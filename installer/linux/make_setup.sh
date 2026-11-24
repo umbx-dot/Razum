@@ -13,6 +13,8 @@ stage="$(mktemp -d)"
 trap 'rm -rf "$stage"' EXIT
 cp "$compiler" "$stage/rzc"
 cp "$package" "$stage/RazumConfig.cmake"
+cp "$here/../../LICENSE" "$stage/LICENSE.txt"
+cp "$here/../../docs/linux-gui-notices.md" "$stage/linux-gui-NOTICES.txt"
 if [ -n "$nasm" ] && [ -n "$license" ]; then
     cp "$nasm" "$stage/nasm"
     cp "$license" "$stage/nasm-LICENSE"

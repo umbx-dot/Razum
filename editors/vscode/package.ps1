@@ -20,6 +20,9 @@ foreach ($item in "package.json", "language-configuration.json", "extension.js",
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot $item) -Destination $extension -Recurse
 }
 Copy-Item -LiteralPath $compiler -Destination (Join-Path $extension "bin")
+$root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+Copy-Item -LiteralPath (Join-Path $root "LICENSE") -Destination (Join-Path $extension "LICENSE.txt")
+Copy-Item -LiteralPath (Join-Path $root "docs/linux-gui-notices.md") -Destination (Join-Path $extension "linux-gui-NOTICES.txt")
 
 $contentTypes = @'
 <?xml version="1.0" encoding="utf-8"?>
@@ -28,6 +31,7 @@ $contentTypes = @'
   <Default Extension=".js" ContentType="application/javascript"/>
   <Default Extension=".svg" ContentType="image/svg+xml"/>
   <Default Extension=".exe" ContentType="application/octet-stream"/>
+  <Default Extension=".txt" ContentType="text/plain"/>
   <Default Extension=".vsixmanifest" ContentType="text/xml"/>
 </Types>
 '@

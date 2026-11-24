@@ -47,6 +47,8 @@ void uninstall(void) {
     RemoveDirectoryW(paths.cmake);
     delete_installed(paths.root, L"rz.ico");
     delete_installed(paths.root, L"rz-icon-LICENSE.txt");
+    delete_installed(paths.root, L"LICENSE.txt");
+    delete_installed(paths.root, L"linux-gui-NOTICES.txt");
     delete_installed(paths.root, L"razum.vsix");
     wchar_t message[MESSAGE_SIZE];
     if (path_removed) {

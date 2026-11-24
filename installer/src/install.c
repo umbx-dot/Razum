@@ -71,6 +71,8 @@ void install(bool include_vscode) {
     extract(RESOURCE_NASM_LICENSE, paths.bin, L"nasm-LICENSE.txt");
     extract(RESOURCE_FILE_ICON, paths.root, L"rz.ico");
     extract(RESOURCE_ICON_LICENSE, paths.root, L"rz-icon-LICENSE.txt");
+    extract(RESOURCE_RAZUM_LICENSE, paths.root, L"LICENSE.txt");
+    extract(RESOURCE_GUI_NOTICES, paths.root, L"linux-gui-NOTICES.txt");
     extract(RESOURCE_CMAKE_PACKAGE, paths.cmake, L"RazumConfig.cmake");
     extract(RESOURCE_VSIX, paths.root, L"razum.vsix");
     copy_uninstaller(&paths);

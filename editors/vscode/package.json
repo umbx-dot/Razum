@@ -4,7 +4,7 @@
     "description": "Razum (.rz) language support: highlighting, every error while you type, hover, go to definition, run and show-asm commands.",
     "version": "0.2.2",
     "publisher": "idom",
-    "license": "UNLICENSED",
+    "license": "MIT",
     "engines": {
         "vscode": "^1.80.0"
     },

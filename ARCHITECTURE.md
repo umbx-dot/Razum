@@ -337,7 +337,7 @@ A Windows GUI program in C (wide-character Win32 API), built only on request (`-
 | `tests/errors_multiple/`, `tests/editor/` | Files with several errors and their whole expected output; the VS Code lookup test (`test_extension.js` with a `vscode` stub in `stubs/`), run by `tests/test_editor.sh` when Node is installed |
 | `examples/` | Example programs |
 | `KNOWLEDGE.md` | Benchmark measurements and run notes used by the website |
-| `LICENSE`, `LICENSE-EXCEPTION.txt` | GPL-2.0 license and runtime exception for compiled programs |
+| `LICENSE` | The MIT License for Razum |
 | `installer/linux/` | The Linux installer: `setup.sh` (the installing script, also `--uninstall`), `make_setup.sh` (appends the payload: `rzc`, NASM and its licence, `RazumConfig.cmake`, the `.vsix`), `CMakeLists.txt` (target `razum-setup`, output `build/razum-setup.sh`) |
 | `editors/vscode/package.sh` | Builds the `.vsix` on Linux with `zip`, carrying the Linux `rzc` (`package.ps1` does it on Windows) |
 | `build.sh`, `build.ps1` | Build scripts for Linux and Windows: check the tools, configure and build with CMake, optionally test and install |

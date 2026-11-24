@@ -19,12 +19,15 @@ rm -rf "$staging"
 mkdir -p "$staging/extension/bin"
 cp -r "$here/package.json" "$here/language-configuration.json" "$here/extension.js" "$here/icons" "$here/syntaxes" "$here/snippets" "$staging/extension/"
 cp "$compiler" "$staging/extension/bin/rzc"
+cp "$here/../../LICENSE" "$staging/extension/LICENSE.txt"
+cp "$here/../../docs/linux-gui-notices.md" "$staging/extension/linux-gui-NOTICES.txt"
 cat > "$staging/[Content_Types].xml" <<'XML'
 <?xml version="1.0" encoding="utf-8"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension=".json" ContentType="application/json"/>
   <Default Extension=".js" ContentType="application/javascript"/>
   <Default Extension=".svg" ContentType="image/svg+xml"/>
+  <Default Extension=".txt" ContentType="text/plain"/>
   <Default Extension=".vsixmanifest" ContentType="text/xml"/>
   <Default Extension="" ContentType="application/octet-stream"/>
 </Types>

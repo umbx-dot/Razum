@@ -76,4 +76,4 @@ Razum is at an early preview stage. File reproducible bug reports in [Issues](ht
 
 ## License
 
-Razum is distributed under [GPL-2.0-only](LICENSE) with a [runtime exception](LICENSE-EXCEPTION.txt) for compiled programs. Bundled components and assets carry their own notices.
+Razum uses the [MIT License](LICENSE). Bundled components and assets carry their own notices.

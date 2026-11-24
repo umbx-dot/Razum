@@ -10,6 +10,8 @@ string(JSON EXTENSION_VERSION GET "${EXTENSION_MANIFEST}" version)
 string(JSON EXTENSION_NAME GET "${EXTENSION_MANIFEST}" name)
 string(JSON EXTENSION_PUBLISHER GET "${EXTENSION_MANIFEST}" publisher)
 set(SETUP ${CMAKE_BINARY_DIR}/razum-setup.sh)
+set(RAZUM_LICENSE ${PROJECT_SOURCE_DIR}/LICENSE)
+set(GUI_NOTICES ${PROJECT_SOURCE_DIR}/docs/linux-gui-notices.md)
 
 set(VSIX_ARGUMENTS "")
 set(VSIX_DEPENDENCY "")
@@ -19,7 +21,7 @@ if(ZIP_EXECUTABLE AND PYTHON_EXECUTABLE)
     add_custom_command(
         OUTPUT ${VSIX}
         COMMAND bash ${EXTENSION_DIRECTORY}/package.sh $<TARGET_FILE:rzc> ${CMAKE_BINARY_DIR}
-        DEPENDS rzc ${EXTENSION_FILES}
+        DEPENDS rzc ${EXTENSION_FILES} ${RAZUM_LICENSE} ${GUI_NOTICES}
         VERBATIM
     )
     set(VSIX_ARGUMENTS ${VSIX} ${EXTENSION_PUBLISHER}.${EXTENSION_NAME})
@@ -41,7 +43,7 @@ add_custom_command(
     COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/make_setup.sh ${SETUP} $<TARGET_FILE:rzc> ${PROJECT_SOURCE_DIR}/cmake/package/RazumConfig.cmake
             ${NASM_ARGUMENTS} ${VSIX_ARGUMENTS}
     DEPENDS rzc ${VSIX_DEPENDENCY} ${CMAKE_CURRENT_SOURCE_DIR}/setup.sh ${CMAKE_CURRENT_SOURCE_DIR}/make_setup.sh
-            ${PROJECT_SOURCE_DIR}/cmake/package/RazumConfig.cmake
+            ${PROJECT_SOURCE_DIR}/cmake/package/RazumConfig.cmake ${RAZUM_LICENSE} ${GUI_NOTICES}
     VERBATIM
 )
 add_custom_target(razum-setup DEPENDS ${SETUP})
