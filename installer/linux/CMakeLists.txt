@@ -30,9 +30,11 @@ else()
     message(STATUS "zip or python3 not found: razum-setup.sh will not contain the VS Code extension")
 endif()
 
-set(NASM_ARGUMENTS "" "")
+set(BUNDLED_NASM "")
+set(BUNDLED_NASM_LICENSE "")
 if(NASM_EXECUTABLE AND NASM_LICENSE)
-    set(NASM_ARGUMENTS ${NASM_EXECUTABLE} ${NASM_LICENSE})
+    set(BUNDLED_NASM "${NASM_EXECUTABLE}")
+    set(BUNDLED_NASM_LICENSE "${NASM_LICENSE}")
 endif()
 if(NOT VSIX_ARGUMENTS)
     set(VSIX_ARGUMENTS "" "")
@@ -41,8 +43,9 @@ endif()
 add_custom_command(
     OUTPUT ${SETUP}
     COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/make_setup.sh ${SETUP} $<TARGET_FILE:rzc> ${PROJECT_SOURCE_DIR}/cmake/package/RazumConfig.cmake
-            ${NASM_ARGUMENTS} ${VSIX_ARGUMENTS}
-    DEPENDS rzc ${VSIX_DEPENDENCY} ${CMAKE_CURRENT_SOURCE_DIR}/setup.sh ${CMAKE_CURRENT_SOURCE_DIR}/make_setup.sh
+            "${BUNDLED_NASM}" "${BUNDLED_NASM_LICENSE}" ${VSIX_ARGUMENTS}
+    DEPENDS rzc ${VSIX_DEPENDENCY} ${BUNDLED_NASM} ${BUNDLED_NASM_LICENSE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/setup.sh ${CMAKE_CURRENT_SOURCE_DIR}/make_setup.sh
             ${PROJECT_SOURCE_DIR}/cmake/package/RazumConfig.cmake ${RAZUM_LICENSE} ${GUI_NOTICES}
     VERBATIM
 )
