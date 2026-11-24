@@ -1,0 +1,35 @@
+// platform: linux
+import stdio;
+import threads;
+
+long finished;
+
+void work(long value) {
+    atomic_add(&finished, value);
+}
+
+void recurse(long depth) {
+    char space[1024];
+    space[0] = (char)depth;
+    if (depth > 0) {
+        recurse(depth - 1);
+    }
+}
+
+void deep(long value) {
+    recurse(value);
+    atomic_add(&finished, 1000);
+}
+
+int main() {
+    for (int round = 0; round < 200; round++) {
+        thread_detach(thread_start(work, 1));
+    }
+    while (atomic_load(&finished) < 200) {
+        thread_yield();
+    }
+    long thread = thread_start(deep, 900);
+    thread_join(thread);
+    print(atomic_load(&finished));
+    return 0;
+}

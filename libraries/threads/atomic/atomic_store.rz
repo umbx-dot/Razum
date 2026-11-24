@@ -1,0 +1,7 @@
+void atomic_store(long *target, long value) {
+    asm {
+        mov rcx, qword [rsp + .target]
+        mov rax, qword [rsp + .value]
+        xchg qword [rcx], rax
+    }
+}

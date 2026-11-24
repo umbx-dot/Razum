@@ -1,0 +1,8 @@
+int futex_exchange(long *word, int value) {
+    asm {
+        mov rcx, qword [rsp + .word]
+        mov eax, dword [rsp + .value]
+        xchg dword [rcx], eax
+        movsxd rax, eax
+    }
+}

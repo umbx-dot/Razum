@@ -1,0 +1,59 @@
+struct GuiWaylandBuffer {
+    uint id;
+    long address;
+    bool busy;
+}
+
+struct GuiDesktop {
+    long socket;
+    int backend;
+    char title[1024];
+    uint x_root;
+    uint x_window;
+    uint x_context;
+    uint x_resource;
+    uint x_mask;
+    uint x_delete;
+    uint x_protocols;
+    int x_limit;
+    int x_depth;
+    int x_first_key;
+    int x_key_count;
+    int x_symbols_per_key;
+    uint *x_keys;
+    uint wl_next;
+    uint wl_registry;
+    uint wl_barrier;
+    uint wl_compositor;
+    uint wl_shm;
+    uint wl_seat;
+    uint wl_shell;
+    uint wl_surface;
+    uint wl_role;
+    uint wl_window;
+    uint wl_pointer;
+    uint wl_cursor;
+    uint wl_keyboard;
+    bool wl_ready;
+    int wl_width;
+    int wl_height;
+    long wl_bytes;
+    GuiWaylandBuffer wl_buffers[2];
+    int fd_count;
+    long fds[16];
+    uint keys[4096];
+    int group;
+    bool shift;
+    bool altgr;
+    bool control;
+    bool caps;
+    double pointer_x;
+    double pointer_y;
+}
+
+GuiDesktop gui_desktop;
+
+const int GUI_X11 = 1;
+const int GUI_WAYLAND = 2;
+const int GUI_MAX_EDGE = 4096;
+const int GUI_TITLE_HEIGHT = 28;

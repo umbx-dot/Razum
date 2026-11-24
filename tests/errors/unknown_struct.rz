@@ -1,0 +1,5 @@
+// error: 3:5: unknown type 'Shape'; declare it with struct Shape { ... }
+int main() {
+    Shape s;
+    return 0;
+}

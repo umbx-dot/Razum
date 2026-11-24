@@ -1,0 +1,24 @@
+bool json_put(char target[], long *used, int value) {
+    int size = value < 0x80 ? 1 : value < 0x800 ? 2 : value < 0x10000 ? 3 : 4;
+    if (*used + size >= target.length) {
+        return false;
+    }
+    long at = *used;
+    if (size == 1) {
+        target[at] = (char)value;
+    } else if (size == 2) {
+        target[at] = (char)(0xC0 | (value >> 6));
+        target[at + 1] = (char)(0x80 | (value & 0x3F));
+    } else if (size == 3) {
+        target[at] = (char)(0xE0 | (value >> 12));
+        target[at + 1] = (char)(0x80 | ((value >> 6) & 0x3F));
+        target[at + 2] = (char)(0x80 | (value & 0x3F));
+    } else {
+        target[at] = (char)(0xF0 | (value >> 18));
+        target[at + 1] = (char)(0x80 | ((value >> 12) & 0x3F));
+        target[at + 2] = (char)(0x80 | ((value >> 6) & 0x3F));
+        target[at + 3] = (char)(0x80 | (value & 0x3F));
+    }
+    *used = at + size;
+    return true;
+}

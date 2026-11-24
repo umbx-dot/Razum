@@ -1,0 +1,97 @@
+import json.types;
+import json.scan;
+
+int json_write_event(JsonOutput *output, int kind, string value, int size) {
+    const int ARRAY_FIRST = 0;
+    const int ARRAY_NEXT = 1;
+    const int OBJECT_FIRST = 2;
+    const int OBJECT_NEXT = 3;
+    const int OBJECT_VALUE = 4;
+    int depth = output.depth;
+    int state = depth == 0 ? -1 : (int)output.state[depth - 1];
+    if (kind < JSON_OBJECT || kind > JSON_END || size < 0) {
+        return JSON_INVALID;
+    }
+    if (kind == JSON_END) {
+        if (depth == 0 || state == OBJECT_VALUE) {
+            return JSON_INVALID;
+        }
+    } else if (kind == JSON_KEY) {
+        if (state != OBJECT_FIRST && state != OBJECT_NEXT) {
+            return JSON_INVALID;
+        }
+    } else if (state == OBJECT_FIRST || state == OBJECT_NEXT || (depth == 0 && output.root)) {
+        return JSON_INVALID;
+    }
+    bool opens = kind == JSON_OBJECT || kind == JSON_ARRAY;
+    if (opens && depth == JSON_MAX_DEPTH) {
+        return JSON_DEPTH;
+    }
+    char punctuation = (char)0;
+    switch (kind) {
+        case JSON_OBJECT: punctuation = "{"; break;
+        case JSON_ARRAY: punctuation = "["; break;
+        case JSON_END: punctuation = state >= OBJECT_FIRST ? '}' : ']'; break;
+        case JSON_TRUE: value = "true"; size = 4; break;
+        case JSON_FALSE: value = "false"; size = 5; break;
+        case JSON_NULL: value = "null"; size = 4; break;
+        case JSON_NUMBER:
+            if (size == 0 || json_scan_number(value, size, 0) != size) {
+                return JSON_INVALID;
+            }
+    }
+    long start = output.used;
+    long remaining = output.capacity - start - 1;
+    bool comma = kind != JSON_END && (state == ARRAY_NEXT || state == OBJECT_NEXT);
+    bool quoted = kind == JSON_KEY || kind == JSON_STRING;
+    long minimum = punctuation != (char)0 ? 1 : (long)size;
+    if (quoted) {
+        minimum += kind == JSON_KEY ? 3 : 2;
+    }
+    if (comma) {
+        minimum++;
+    }
+    if (remaining < minimum) {
+        return JSON_CAPACITY;
+    }
+    if (comma) {
+        output.data[output.used] = ",";
+        output.used++;
+    }
+    if (quoted) {
+        long limit = output.capacity - (kind == JSON_KEY ? 2 : 1);
+        int status = json_emit_quoted(output, value, size, limit);
+        if (status < 0) {
+            output.used = start;
+            output.data[start] = "\0";
+            return status;
+        }
+    } else if (punctuation != (char)0) {
+        output.data[output.used] = punctuation;
+        output.used++;
+    } else {
+        for (int i = 0; i < size; i++) {
+            output.data[output.used] = value[i];
+            output.used++;
+        }
+    }
+    if (kind == JSON_END) {
+        output.depth--;
+    } else if (kind == JSON_KEY) {
+        output.data[output.used] = ":";
+        output.used++;
+        output.state[depth - 1] = (byte)OBJECT_VALUE;
+    } else {
+        if (depth == 0) {
+            output.root = true;
+        } else {
+            output.state[depth - 1] = (byte)(state == OBJECT_VALUE ? OBJECT_NEXT : ARRAY_NEXT);
+        }
+        if (opens) {
+            output.state[depth] = (byte)(kind == JSON_OBJECT ? OBJECT_FIRST : ARRAY_FIRST);
+            output.depth++;
+        }
+    }
+    output.data[output.used] = "\0";
+    return 0;
+}

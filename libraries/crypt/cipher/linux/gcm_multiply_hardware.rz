@@ -1,0 +1,65 @@
+void gcm_multiply_hardware(ulong *value, ulong *key) {
+    asm {
+        %macro gcm_reflect_qwords 3
+            movdqa %2, %1
+            psrlw %2, 4
+            pand %1, [rel .gcm_nibble_mask]
+            pand %2, [rel .gcm_nibble_mask]
+            movdqa %3, [rel .gcm_reverse_nibbles]
+            pshufb %3, %1
+            psllw %3, 4
+            movdqa %1, [rel .gcm_reverse_nibbles]
+            pshufb %1, %2
+            por %1, %3
+            pshufb %1, [rel .gcm_reverse_bytes]
+        %endmacro
+
+        mov rcx, [rsp + .value]
+        mov rdx, [rsp + .key]
+        movdqu xmm0, [rcx]
+        movdqu xmm1, [rdx]
+        gcm_reflect_qwords xmm0, xmm4, xmm5
+        gcm_reflect_qwords xmm1, xmm4, xmm5
+
+        movdqa xmm2, xmm0
+        pclmulqdq xmm2, xmm1, 0x00
+        movdqa xmm3, xmm0
+        pclmulqdq xmm3, xmm1, 0x11
+        movdqa xmm4, xmm0
+        pclmulqdq xmm4, xmm1, 0x01
+        pclmulqdq xmm0, xmm1, 0x10
+        pxor xmm4, xmm0
+        movdqa xmm5, xmm4
+        pslldq xmm4, 8
+        psrldq xmm5, 8
+        pxor xmm2, xmm4
+        pxor xmm3, xmm5
+
+        mov eax, 0x87
+        movd xmm5, eax
+        movdqa xmm4, xmm3
+        pclmulqdq xmm3, xmm5, 0x00
+        pclmulqdq xmm4, xmm5, 0x01
+        pxor xmm2, xmm3
+        movdqa xmm3, xmm4
+        pslldq xmm4, 8
+        pxor xmm2, xmm4
+        psrldq xmm3, 8
+        pclmulqdq xmm3, xmm5, 0x00
+        pxor xmm2, xmm3
+
+        gcm_reflect_qwords xmm2, xmm4, xmm5
+        movdqu [rcx], xmm2
+        %unmacro gcm_reflect_qwords 3
+        jmp .gcm_done
+
+        align 16
+    .gcm_nibble_mask:
+        times 16 db 15
+    .gcm_reverse_nibbles:
+        db 0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15
+    .gcm_reverse_bytes:
+        db 7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8
+    .gcm_done:
+    }
+}

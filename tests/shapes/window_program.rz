@@ -1,0 +1,7 @@
+// platform: windows
+// asm: ; subsystem: windows (no console)
+program gui;
+
+int main() {
+    return 0;
+}

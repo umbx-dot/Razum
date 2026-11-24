@@ -1,0 +1,157 @@
+// platform: windows
+import stdio;
+import text;
+import windows;
+import winsock;
+import threads;
+import http;
+import filesystem;
+
+void hello(HttpRequest *request, HttpResponse *response) {
+    http_text(response, "Hello from razum");
+}
+
+void greet(HttpRequest *request, HttpResponse *response) {
+    char name[64];
+    if (!http_query_value(request, "name", name)) {
+        copy(name, "stranger");
+    }
+    http_write(response, "Hello, ");
+    http_write(response, name);
+    http_write(response, "!");
+}
+
+void echo(HttpRequest *request, HttpResponse *response) {
+    http_content_type(response, http_header(request, "content-type"));
+    http_write_bytes(response, request.body, request.body_length);
+}
+
+void user(HttpRequest *request, HttpResponse *response) {
+    http_json(response, "{\"user\": \"");
+    http_write(response, request.rest);
+    http_write(response, "\"}");
+}
+
+void created(HttpRequest *request, HttpResponse *response) {
+    http_status(response, 201);
+    http_set_header(response, "X-Test", "yes");
+    http_text(response, "made");
+}
+
+long open_client(string host, int port) {
+    byte address[28];
+    int family = http_address(host, port, address);
+    long socket = WSASocketW(family, SOCK_STREAM, IPPROTO_TCP, 0, 0, 0);
+    if (connect(socket, address, family == AF_INET6 ? 28 : 16) != 0) {
+        print("connect failed");
+    }
+    return socket;
+}
+
+void send_text(long socket, string text) {
+    send(socket, (char *)text, (int)length(text), 0);
+}
+
+void show_response(long socket) {
+    char data[8192];
+    long used = 0;
+    while (used < data.length - 1) {
+        int received = recv(socket, &data[used], (int)(data.length - 1 - used), 0);
+        if (received <= 0) {
+            break;
+        }
+        used += received;
+    }
+    data[used] = '\0';
+    closesocket(socket);
+    long start = 0;
+    while (start < used) {
+        long end = start;
+        while (end < used && data[end] != '\n') {
+            end++;
+        }
+        bool is_date = data[start] == 'D' && data[start + 1] == 'a' && data[start + 2] == 't' && data[start + 3] == 'e';
+        if (is_date) {
+            bool well_formed = end - start == 36 && data[start + 9] == ',' && data[start + 32] == 'G' && data[start + 34] == 'T' &&
+                               data[start + 25] == ':' && data[start + 28] == ':' && data[end - 1] == '\r';
+            print(well_formed ? "Date: <well formed>" : "Date: <BROKEN>");
+        } else {
+            for (long index = start; index <= end && index < used; index++) {
+                write_char(data[index]);
+            }
+        }
+        start = end + 1;
+    }
+    print("--");
+}
+
+int main() {
+    HttpServer *server = http_new();
+    http_workers(server, 2);
+    http_route(server, "GET", "/", hello);
+    http_route(server, "GET", "/greet", greet);
+    http_route(server, "POST", "/echo", echo);
+    http_route(server, "GET", "/users/*", user);
+    http_route(server, "*", "/create", created);
+    char folder[512];
+    temp_directory(folder);
+    concat(folder, "razum_http_files");
+    create_directory(folder);
+    char page[600];
+    copy(page, folder);
+    concat(page, "\\page.txt");
+    write_text(page, "static text");
+    char index[600];
+    copy(index, folder);
+    concat(index, "\\index.html");
+    write_text(index, "<h1>home</h1>");
+    http_files(server, "/files/", folder);
+    print(http_listen(server, "127.0.0.1", 0));
+    print(http_listen(server, "::1", 0));
+    print(http_listen(server, "not an address", 80));
+    print(http_start(server));
+    int port = http_port(server, 0);
+    int port6 = http_port(server, 1);
+    print(port > 0 && port6 > 0);
+
+    long socket = open_client("127.0.0.1", port);
+    send_text(socket, "GET / HTTP/1.1\r\nHost: test\r\nConnection: close\r\n\r\n");
+    show_response(socket);
+
+    socket = open_client("localhost", port);
+    send_text(socket, "GET /greet?name=Ada%20L HTTP/1.1\r\nHost: test\r\n\r\nHEAD / HTTP/1.1\r\nHost: test\r\n\r\nGET /users/42 HTTP/1.1\r\nHost: test\r\n\r\nGET /missing HTTP/1.1\r\nConnection: close\r\n\r\n");
+    show_response(socket);
+
+    socket = open_client("127.0.0.1", port);
+    send_text(socket, "POST /echo HTTP/1.1\r\nHost: test\r\nContent-Type: text/csv\r\nContent-Length: 10\r\nExpect: 100-continue\r\nConnection: close\r\n\r\n");
+    Sleep(50);
+    send_text(socket, "a,b,");
+    Sleep(50);
+    send_text(socket, "c\r\n1,2");
+    show_response(socket);
+
+    socket = open_client("::1", port6);
+    send_text(socket, "DELETE /create HTTP/1.0\r\n\r\n");
+    show_response(socket);
+
+    socket = open_client("127.0.0.1", port);
+    send_text(socket, "GARBAGE\r\n\r\n");
+    show_response(socket);
+
+    socket = open_client("127.0.0.1", port);
+    send_text(socket, "GET / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n");
+    show_response(socket);
+
+    socket = open_client("127.0.0.1", port);
+    send_text(socket, "GET /files/page.txt HTTP/1.1\r\n\r\nGET /files/ HTTP/1.1\r\n\r\nGET /files/../secret HTTP/1.1\r\n\r\nGET /files/none.txt HTTP/1.1\r\nConnection: close\r\n\r\n");
+    show_response(socket);
+    delete_file(page);
+    delete_file(index);
+    delete_directory(folder);
+
+    http_stop(server);
+    http_wait(server);
+    print(http_request_count(server));
+    print(http_connection_count(server));
+    return 0;
+}

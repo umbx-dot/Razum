@@ -1,0 +1,6 @@
+import gui.state;
+import gui.draw;
+
+void gui_begin_column(double width) {
+    gui_begin_box(false, width, 0, 12);
+}

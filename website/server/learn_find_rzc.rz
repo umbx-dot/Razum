@@ -1,0 +1,17 @@
+import text;
+import process;
+
+bool learn_find_rzc(string preferred) {
+    copy(learn_rzc, preferred);
+    char command[1100];
+    copy(command, "\"");
+    concat(command, learn_rzc);
+    concat(command, "\" --help");
+    ProcessLimits limits;
+    limits.timeout_milliseconds = 5000;
+    limits.max_output = 4096;
+    ProcessResult result;
+    bool found = process_run(result, command, "", "", limits) && contains(result.output, "usage: rzc");
+    process_free(result);
+    return found;
+}

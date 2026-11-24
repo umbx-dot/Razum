@@ -1,0 +1,31 @@
+import text;
+import windows;
+
+bool open(File file, string path, string mode) {
+    uint access = GENERIC_READ;
+    uint creation = OPEN_EXISTING;
+    if (mode[0] == "w") {
+        access = GENERIC_WRITE;
+        creation = CREATE_ALWAYS;
+    } else if (mode[0] == "a") {
+        access = FILE_APPEND_DATA;
+        creation = OPEN_ALWAYS;
+    }
+    ushort wide[1024];
+    file.handle = to_utf16(wide, path) < 0 ? INVALID_HANDLE_VALUE
+                  : CreateFileW(wide, access, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, creation, FILE_ATTRIBUTE_NORMAL, 0);
+    file.used = 0;
+    file.position = 0;
+    file.writing = mode[0] != "r";
+    file.failed = false;
+    if (file.handle == INVALID_HANDLE_VALUE) {
+        return false;
+    }
+    long end[1];
+    if (mode[0] == "a" && SetFilePointerEx(file.handle, 0, end, FILE_END) == 0) {
+        CloseHandle(file.handle);
+        file.handle = INVALID_HANDLE_VALUE;
+        return false;
+    }
+    return true;
+}

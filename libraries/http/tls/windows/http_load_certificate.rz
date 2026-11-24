@@ -1,0 +1,83 @@
+import http.state;
+import windows;
+import text;
+
+long http_find_keyed_certificate(long store) {
+    long candidate = CertEnumCertificatesInStore(store, 0);
+    while (candidate != 0) {
+        uint size = 0;
+        bool keyed = CertGetCertificateContextProperty(candidate, CERT_KEY_PROV_INFO_PROP_ID, null, &size) != 0 ||
+                     CertGetCertificateContextProperty(candidate, CERT_KEY_CONTEXT_PROP_ID, null, &size) != 0 ||
+                     CertGetCertificateContextProperty(candidate, CERT_NCRYPT_KEY_HANDLE_PROP_ID, null, &size) != 0;
+        if (keyed) {
+            long found = CertDuplicateCertificateContext(candidate);
+            CertFreeCertificateContext(candidate);
+            return found;
+        }
+        candidate = CertEnumCertificatesInStore(store, candidate);
+    }
+    return 0;
+}
+
+bool http_load_certificate(HttpListener *listener, string path, string password) {
+    ushort wide[1024];
+    long file = to_utf16(wide, path) < 0 ? INVALID_HANDLE_VALUE : CreateFileW(wide, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+    if (file == INVALID_HANDLE_VALUE) {
+        http_last_error = GetLastError();
+        return false;
+    }
+    long size = 0;
+    GetFileSizeEx(file, &size);
+    if (size <= 0 || size > 1048576) {
+        CloseHandle(file);
+        http_last_error = 13;
+        return false;
+    }
+    byte *data = new byte[size];
+    uint read = 0;
+    ReadFile(file, (char *)data, (uint)size, &read, 0);
+    CloseHandle(file);
+    CRYPT_DATA_BLOB blob;
+    blob.size = read;
+    blob.data = data;
+    ushort wide_password[256];
+    MultiByteToWideChar(CP_UTF8, 0, password, -1, wide_password, wide_password.length);
+    long store = PFXImportCertStore(blob, wide_password, CRYPT_USER_KEYSET | PKCS12_ALWAYS_CNG_KSP);
+    free(data);
+    if (store == 0) {
+        http_last_error = GetLastError();
+        return false;
+    }
+    long certificate = http_find_keyed_certificate(store);
+    if (certificate == 0) {
+        CertCloseStore(store, 0);
+        http_last_error = 0x80092004;
+        return false;
+    }
+    long chain[1];
+    chain[0] = certificate;
+    SCH_CREDENTIALS credentials;
+    credentials.version = SCH_CREDENTIALS_VERSION;
+    credentials.certificate_count = 1;
+    credentials.certificates = (long)&chain[0];
+    credentials.flags = SCH_USE_STRONG_CRYPTO;
+    ushort package[64];
+    MultiByteToWideChar(CP_UTF8, 0, "Microsoft Unified Security Protocol Provider", -1, package, package.length);
+    long expiry = 0;
+    uint status = AcquireCredentialsHandleW(0, package, SECPKG_CRED_INBOUND, 0, credentials, 0, 0, listener.credential, &expiry);
+    if (status != SEC_E_OK) {
+        http_last_error = status;
+        CertFreeCertificateContext(certificate);
+        CertCloseStore(store, 0);
+        return false;
+    }
+    long key = 0;
+    uint key_spec = 0;
+    int caller_free = 0;
+    if (CryptAcquireCertificatePrivateKey(certificate, CRYPT_ACQUIRE_ONLY_NCRYPT_KEY_FLAG, 0, &key, &key_spec, &caller_free) != 0) {
+        NCryptDeleteKey(key, 0);
+    }
+    listener.certificate = certificate;
+    listener.store = store;
+    return true;
+}

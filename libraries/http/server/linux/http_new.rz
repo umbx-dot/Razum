@@ -1,0 +1,11 @@
+import http.state;
+import threads;
+
+HttpServer *http_new() {
+    HttpServer *server = new HttpServer;
+    server.idle_timeout = 60000;
+    server.request_timeout = 10000;
+    server.max_body = 1048576;
+    server.worker_count = cpu_count();
+    return server;
+}

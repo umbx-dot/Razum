@@ -1,0 +1,39 @@
+import http.state;
+import windows;
+import winsock;
+
+bool http_open_listener(HttpServer *server, string host, int port, bool tls) {
+    if (server.listener_count == server.listeners.length || server.running || port < 0 || port > 65535) {
+        return false;
+    }
+    byte address[28];
+    int family = http_address(host, port, address);
+    if (family == 0) {
+        return false;
+    }
+    long socket = WSASocketW(family, SOCK_STREAM, IPPROTO_TCP, 0, 0, WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
+    if (socket == INVALID_SOCKET) {
+        return false;
+    }
+    int yes = 1;
+    int no = 0;
+    setsockopt(socket, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, (byte *)&yes, 4);
+    if (family == AF_INET6) {
+        setsockopt(socket, IPPROTO_IPV6, IPV6_V6ONLY, (byte *)&no, 4);
+    }
+    int size = family == AF_INET6 ? 28 : 16;
+    bool ready = bind(socket, address, size) == 0 && listen(socket, -65535) == 0 &&
+                 CreateIoCompletionPort(socket, server.port, 0, 0) != 0 && http_load_accept(server, socket);
+    if (!ready) {
+        closesocket(socket);
+        return false;
+    }
+    getsockname(socket, address, &size);
+    HttpListener *listener = &server.listeners[server.listener_count];
+    listener.socket = socket;
+    listener.family = family;
+    listener.port = ((int)address[2] << 8) | address[3];
+    listener.tls = tls;
+    server.listener_count++;
+    return true;
+}

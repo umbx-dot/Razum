@@ -1,0 +1,10 @@
+void gui_fill_pixels(uint *pixels, int size, uint color) {
+    asm {
+        push rdi
+        mov rdi, [rsp + 8 + .pixels]
+        mov ecx, dword [rsp + 8 + .size]
+        mov eax, dword [rsp + 8 + .color]
+        rep stosd
+        pop rdi
+    }
+}

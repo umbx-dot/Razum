@@ -1,0 +1,15 @@
+import gui.state;
+import gui.wire;
+import linux;
+
+bool gui_wl_send_fd(uint object, uint pool, int size, long fd) {
+    uint words[4] = {object, 0x00100000, pool, (uint)size};
+    long vector[2] = {(long)&words[0], 16};
+    long ancillary[3] = {20, (SCM_RIGHTS << 32) | SOL_SOCKET, fd};
+    long message[7] = {0, 0, (long)&vector[0], 1, (long)&ancillary[0], 24, 0};
+    long sent = EINTR;
+    while (sent == EINTR) {
+        sent = system_call(SYS_SENDMSG, gui_desktop.socket, (long)&message[0], MSG_NOSIGNAL, 0);
+    }
+    return sent > 0 && gui_send((long)&words[0] + sent, 16 - sent);
+}

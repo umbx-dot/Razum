@@ -1,0 +1,13 @@
+// error: 9:9: '==' needs a number, not a struct
+struct Point {
+    int x;
+}
+
+int main() {
+    Point a;
+    Point b;
+    if (a == b) {
+        return 1;
+    }
+    return 0;
+}

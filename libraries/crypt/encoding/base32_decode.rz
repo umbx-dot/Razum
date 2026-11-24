@@ -1,0 +1,32 @@
+long base32_decode(byte target[], string encoded) {
+    long size = unpadded_length(encoded, 8, 6);
+    long rest = size % 8;
+    if (size < 0 || rest == 1 || rest == 3 || rest == 6 || size * 5 / 8 > target.length) {
+        return -1;
+    }
+    long bits = 0;
+    int count = 0;
+    long out = 0;
+    for (long i = 0; i < size; i++) {
+        char digit = encoded[i];
+        int value = -1;
+        if (digit >= "A" && digit <= "Z") {
+            value = digit - "A";
+        } else if (digit >= "a" && digit <= "z") {
+            value = digit - "a";
+        } else if (digit >= "2" && digit <= "7") {
+            value = digit - "2" + 26;
+        }
+        if (value < 0) {
+            return -1;
+        }
+        bits = (bits << 5) | value;
+        count += 5;
+        if (count >= 8) {
+            count -= 8;
+            target[out] = (byte)(bits >> count);
+            out++;
+        }
+    }
+    return out;
+}

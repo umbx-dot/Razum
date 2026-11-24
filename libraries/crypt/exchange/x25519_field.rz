@@ -1,0 +1,102 @@
+void field_carry(long value[]) {
+    for (int index = 0; index < 16; index++) {
+        value[index] += 65536;
+        long carry = value[index] >> 16;
+        if (index < 15) {
+            value[index + 1] += carry - 1;
+        } else {
+            value[0] += 38 * (carry - 1);
+        }
+        value[index] -= carry << 16;
+    }
+}
+
+void field_select(long first[], long second[], long bit) {
+    long mask = ~(bit - 1);
+    for (int index = 0; index < 16; index++) {
+        long swap = mask & (first[index] ^ second[index]);
+        first[index] = first[index] ^ swap;
+        second[index] = second[index] ^ swap;
+    }
+}
+
+void field_add(long target[], long left[], long right[]) {
+    for (int index = 0; index < 16; index++) {
+        target[index] = left[index] + right[index];
+    }
+}
+
+void field_subtract(long target[], long left[], long right[]) {
+    for (int index = 0; index < 16; index++) {
+        target[index] = left[index] - right[index];
+    }
+}
+
+void field_multiply(long target[], long left[], long right[]) {
+    long product[31];
+    for (int index = 0; index < 31; index++) {
+        product[index] = 0;
+    }
+    for (int i = 0; i < 16; i++) {
+        for (int j = 0; j < 16; j++) {
+            product[i + j] += left[i] * right[j];
+        }
+    }
+    for (int index = 0; index < 15; index++) {
+        product[index] += 38 * product[index + 16];
+    }
+    for (int index = 0; index < 16; index++) {
+        target[index] = product[index];
+    }
+    field_carry(target);
+    field_carry(target);
+}
+
+void field_invert(long target[], long value[]) {
+    long result[16];
+    for (int index = 0; index < 16; index++) {
+        result[index] = value[index];
+    }
+    for (int bit = 253; bit >= 0; bit--) {
+        field_multiply(result, result, result);
+        if (bit != 2 && bit != 4) {
+            field_multiply(result, result, value);
+        }
+    }
+    for (int index = 0; index < 16; index++) {
+        target[index] = result[index];
+    }
+}
+
+void field_unpack(long target[], byte *bytes) {
+    for (int index = 0; index < 16; index++) {
+        target[index] = (long)bytes[2 * index] + ((long)bytes[2 * index + 1] << 8);
+    }
+    target[15] = target[15] & 32767;
+}
+
+void field_pack(byte *bytes, long value[]) {
+    long reduced[16];
+    long trial[16];
+    for (int index = 0; index < 16; index++) {
+        reduced[index] = value[index];
+    }
+    field_carry(reduced);
+    field_carry(reduced);
+    field_carry(reduced);
+    for (int round = 0; round < 2; round++) {
+        trial[0] = reduced[0] - 65517;
+        for (int index = 1; index < 15; index++) {
+            trial[index] = reduced[index] - 65535 - ((trial[index - 1] >> 16) & 1);
+            trial[index - 1] = trial[index - 1] & 65535;
+        }
+        trial[15] = reduced[15] - 32767 - ((trial[14] >> 16) & 1);
+        long borrow = (trial[15] >> 16) & 1;
+        trial[14] = trial[14] & 65535;
+        field_select(reduced, trial, 1 - borrow);
+    }
+    for (int index = 0; index < 16; index++) {
+        bytes[2 * index] = (byte)reduced[index];
+        bytes[2 * index + 1] = (byte)(reduced[index] >> 8);
+    }
+}

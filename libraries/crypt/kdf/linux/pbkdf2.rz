@@ -1,0 +1,46 @@
+import crypt.hash;
+import crypt.hmac;
+
+long pbkdf2(Hash kind, byte key[], byte *password, long password_length, byte *salt, long salt_length,
+            long iterations) {
+    if (password_length < 0 || password_length > 0xFFFFFFFF || salt_length < 0 || salt_length > 0xFFFFFFFF
+        || iterations < 1) {
+        return -1;
+    }
+    Hasher keyed;
+    if (!hmac_start(keyed, kind, password, password_length)) {
+        return -1;
+    }
+    int size = hash_size(kind);
+    byte block[64];
+    byte mixed[64];
+    byte counter[4];
+    long done = 0;
+    for (long number = 1; done < key.length; number++) {
+        Hasher round;
+        round = keyed;
+        hash_update(round, salt, salt_length);
+        counter[0] = (byte)(number >> 24);
+        counter[1] = (byte)(number >> 16);
+        counter[2] = (byte)(number >> 8);
+        counter[3] = (byte)number;
+        hash_update(round, &counter[0], 4);
+        hash_finish(round, block);
+        for (int index = 0; index < size; index++) {
+            mixed[index] = block[index];
+        }
+        for (long iteration = 1; iteration < iterations; iteration++) {
+            round = keyed;
+            hash_update(round, &block[0], size);
+            hash_finish(round, block);
+            for (int index = 0; index < size; index++) {
+                mixed[index] = (byte)(mixed[index] ^ block[index]);
+            }
+        }
+        for (int index = 0; index < size && done < key.length; index++) {
+            key[done] = mixed[index];
+            done++;
+        }
+    }
+    return key.length;
+}

@@ -1,0 +1,7 @@
+import linux;
+
+void WakeConditionVariable(long *condition) {
+    if (futex_advance_if_waiting(condition)) {
+        futex(condition, FUTEX_WAKE_PRIVATE, 1, 0);
+    }
+}

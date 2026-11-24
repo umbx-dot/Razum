@@ -1,0 +1,14 @@
+import gui.state;
+
+bool gui_create_fonts() {
+    if (!gui_create_font(GUI_BODY, "Segoe UI", 14) || !gui_create_font(GUI_SMALL, "Segoe UI", 12)) {
+        return false;
+    }
+    if (!gui_create_font(GUI_STRONG, "Segoe UI Semibold", 14)) {
+        gui_create_font(GUI_STRONG, "Segoe UI", 14);
+    }
+    if (!gui_create_font(GUI_HEADING, "Segoe UI Semibold", 22)) {
+        gui_create_font(GUI_HEADING, "Segoe UI", 22);
+    }
+    return true;
+}

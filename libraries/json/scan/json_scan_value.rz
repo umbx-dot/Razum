@@ -1,0 +1,104 @@
+import json.types;
+import json.strings;
+
+int json_scan_value(JsonReader *reader, int depth) {
+    int start = reader.position;
+    if (start == reader.size) {
+        return JSON_INVALID;
+    }
+    if (reader.used == reader.capacity) {
+        return JSON_CAPACITY;
+    }
+    string source = reader.source;
+    int size = reader.size;
+    char current = source[start];
+    JsonToken *token = &reader.tokens[reader.used];
+    reader.used++;
+    token.start = start;
+    int end = -1;
+    if (current == "{" || current == "[") {
+        if (depth == JSON_MAX_DEPTH) {
+            return JSON_DEPTH;
+        }
+        bool object = current == "{";
+        char close = object ? '}' : ']';
+        token.kind = object ? JSON_OBJECT : JSON_ARRAY;
+        reader.position++;
+        json_skip_space(reader);
+        if (reader.position < size && source[reader.position] == close) {
+            end = reader.position + 1;
+        } else {
+            while (true) {
+                if (object) {
+                    int key_start = reader.position;
+                    if (key_start == size || source[key_start] != "\"") {
+                        return JSON_INVALID;
+                    }
+                    if (reader.used == reader.capacity) {
+                        return JSON_CAPACITY;
+                    }
+                    int key_end = json_scan_string(source, size, key_start);
+                    if (key_end < 0) {
+                        return JSON_INVALID;
+                    }
+                    JsonToken *key = &reader.tokens[reader.used];
+                    reader.used++;
+                    key.kind = JSON_STRING;
+                    key.start = key_start;
+                    key.end = key_end;
+                    key.next = reader.used;
+                    reader.position = key_end;
+                    json_skip_space(reader);
+                    if (reader.position == size || source[reader.position] != ":") {
+                        return JSON_INVALID;
+                    }
+                    reader.position++;
+                    json_skip_space(reader);
+                }
+                int status = json_scan_value(reader, depth + 1);
+                if (status < 0) {
+                    return status;
+                }
+                json_skip_space(reader);
+                if (reader.position == size) {
+                    return JSON_INVALID;
+                }
+                char separator = source[reader.position];
+                reader.position++;
+                if (separator == close) {
+                    end = reader.position;
+                    break;
+                }
+                if (separator != ",") {
+                    return JSON_INVALID;
+                }
+                json_skip_space(reader);
+            }
+        }
+    } else if (current == "\"") {
+        token.kind = JSON_STRING;
+        end = json_scan_string(source, size, start);
+    } else if (current == "-" || (current >= "0" && current <= "9")) {
+        token.kind = JSON_NUMBER;
+        end = json_scan_number(source, size, start);
+    } else if (size - start >= 4 && current == "t" && source[start + 1] == "r" &&
+               source[start + 2] == "u" && source[start + 3] == "e") {
+        token.kind = JSON_TRUE;
+        end = start + 4;
+    } else if (size - start >= 5 && current == "f" && source[start + 1] == "a" &&
+               source[start + 2] == "l" && source[start + 3] == "s" && source[start + 4] == "e") {
+        token.kind = JSON_FALSE;
+        end = start + 5;
+    } else if (size - start >= 4 && current == "n" && source[start + 1] == "u" &&
+               source[start + 2] == "l" && source[start + 3] == "l") {
+        token.kind = JSON_NULL;
+        end = start + 4;
+    }
+    if (end < 0) {
+        return JSON_INVALID;
+    }
+    token.end = end;
+    token.next = reader.used;
+    reader.position = end;
+    return 0;
+}

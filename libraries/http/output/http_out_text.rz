@@ -1,0 +1,6 @@
+import http.state;
+import text;
+
+void http_out_text(HttpWorker *worker, string text) {
+    http_out(worker, (char *)text, length(text));
+}

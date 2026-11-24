@@ -1,0 +1,11 @@
+import gui.state;
+
+void gui_set_accent(uint color) {
+    gui.theme_from = gui.theme;
+    gui.target.accent = color;
+    gui.theme_progress = 0.0;
+    if (!gui.started) {
+        gui.theme.accent = color;
+        gui.theme_progress = 1.0;
+    }
+}

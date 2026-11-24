@@ -1,0 +1,64 @@
+import gui.state;
+import gui.theme;
+
+import windows;
+
+void gui_render() {
+    long graphics = gui.graphics;
+    if (graphics == 0) {
+        return;
+    }
+    GdipGraphicsClear(graphics, gui.theme.background);
+    for (int i = 0; i < gui.command_count; i++) {
+        GuiCommand *command = &gui.commands[i];
+        int kind = command.kind;
+        float x = (float)command.x;
+        float y = (float)command.y;
+        float width = (float)command.width;
+        float height = (float)command.height;
+        if (kind == GUI_FILL) {
+            GdipSetSolidFillColor(gui.brush, command.color);
+            if (command.radius <= 0) {
+                GdipFillRectangle(graphics, gui.brush, x, y, width, height);
+            } else {
+                gui_rounded_path(command.x, command.y, command.width, command.height, command.radius);
+                GdipFillPath(graphics, gui.brush, gui.path);
+            }
+        } else if (kind == GUI_SHADOW) {
+            GdipSetSolidFillColor(gui.brush, gui_fade(command.color, 0.18));
+            for (int layer = 1; layer <= 6; layer++) {
+                double spread = command.stroke * layer / 6;
+                gui_rounded_path(command.x - spread / 2, command.y - spread / 2 + command.stroke / 4, command.width + spread,
+                                 command.height + spread, command.radius + spread / 2);
+                GdipFillPath(graphics, gui.brush, gui.path);
+            }
+        } else if (kind == GUI_STROKE) {
+            double half = command.stroke / 2;
+            GdipSetPenColor(gui.pen, command.color);
+            GdipSetPenWidth(gui.pen, (float)command.stroke);
+            gui_rounded_path(command.x + half, command.y + half, command.width - command.stroke,
+                             command.height - command.stroke, command.radius - half);
+            GdipDrawPath(graphics, gui.pen, gui.path);
+        } else if (kind == GUI_CIRCLE) {
+            GdipSetSolidFillColor(gui.brush, command.color);
+            GdipFillEllipse(graphics, gui.brush, x, y, width, height);
+        } else if (kind == GUI_LINE) {
+            GdipSetPenColor(gui.pen, command.color);
+            GdipSetPenWidth(gui.pen, (float)command.stroke);
+            GdipDrawLine(graphics, gui.pen, x, y, (float)(command.x + command.width), (float)(command.y + command.height));
+        } else if (kind == GUI_TEXT) {
+            RectF layout;
+            layout.x = x;
+            layout.y = y;
+            layout.width = width;
+            layout.height = height;
+            GdipSetSolidFillColor(gui.brush, command.color);
+            GdipDrawString(graphics, &gui.text[command.text_start], command.text_length, gui.fonts[command.font], layout,
+                           command.wrap ? gui.wrap_format : gui.format, gui.brush);
+        } else if (kind == GUI_CLIP) {
+            GdipSetClipRect(graphics, x, y, width, height, 0);
+        } else if (kind == GUI_UNCLIP) {
+            GdipResetClip(graphics);
+        }
+    }
+}

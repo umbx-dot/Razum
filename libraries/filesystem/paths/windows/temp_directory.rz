@@ -1,0 +1,13 @@
+import text;
+import windows;
+
+long temp_directory(char target[]) {
+    ushort wide[1024];
+    uint needed = GetTempPathW((uint)wide.length, wide);
+    if (needed == 0 || needed >= wide.length) {
+        target[0] = "\0";
+        return 0;
+    }
+    long size = from_utf16(target, wide);
+    return size < 0 ? 0 : size;
+}

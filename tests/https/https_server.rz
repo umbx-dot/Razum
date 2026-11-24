@@ -1,0 +1,47 @@
+import stdio;
+import http;
+
+HttpServer *server;
+
+void hello(HttpRequest *request, HttpResponse *response) {
+    http_text(response, "Hello over TLS");
+}
+
+void large(HttpRequest *request, HttpResponse *response) {
+    for (int line = 0; line < 4000; line++) {
+        http_write(response, "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\n");
+    }
+}
+
+void echo(HttpRequest *request, HttpResponse *response) {
+    http_write_bytes(response, request.body, request.body_length);
+}
+
+void stop(HttpRequest *request, HttpResponse *response) {
+    http_text(response, "stopping");
+    http_close_after(response);
+    http_stop(server);
+}
+
+int main(string args[]) {
+    if (args.length < 2) {
+        print("usage: https_server <certificate.pfx>");
+        return 2;
+    }
+    server = http_new();
+    http_workers(server, 2);
+    http_route(server, "GET", "/", hello);
+    http_route(server, "GET", "/large", large);
+    http_route(server, "POST", "/echo", echo);
+    http_route(server, "GET", "/stop", stop);
+    if (!http_listen_tls(server, "127.0.0.1", 0, args[1], "razum-test")) {
+        write_string("https listen failed: ");
+        print_hex(http_last_error);
+        return 1;
+    }
+    print(http_port(server, 0));
+    flush_output();
+    http_run(server);
+    print(http_request_count(server));
+    return 0;
+}

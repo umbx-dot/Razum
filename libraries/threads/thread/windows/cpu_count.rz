@@ -1,0 +1,6 @@
+import windows;
+
+int cpu_count() {
+    int count = (int)GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
+    return count > 0 ? count : 1;
+}

@@ -1,0 +1,11 @@
+import threads.system;
+
+void wait_group_add(WaitGroup group, long count) {
+    AcquireSRWLockExclusive(&group.lock);
+    group.count += count;
+    bool finished = group.count <= 0;
+    ReleaseSRWLockExclusive(&group.lock);
+    if (finished) {
+        WakeAllConditionVariable(&group.finished);
+    }
+}

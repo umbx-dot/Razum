@@ -1,0 +1,8 @@
+import http.state;
+import text;
+
+void http_write_long(HttpResponse *response, long value) {
+    char digits[24];
+    int_to_text(digits, value);
+    http_write(response, digits);
+}

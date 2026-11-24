@@ -1,0 +1,10 @@
+import windows;
+import winsock;
+
+void http_reset_overlapped(OVERLAPPED overlapped) {
+    overlapped.internal = 0;
+    overlapped.internal_high = 0;
+    overlapped.offset = 0;
+    overlapped.offset_high = 0;
+    overlapped.event = 0;
+}

@@ -1,0 +1,8 @@
+import gui.state;
+
+bool gui_clicked(int id, bool hovered) {
+    if (hovered && gui.pressed) {
+        gui.active = id;
+    }
+    return hovered && gui.released && gui.active == id;
+}

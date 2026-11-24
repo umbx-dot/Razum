@@ -1,0 +1,15 @@
+import http.state;
+import windows;
+import winsock;
+
+bool http_load_accept(HttpServer *server, long socket) {
+    GUID accept_id = {0xB5367DF1, 0xCBAC, 0x11CF, {0x95, 0xCA, 0x00, 0x80, 0x5F, 0x48, 0xA1, 0x92}};
+    long pointer = 0;
+    uint returned = 0;
+    if (WSAIoctl(socket, SIO_GET_EXTENSION_FUNCTION_POINTER, (byte *)&accept_id, 16, (byte *)&pointer, 8, &returned, 0, 0) != 0) {
+        return false;
+    }
+    server.accept_ex = (fn(long listener, long accepted, char *buffer, uint receive_length, uint local_length, uint remote_length,
+                           uint *received, long overlapped) -> int)pointer;
+    return true;
+}

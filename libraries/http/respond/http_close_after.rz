@@ -1,0 +1,5 @@
+import http.state;
+
+void http_close_after(HttpResponse *response) {
+    response.close = true;
+}

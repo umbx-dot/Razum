@@ -1,0 +1,7 @@
+import gui.state;
+
+int gui_fill(double x, double y, double width, double height, double radius, uint color) {
+    int index = gui_push(GUI_FILL, x, y, width, height, color);
+    gui.commands[index].radius = radius;
+    return index;
+}

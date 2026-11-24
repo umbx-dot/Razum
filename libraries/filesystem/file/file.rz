@@ -1,0 +1,8 @@
+struct File {
+    long handle;
+    long used;
+    long position;
+    bool writing;
+    bool failed;
+    char buffer[4096];
+}

@@ -1,0 +1,6 @@
+import windows;
+
+void thread_join(long thread) {
+    WaitForSingleObject(thread, INFINITE);
+    CloseHandle(thread);
+}

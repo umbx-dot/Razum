@@ -1,0 +1,12 @@
+import threads.system;
+import threads.atomic;
+
+void channel_signal() {
+    if (atomic_add(&channel_signals.waiters, 0) == 0) {
+        return;
+    }
+    AcquireSRWLockExclusive(&channel_signals.lock);
+    channel_signals.sequence++;
+    ReleaseSRWLockExclusive(&channel_signals.lock);
+    WakeAllConditionVariable(&channel_signals.changed);
+}

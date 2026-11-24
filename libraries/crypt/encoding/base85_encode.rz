@@ -1,0 +1,28 @@
+long base85_encode(char target[], byte *data, long length) {
+    target[0] = "\0";
+    if (length < 0 || target.length <= length / 4 * 5 + (length % 4 == 0 ? 0 : length % 4 + 1)) {
+        return -1;
+    }
+    long out = 0;
+    char group[5];
+    for (long i = 0; i < length; i += 4) {
+        ulong value = 0;
+        for (long k = i; k < i + 4; k++) {
+            value = value << 8;
+            if (k < length) {
+                value |= data[k];
+            }
+        }
+        for (int k = 4; k >= 0; k--) {
+            group[k] = BASE85_DIGITS[value % 85];
+            value /= 85;
+        }
+        long used = length - i < 4 ? length - i + 1 : 5;
+        for (int k = 0; k < used; k++) {
+            target[out] = group[k];
+            out++;
+        }
+    }
+    target[out] = "\0";
+    return out;
+}

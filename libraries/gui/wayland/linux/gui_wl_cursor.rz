@@ -1,0 +1,10 @@
+import gui.state;
+import linux;
+
+void gui_wl_cursor(uint serial) {
+    if (gui_desktop.wl_cursor == 0 && !gui_wl_build_cursor()) {
+        return;
+    }
+    uint cursor[6] = {0, 0, serial, gui_desktop.wl_cursor, 1, 1};
+    gui_wl_request(gui_desktop.wl_pointer, 0, cursor);
+}

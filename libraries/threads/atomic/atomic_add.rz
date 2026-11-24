@@ -1,0 +1,9 @@
+long atomic_add(long *target, long delta) {
+    asm {
+        mov rcx, qword [rsp + .target]
+        mov rdx, qword [rsp + .delta]
+        mov rax, rdx
+        lock xadd qword [rcx], rax
+        add rax, rdx
+    }
+}

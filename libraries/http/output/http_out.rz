@@ -1,0 +1,19 @@
+import http.state;
+import http.memory;
+
+void http_out(HttpWorker *worker, char *data, long length) {
+    long needed = worker.output_used + length;
+    if (needed > worker.output_capacity) {
+        long size = worker.output_capacity * 2;
+        while (size < needed) {
+            size *= 2;
+        }
+        char *bigger = new char[size];
+        http_copy(bigger, worker.output, worker.output_used);
+        free(worker.output);
+        worker.output = bigger;
+        worker.output_capacity = size;
+    }
+    http_copy(&worker.output[worker.output_used], data, length);
+    worker.output_used = needed;
+}

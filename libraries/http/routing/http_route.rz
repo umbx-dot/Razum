@@ -1,0 +1,18 @@
+import http.state;
+import text;
+
+bool http_route(HttpServer *server, string method, string path, fn(HttpRequest *request, HttpResponse *response) handler) {
+    if (server.route_count == server.routes.length || server.running) {
+        return false;
+    }
+    HttpRoute *route = &server.routes[server.route_count];
+    long size = length(path);
+    route.method = method;
+    route.path = path;
+    route.prefix = size > 0 && path[size - 1] == "*";
+    route.length = route.prefix ? size - 1 : size;
+    route.handler = handler;
+    route.directory = "";
+    server.route_count++;
+    return true;
+}

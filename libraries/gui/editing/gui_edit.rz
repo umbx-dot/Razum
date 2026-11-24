@@ -1,0 +1,52 @@
+import gui.state;
+import gui.typography;
+
+import text;
+
+bool gui_edit(char text[]) {
+    int size = (int)length(text);
+    if (gui.caret > size) {
+        gui.caret = size;
+    }
+    bool changed = false;
+    for (int i = 0; i < gui.event_count; i++) {
+        int event = gui.events[i];
+        if (event >= 0) {
+            if (size + 1 < text.length) {
+                for (int j = size; j > gui.caret; j--) {
+                    text[j] = text[j - 1];
+                }
+                text[gui.caret] = (char)event;
+                size++;
+                text[size] = "\0";
+                gui.caret++;
+                changed = true;
+            }
+        } else if (event == -GUI_KEY_BACKSPACE && gui.caret > 0) {
+            int from = gui_step(text, gui.caret, -1);
+            gui_remove(text, from, gui.caret);
+            size -= gui.caret - from;
+            gui.caret = from;
+            changed = true;
+        } else if (event == -GUI_KEY_DELETE && gui.caret < size) {
+            int to = gui_step(text, gui.caret, 1);
+            gui_remove(text, gui.caret, to);
+            size -= to - gui.caret;
+            changed = true;
+        } else if (event == -GUI_KEY_LEFT && gui.caret > 0) {
+            gui.caret = gui_step(text, gui.caret, -1);
+        } else if (event == -GUI_KEY_RIGHT && gui.caret < size) {
+            gui.caret = gui_step(text, gui.caret, 1);
+        } else if (event == -GUI_KEY_HOME) {
+            gui.caret = 0;
+        } else if (event == -GUI_KEY_END) {
+            gui.caret = size;
+        } else if (event == -GUI_KEY_ENTER || event == -GUI_KEY_ESCAPE) {
+            gui.focus = -1;
+        }
+    }
+    if (gui.event_count > 0) {
+        gui.caret_since = gui.time;
+    }
+    return changed;
+}

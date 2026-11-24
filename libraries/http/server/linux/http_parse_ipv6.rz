@@ -1,0 +1,82 @@
+long http_hex_digit(char digit) {
+    if (digit >= "0" && digit <= "9") {
+        return digit - "0";
+    }
+    if (digit >= "a" && digit <= "f") {
+        return digit - "a" + 10;
+    }
+    if (digit >= "A" && digit <= "F") {
+        return digit - "A" + 10;
+    }
+    return -1;
+}
+
+bool http_parse_ipv6(char text[], byte target[], long offset) {
+    long groups[8];
+    long count = 0;
+    long gap = -1;
+    long at = 0;
+    if (text[0] == ":" && text[1] == ":") {
+        gap = 0;
+        at = 2;
+    }
+    while (text[at] != "\0") {
+        long start = at;
+        bool dotted = false;
+        long scan = at;
+        while (text[scan] != "\0" && text[scan] != ":") {
+            dotted = dotted || text[scan] == ".";
+            scan++;
+        }
+        if (dotted) {
+            byte tail[4];
+            if (count > 6 || !http_parse_ipv4(text, start, tail, 0)) {
+                return false;
+            }
+            groups[count] = ((long)tail[0] << 8) | tail[1];
+            groups[count + 1] = ((long)tail[2] << 8) | tail[3];
+            count += 2;
+            break;
+        }
+        long value = 0;
+        long digits = 0;
+        while (http_hex_digit(text[at]) >= 0 && digits < 5) {
+            value = value * 16 + http_hex_digit(text[at]);
+            at++;
+            digits++;
+        }
+        if (digits == 0 || digits > 4 || count == 8) {
+            return false;
+        }
+        groups[count] = value;
+        count++;
+        if (text[at] == "\0") {
+            break;
+        }
+        if (text[at] != ":") {
+            return false;
+        }
+        at++;
+        if (text[at] == ":") {
+            if (gap >= 0) {
+                return false;
+            }
+            gap = count;
+            at++;
+        }
+    }
+    if ((gap < 0 && count != 8) || (gap >= 0 && count > 7)) {
+        return false;
+    }
+    long missing = 8 - count;
+    long written = 0;
+    for (long index = 0; index < count; index++) {
+        if (index == gap) {
+            written += missing;
+        }
+        target[offset + 2 * written] = (byte)(groups[index] >> 8);
+        target[offset + 2 * written + 1] = (byte)groups[index];
+        written++;
+    }
+    return true;
+}

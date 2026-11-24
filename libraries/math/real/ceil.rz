@@ -1,0 +1,7 @@
+double ceil(double value) {
+    asm {
+        movsd xmm0, qword [rsp + .value]
+        mov ecx, 2
+        call rz@round_with
+    }
+}

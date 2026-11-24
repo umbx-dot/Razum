@@ -1,0 +1,7 @@
+uint crc32(uint crc, byte *data, long length) {
+    uint value = ~crc;
+    for (long i = 0; i < length; i++) {
+        value = crc32_table[(value ^ data[i]) & 0xFF] ^ (value >> 8);
+    }
+    return ~value;
+}

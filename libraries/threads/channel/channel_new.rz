@@ -1,0 +1,7 @@
+Channel *channel_new(int capacity) {
+    Channel *channel = new Channel;
+    channel.unbuffered = capacity <= 0;
+    channel.capacity = capacity <= 0 ? 1 : capacity;
+    channel.items = new long[channel.capacity];
+    return channel;
+}

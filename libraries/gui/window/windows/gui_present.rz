@@ -1,0 +1,23 @@
+import gui.state;
+import gui.theme;
+import gui.typography;
+import gui.render;
+import gui.input;
+
+import windows;
+
+void gui_present() {
+    if (gui.graphics != 0) {
+        GdipFlush(gui.graphics, 1);
+    }
+    if (gui.window == 0) {
+        return;
+    }
+    long dc = GetDC(gui.window);
+    BitBlt(dc, 0, 0, gui.buffer_width, gui.buffer_height, gui.memory_dc, 0, 0, SRCCOPY);
+    ReleaseDC(gui.window, dc);
+    if (!gui.shown) {
+        ShowWindow(gui.window, SW_SHOW);
+        gui.shown = true;
+    }
+}

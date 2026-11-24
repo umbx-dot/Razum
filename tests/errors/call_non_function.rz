@@ -1,0 +1,6 @@
+// error: 4:5: only functions can be called, but this is a long
+int main() {
+    long value = 3;
+    value(1);
+    return 0;
+}

@@ -1,0 +1,31 @@
+import http.state;
+import threads;
+
+void http_track(HttpServer *server, HttpConnection *connection) {
+    mutex_lock(server.table_lock);
+    int slot = 0;
+    if (server.free_count > 0) {
+        server.free_count--;
+        slot = server.free_slots[server.free_count];
+    } else {
+        if (server.slot_used == server.slot_capacity) {
+            int capacity = server.slot_capacity * 2;
+            long *slots = new long[capacity];
+            int *free_slots = new int[capacity];
+            for (int index = 0; index < server.slot_used; index++) {
+                slots[index] = server.slots[index];
+            }
+            free(server.slots);
+            free(server.free_slots);
+            server.slots = slots;
+            server.free_slots = free_slots;
+            server.slot_capacity = capacity;
+        }
+        slot = server.slot_used;
+        server.slot_used++;
+    }
+    server.slots[slot] = (long)connection;
+    connection.slot = slot;
+    server.connection_count++;
+    mutex_unlock(server.table_lock);
+}

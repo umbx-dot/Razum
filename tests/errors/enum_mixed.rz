@@ -1,0 +1,8 @@
+// error: 6:23: cannot store Size in Color 'color'; convert it with (Color)
+enum Color { RED }
+enum Size { SMALL }
+
+int main() {
+    Color color = Size.SMALL;
+    return 0;
+}

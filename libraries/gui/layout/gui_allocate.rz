@@ -1,0 +1,29 @@
+import gui.state;
+import gui.draw;
+
+void gui_allocate(double width, double height) {
+    GuiBox *box = &gui.boxes[gui.depth];
+    double gap = box.count > 0 ? box.gap : 0.0;
+    if (width <= 0) {
+        width = gui_available_width();
+    }
+    if (box.row) {
+        double line = height < 36 ? 36.0 : height;
+        gui.slot_x = box.x + box.cursor + gap;
+        gui.slot_y = box.y + (line - height) / 2;
+        box.cursor += gap + width;
+        if (line > box.extent) {
+            box.extent = line;
+        }
+    } else {
+        gui.slot_x = box.x;
+        gui.slot_y = box.y + box.cursor + gap;
+        box.cursor += gap + height;
+        if (width > box.extent) {
+            box.extent = width;
+        }
+    }
+    box.count++;
+    gui.slot_width = width;
+    gui.slot_height = height;
+}

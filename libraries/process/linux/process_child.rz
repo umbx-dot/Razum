@@ -1,0 +1,69 @@
+import linux;
+import text;
+
+void process_child(string command, string directory, ProcessLimits limits, int input, int output, int report, long tasks) {
+    system_call(SYS_SETPGID, 0, 0, 0, 0);
+    system_call(SYS_DUP2, (long)input, 0, 0, 0);
+    system_call(SYS_DUP2, (long)output, 1, 0, 0);
+    system_call(SYS_DUP2, (long)output, 2, 0, 0);
+    int error = 0;
+    if (length(directory) > 0) {
+        error = (int)system_call(SYS_CHDIR, (long)directory, 0, 0, 0);
+    }
+    long limit[2];
+    if (error == 0 && limits.max_memory > 0) {
+        limit[0] = limits.max_memory;
+        limit[1] = limits.max_memory;
+        system_call(SYS_SETRLIMIT, RLIMIT_AS, (long)&limit[0], 0, 0);
+    }
+    if (error == 0 && limits.max_processes > 0 && tasks >= 0) {
+        limit[0] = tasks + limits.max_processes;
+        limit[1] = tasks + limits.max_processes;
+        system_call(SYS_SETRLIMIT, RLIMIT_NPROC, (long)&limit[0], 0, 0);
+    }
+    char storage[8192];
+    long arguments[256];
+    if (error == 0 && process_arguments(command, storage, arguments) == 0) {
+        error = -2;
+    }
+    if (error == 0) {
+        string program = (string)&storage[0];
+        if (find_char(program, "/") >= 0) {
+            error = (int)system_call(SYS_EXECVE, arguments[0], (long)&arguments[0], process_environment(), 0);
+        } else {
+            char search[4096];
+            if (environment_value("PATH", search) < 0) {
+                copy(search, "/usr/local/bin:/usr/bin:/bin");
+            }
+            error = -2;
+            long at = 0;
+            char candidate[4096];
+            while (search[at] != "\0" || at == 0) {
+                long used = 0;
+                while (search[at] != "\0" && search[at] != ":" && used < 3000) {
+                    candidate[used] = search[at];
+                    used++;
+                    at++;
+                }
+                if (used == 0) {
+                    candidate[0] = ".";
+                    used = 1;
+                }
+                candidate[used] = "/";
+                candidate[used + 1] = "\0";
+                concat(candidate, program);
+                long tried = system_call(SYS_EXECVE, (long)&candidate[0], (long)&arguments[0], process_environment(), 0);
+                if (tried != -2 || error == -2) {
+                    error = (int)tried;
+                }
+                if (search[at] == ":") {
+                    at++;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+    system_call(SYS_WRITE, (long)report, (long)&error, 4, 0);
+    system_call(SYS_EXIT, 127, 0, 0, 0);
+}

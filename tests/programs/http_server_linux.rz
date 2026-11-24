@@ -1,0 +1,124 @@
+// platform: linux
+import stdio;
+import text;
+import threads;
+import http;
+import process;
+import filesystem;
+
+void hello(HttpRequest *request, HttpResponse *response) {
+    http_text(response, "Hello from razum");
+}
+
+void greet(HttpRequest *request, HttpResponse *response) {
+    char name[64];
+    if (!http_query_value(request, "name", name)) {
+        copy(name, "stranger");
+    }
+    http_write(response, "Hello, ");
+    http_write(response, name);
+    http_write(response, "!");
+}
+
+void echo(HttpRequest *request, HttpResponse *response) {
+    http_content_type(response, http_header(request, "content-type"));
+    http_write_bytes(response, request.body, request.body_length);
+}
+
+void user(HttpRequest *request, HttpResponse *response) {
+    http_json(response, "{\"user\": \"");
+    http_write(response, request.rest);
+    http_write(response, "\"}");
+}
+
+void created(HttpRequest *request, HttpResponse *response) {
+    http_status(response, 201);
+    http_set_header(response, "X-Test", "yes");
+    http_text(response, "made");
+}
+
+void large(HttpRequest *request, HttpResponse *response) {
+    for (int index = 0; index < 30000; index++) {
+        http_write(response, "0123456789");
+    }
+}
+
+ProcessLimits limits;
+char base[64];
+
+void fetch(string arguments, string path) {
+    char command[512];
+    copy(command, "curl -s ");
+    concat(command, arguments);
+    concat(command, " ");
+    concat(command, base);
+    concat(command, path);
+    ProcessResult result;
+    process_run(result, command, "", "", limits);
+    write_string(result.output);
+    print_line();
+    process_free(result);
+}
+
+int main(string args[]) {
+    limits.timeout_milliseconds = 10000;
+    limits.max_output = 65536;
+    HttpServer *server = http_new();
+    http_workers(server, 2);
+    http_route(server, "GET", "/", hello);
+    http_route(server, "GET", "/greet", greet);
+    http_route(server, "POST", "/echo", echo);
+    http_route(server, "GET", "/users/*", user);
+    http_route(server, "*", "/create", created);
+    http_route(server, "GET", "/large", large);
+    char folder[300];
+    copy(folder, args[0]);
+    concat(folder, ".files");
+    create_directory(folder);
+    char page[300];
+    copy(page, folder);
+    concat(page, "/page.txt");
+    write_text(page, "static page");
+    http_files(server, "/files/", folder);
+    print(http_listen(server, "127.0.0.1", 0));
+    print(http_listen(server, "::1", 0));
+    print(http_listen(server, "not an address", 80));
+    print(http_listen_tls(server, "127.0.0.1", 0, "none.pfx", ""));
+    print(http_start(server));
+    int port = http_port(server, 0);
+    print(port > 0);
+    copy(base, "http://127.0.0.1:");
+    char number[16];
+    int_to_text(number, port);
+    concat(base, number);
+
+    fetch("", "/");
+    fetch("", "/greet?name=Ada");
+    fetch("-H \"Content-Type: text/plain\" --data-binary echoed", "/echo");
+    fetch("", "/users/42");
+    fetch("-X PUT -o /dev/null -w \"%{http_code} %header{x-test}\"", "/create");
+    fetch("-o /dev/null -w \"%{http_code}\"", "/missing");
+    fetch("", "/files/page.txt");
+    fetch("-I -o /dev/null -w \"%{http_code} %header{content-length} %{size_download}\"", "/files/page.txt");
+    fetch("-o /dev/null -w \"%{http_code}\"", "/files/../secret");
+    fetch("-o /dev/null -w \"%{size_download}\"", "/large");
+    char base4[64];
+    copy(base4, base);
+    copy(base, "http://[::1]:");
+    int_to_text(number, http_port(server, 1));
+    concat(base, number);
+    fetch("-g", "/greet?name=six");
+    copy(base, base4);
+    char twice[256];
+    copy(twice, "-o /dev/null -o /dev/null -w \"%{num_connects}\" ");
+    concat(twice, base);
+    concat(twice, "/greet");
+    fetch(twice, "/");
+
+    http_stop(server);
+    http_wait(server);
+    print(http_connection_count(server));
+    delete_file(page);
+    delete_directory(folder);
+    return 0;
+}

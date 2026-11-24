@@ -1,0 +1,45 @@
+import http.state;
+import windows;
+import winsock;
+import threads.atomic;
+
+void http_put_two(char text[], int at, int value) {
+    text[at] = (char)("0" + value / 10 % 10);
+    text[at + 1] = (char)("0" + value % 10);
+}
+
+void http_update_date() {
+    string days[7] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+    string months[12] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+    SYSTEMTIME time;
+    GetSystemTime(time);
+    char text[32];
+    string day = days[time.day_of_week % 7];
+    string month = months[(time.month + 11) % 12];
+    text[0] = day[0];
+    text[1] = day[1];
+    text[2] = day[2];
+    text[3] = ",";
+    text[4] = " ";
+    http_put_two(text, 5, time.day);
+    text[7] = " ";
+    text[8] = month[0];
+    text[9] = month[1];
+    text[10] = month[2];
+    text[11] = " ";
+    http_put_two(text, 12, time.year / 100);
+    http_put_two(text, 14, time.year % 100);
+    text[16] = " ";
+    http_put_two(text, 17, time.hour);
+    text[19] = ":";
+    http_put_two(text, 20, time.minute);
+    text[22] = ":";
+    http_put_two(text, 23, time.second);
+    text[25] = " ";
+    text[26] = "G";
+    text[27] = "M";
+    text[28] = "T";
+    long next = 1 - atomic_load(&http_date_index);
+    http_dates[next] = text;
+    atomic_store(&http_date_index, next);
+}

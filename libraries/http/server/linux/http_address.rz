@@ -1,0 +1,34 @@
+import linux;
+import text;
+
+int http_address(string host, int port, byte address[]) {
+    for (int index = 0; index < address.length; index++) {
+        address[index] = 0;
+    }
+    char text[64];
+    if (length(host) >= text.length) {
+        return 0;
+    }
+    copy(text, host);
+    if (equals(host, "localhost")) {
+        copy(text, "127.0.0.1");
+    } else if (equals(host, "") || equals(host, "*")) {
+        copy(text, "0.0.0.0");
+    } else if (starts_with(host, "[") && ends_with(host, "]")) {
+        substring(text, host, 1, length(host) - 2);
+    }
+    address[2] = (byte)(port >> 8);
+    address[3] = (byte)port;
+    if (http_parse_ipv4(text, 0, address, 4)) {
+        address[0] = (byte)AF_INET;
+        return (int)AF_INET;
+    }
+    for (int index = 4; index < 8; index++) {
+        address[index] = 0;
+    }
+    if (address.length >= 28 && http_parse_ipv6(text, address, 8)) {
+        address[0] = (byte)AF_INET6;
+        return (int)AF_INET6;
+    }
+    return 0;
+}

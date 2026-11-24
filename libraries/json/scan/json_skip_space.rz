@@ -1,0 +1,17 @@
+import json.types;
+
+void json_skip_space(JsonReader *reader) {
+    int position = reader.position;
+    int size = reader.size;
+    string source = reader.source;
+    while (position < size) {
+        char current = source[position];
+        if (current != " " && current != "\t" && current != "\r" && current != "\n") {
+            break;
+        }
+        position++;
+    }
+    if (position != reader.position) {
+        reader.position = position;
+    }
+}

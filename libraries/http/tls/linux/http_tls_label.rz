@@ -1,0 +1,29 @@
+import crypt.bytes;
+import crypt.hash;
+import crypt.kdf;
+
+void http_tls_label(byte *secret, string label, byte *context, long context_length, byte output[], long length) {
+    byte info[128];
+    long label_length = 0;
+    while (label[label_length] != "\0") {
+        label_length++;
+    }
+    long at = http_tls_put(info, 0, length, 2);
+    at = http_tls_put(info, at, 6 + label_length, 1);
+    at = http_tls_put_bytes(info, at, as_bytes("tls13 "), 6);
+    at = http_tls_put_bytes(info, at, as_bytes(label), label_length);
+    at = http_tls_put(info, at, context_length, 1);
+    at = http_tls_put_bytes(info, at, context, context_length);
+    hkdf_expand(Hash.SHA256, output, length, secret, 32, &info[0], at);
+}
+
+void http_tls_snapshot(HttpTls *tls, byte digest[]) {
+    Hasher copy;
+    copy = tls.transcript;
+    hash_finish(copy, digest);
+}
+
+void http_tls_traffic(byte *secret, byte key[], byte iv[]) {
+    http_tls_label(secret, "key", null, 0, key, 16);
+    http_tls_label(secret, "iv", null, 0, iv, 12);
+}

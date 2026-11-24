@@ -1,0 +1,13 @@
+// platform: windows
+// asm: call [iat@SwitchToThread]
+import stdio;
+
+long twice(long x) {
+    return x * 2;
+}
+
+int main() {
+    fn(long) -> long f = twice;
+    print(f(2));
+    return 0;
+}

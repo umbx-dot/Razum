@@ -1,0 +1,5 @@
+double sqrt(double value) {
+    asm {
+        sqrtsd xmm0, qword [rsp + .value]
+    }
+}

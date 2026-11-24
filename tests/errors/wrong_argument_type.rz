@@ -1,0 +1,8 @@
+// error: 7:21: argument 2 of 'scale' must be an int, not a double; convert it with (int)
+int scale(int value, int factor) {
+    return value * factor;
+}
+
+int main() {
+    return scale(2, 1.5);
+}

@@ -1,0 +1,43 @@
+import stdio;
+import crypt;
+import filesystem;
+
+void show(string label, byte *data, long length) {
+    char text[200];
+    hex_encode(text, data, length);
+    write_string(label);
+    write_string(" ");
+    print(text);
+}
+
+int main() {
+    File file;
+    if (!open(file, "tests/https/localhost.pfx", "r")) {
+        print("cannot open the test certificate");
+        return 1;
+    }
+    byte data[8192];
+    long size = read_bytes(file, data);
+    close(file);
+    Pfx pfx;
+    print(pfx_parse(pfx, &data[0], size, "razum-test"));
+    show("private key", &pfx.private_key[0], 32);
+    print(pfx.certificate_count);
+    byte digest[32];
+    hash(Hash.SHA256, digest, &pfx.certificates[pfx.certificate_starts[0]], pfx.certificate_lengths[0]);
+    show("leaf sha256", &digest[0], 32);
+    Pfx wrong;
+    print(pfx_parse(wrong, &data[0], size, "not the password"));
+    File modern;
+    if (!open(modern, "tests/https/localhost_aes.pfx", "r")) {
+        print("cannot open the AES certificate");
+        return 1;
+    }
+    size = read_bytes(modern, data);
+    close(modern);
+    Pfx aes;
+    print(pfx_parse(aes, &data[0], size, "razum-test"));
+    show("aes private key", &aes.private_key[0], 32);
+    print(pfx_parse(wrong, &data[0], size, "wrong"));
+    return 0;
+}

@@ -1,0 +1,64 @@
+import http;
+import process;
+import text;
+import threads;
+
+void learn_run(HttpRequest *request, HttpResponse *response) {
+    if (!learn_allowed(request, response)) {
+        return;
+    }
+    char code[65536];
+    char input[16384];
+    if (!json_field(request, "code", code)) {
+        http_status(response, 400);
+        http_json(response, "{\"error\": \"The request needs a code field of at most 64 KB.\"}");
+        return;
+    }
+    json_field(request, "input", input);
+    if (atomic_add(&learn_active, 1) > LEARN_MAX_ACTIVE) {
+        atomic_add(&learn_active, -1);
+        http_status(response, 429);
+        http_json(response, "{\"error\": \"Too many programs are running; try again in a moment.\"}");
+        return;
+    }
+    char folder[600];
+    learn_workspace(folder);
+    char command[2048];
+    copy(command, "\"");
+    concat(command, learn_rzc);
+    concat(command, "\" main.rz --stdin -o main.exe");
+    ProcessLimits compile_limits;
+    compile_limits.timeout_milliseconds = 15000;
+    compile_limits.max_output = 65536;
+    compile_limits.max_memory = 1024 * 1048576;
+    compile_limits.max_processes = 4;
+    ProcessResult compiled;
+    bool started = process_run(compiled, command, code, folder, compile_limits);
+    http_json(response, "{");
+    if (!started) {
+        http_write(response, "\"error\": \"rzc could not be started.\"}");
+        process_free(compiled);
+        learn_clean(folder);
+        atomic_add(&learn_active, -1);
+        return;
+    }
+    bool succeeded = compiled.exit_code == 0 && !compiled.timed_out;
+    learn_answer(response, "compile", compiled, !succeeded);
+    process_free(compiled);
+    if (succeeded) {
+        copy(command, "\"");
+        concat(command, folder);
+        concat(command, "\\main.exe\"");
+        ProcessLimits run_limits;
+        run_limits.timeout_milliseconds = 5000;
+        run_limits.max_output = 65536;
+        run_limits.max_memory = 512 * 1048576;
+        run_limits.max_processes = 8;
+        ProcessResult ran;
+        process_run(ran, command, input, folder, run_limits);
+        learn_answer(response, "run", ran, true);
+        process_free(ran);
+    }
+    learn_clean(folder);
+    atomic_add(&learn_active, -1);
+}

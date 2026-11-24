@@ -1,0 +1,15 @@
+import crypt.encoding;
+
+long token_hex(char target[], long count) {
+    target[0] = "\0";
+    if (count < 0 || target.length <= 2 * count) {
+        return -1;
+    }
+    byte *bytes = new byte[count + 1];
+    long size = -1;
+    if (bytes != null && secure_bytes(bytes, count)) {
+        size = hex_encode(target, bytes, count);
+    }
+    free(bytes);
+    return size;
+}

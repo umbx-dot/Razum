@@ -1,0 +1,14 @@
+void http_copy(char *target, char *source, long length) {
+    asm {
+        mov r8, qword [rsp + .target]
+        mov r9, qword [rsp + .source]
+        mov rcx, qword [rsp + .length]
+        push rsi
+        push rdi
+        mov rdi, r8
+        mov rsi, r9
+        rep movsb
+        pop rdi
+        pop rsi
+    }
+}

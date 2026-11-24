@@ -1,0 +1,9 @@
+long thread_clone(long stack_top, ThreadControl *control, fn(long argument) entry) {
+    asm {
+        mov rcx, qword [rsp + .stack_top]
+        mov rdx, qword [rsp + .control]
+        mov r8, qword [rsp + .entry]
+        mov r9, rdx
+        call rz@thread_clone
+    }
+}

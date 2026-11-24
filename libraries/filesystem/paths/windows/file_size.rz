@@ -1,0 +1,17 @@
+import text;
+import windows;
+
+long file_size(string path) {
+    ushort wide[1024];
+    if (to_utf16(wide, path) < 0) {
+        return -1;
+    }
+    long handle = CreateFileW(wide, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+    if (handle == INVALID_HANDLE_VALUE) {
+        return -1;
+    }
+    long size[1];
+    bool known = GetFileSizeEx(handle, size) != 0;
+    CloseHandle(handle);
+    return known ? size[0] : -1;
+}

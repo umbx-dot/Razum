@@ -1,0 +1,53 @@
+void array_quick_sort_T(T *items, long count, int depth) {
+    while (count > 24) {
+        if (depth == 0) {
+            array_heap_sort_T(items, count);
+            return;
+        }
+        depth--;
+        long middle = count / 2;
+        long last = count - 1;
+        if (items[middle] < items[0]) {
+            T kept = items[0];
+            items[0] = items[middle];
+            items[middle] = kept;
+        }
+        if (items[last] < items[0]) {
+            T kept = items[0];
+            items[0] = items[last];
+            items[last] = kept;
+        }
+        if (items[last] < items[middle]) {
+            T kept = items[middle];
+            items[middle] = items[last];
+            items[last] = kept;
+        }
+        T pivot = items[middle];
+        long left = 0;
+        long right = last;
+        while (left <= right) {
+            while (items[left] < pivot) {
+                left++;
+            }
+            while (items[right] > pivot) {
+                right--;
+            }
+            if (left <= right) {
+                T kept = items[left];
+                items[left] = items[right];
+                items[right] = kept;
+                left++;
+                right--;
+            }
+        }
+        if (right + 1 < count - left) {
+            array_quick_sort_T(items, right + 1, depth);
+            items = &items[left];
+            count = count - left;
+        } else {
+            array_quick_sort_T(&items[left], count - left, depth);
+            count = right + 1;
+        }
+    }
+    array_insertion_sort_T(items, count);
+}

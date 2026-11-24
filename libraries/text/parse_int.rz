@@ -1,0 +1,10 @@
+long parse_int(string text) {
+    asm {
+        mov rcx, qword [rsp + .text]
+        xor eax, eax
+        test rcx, rcx
+        jz .done
+        call rz@parse_int
+    .done:
+    }
+}

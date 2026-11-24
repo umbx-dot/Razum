@@ -1,0 +1,119 @@
+import crypt.bytes;
+import crypt.hash;
+import crypt.kdf;
+import crypt.cipher;
+
+long pfx_decrypt(byte *data, long algorithm, long algorithm_end, byte *encrypted, long encrypted_length,
+                 string password, byte *wide_password, long wide_length, byte target[]) {
+    long identifier = 0;
+    long identifier_length = 0;
+    if (der_read(data, algorithm, algorithm_end, 0x30, &identifier, &identifier_length) < 0) {
+        return -1;
+    }
+    long identifier_end = identifier + identifier_length;
+    long oid = 0;
+    long oid_length = 0;
+    long at = der_read(data, identifier, identifier_end, 6, &oid, &oid_length);
+    long start = 0;
+    long size = 0;
+    if (at < 0 || der_read(data, at, identifier_end, 0x30, &start, &size) < 0 || encrypted_length > target.length) {
+        return -1;
+    }
+    long end = start + size;
+    if (der_is(data, oid, oid_length, "2a864886f70d010c0103")) {
+        long salt = 0;
+        long salt_length = 0;
+        long count = 0;
+        long count_length = 0;
+        long after = der_read(data, start, end, 4, &salt, &salt_length);
+        if (after < 0 || der_read(data, after, end, 2, &count, &count_length) < 0) {
+            return -1;
+        }
+        long iterations = der_integer(data, count, count_length);
+        byte key[24];
+        byte iv[8];
+        pkcs12_derive(Hash.SHA1, wide_password, wide_length, &data[salt], salt_length, iterations, 1, key, 24);
+        pkcs12_derive(Hash.SHA1, wide_password, wide_length, &data[salt], salt_length, iterations, 2, iv, 8);
+        return des3_cbc_decrypt(target, &key[0], &iv[0], encrypted, encrypted_length);
+    }
+    if (!der_is(data, oid, oid_length, "2a864886f70d01050d")) {
+        return -1;
+    }
+    long kdf = 0;
+    long kdf_length = 0;
+    long scheme_at = der_read(data, start, end, 0x30, &kdf, &kdf_length);
+    long kdf_oid = 0;
+    long kdf_oid_length = 0;
+    long kdf_params_at = der_read(data, kdf, kdf + kdf_length, 6, &kdf_oid, &kdf_oid_length);
+    long params = 0;
+    long params_length = 0;
+    if (scheme_at < 0 || kdf_params_at < 0 || !der_is(data, kdf_oid, kdf_oid_length, "2a864886f70d01050c") ||
+        der_read(data, kdf_params_at, kdf + kdf_length, 0x30, &params, &params_length) < 0) {
+        return -1;
+    }
+    long params_end = params + params_length;
+    long salt = 0;
+    long salt_length = 0;
+    long count = 0;
+    long count_length = 0;
+    long position = der_read(data, params, params_end, 4, &salt, &salt_length);
+    position = position < 0 ? -1 : der_read(data, position, params_end, 2, &count, &count_length);
+    if (position < 0) {
+        return -1;
+    }
+    Hash prf = Hash.SHA1;
+    long value = 0;
+    long value_length = 0;
+    if (position < params_end && data[position] == 2) {
+        position = der_read(data, position, params_end, 2, &value, &value_length);
+    }
+    if (position >= 0 && position < params_end && data[position] == 0x30) {
+        long prf_start = 0;
+        long prf_length = 0;
+        der_read(data, position, params_end, 0x30, &prf_start, &prf_length);
+        long prf_oid = 0;
+        long prf_oid_length = 0;
+        der_read(data, prf_start, prf_start + prf_length, 6, &prf_oid, &prf_oid_length);
+        if (der_is(data, prf_oid, prf_oid_length, "2a864886f70d0209")) {
+            prf = Hash.SHA256;
+        } else if (der_is(data, prf_oid, prf_oid_length, "2a864886f70d020b")) {
+            prf = Hash.SHA512;
+        } else if (!der_is(data, prf_oid, prf_oid_length, "2a864886f70d0207")) {
+            return -1;
+        }
+    }
+    long scheme = 0;
+    long scheme_length = 0;
+    if (der_read(data, scheme_at, end, 0x30, &scheme, &scheme_length) < 0) {
+        return -1;
+    }
+    long cipher_oid = 0;
+    long cipher_oid_length = 0;
+    long iv_at = der_read(data, scheme, scheme + scheme_length, 6, &cipher_oid, &cipher_oid_length);
+    long iv = 0;
+    long iv_length = 0;
+    if (iv_at < 0 || der_read(data, iv_at, scheme + scheme_length, 4, &iv, &iv_length) < 0 || iv_length != 16) {
+        return -1;
+    }
+    long key_length = 0;
+    if (der_is(data, cipher_oid, cipher_oid_length, "608648016503040102")) {
+        key_length = 16;
+    } else if (der_is(data, cipher_oid, cipher_oid_length, "608648016503040116")) {
+        key_length = 24;
+    } else if (der_is(data, cipher_oid, cipher_oid_length, "60864801650304012a")) {
+        key_length = 32;
+    } else {
+        return -1;
+    }
+    long password_length = 0;
+    while (password[password_length] != "\0") {
+        password_length++;
+    }
+    byte key[32];
+    byte derived[32];
+    pbkdf2(prf, derived, as_bytes(password), password_length, &data[salt], salt_length, der_integer(data, count, count_length));
+    for (int index = 0; index < 32; index++) {
+        key[index] = derived[index];
+    }
+    return aes_cbc_decrypt(target, &key[0], key_length, &data[iv], encrypted, encrypted_length);
+}

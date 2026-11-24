@@ -1,0 +1,5 @@
+import http.state;
+
+void http_content_type(HttpResponse *response, string type) {
+    response.content_type = http_keep(response, type);
+}

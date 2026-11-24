@@ -1,0 +1,18 @@
+ulong random_next() {
+    if (random_state == 0) {
+        ulong clock = 0;
+        asm {
+            rdtsc
+            shl rdx, 32
+            or rax, rdx
+            mov qword [rsp + .clock], rax
+        }
+        seed_random(clock);
+    }
+    ulong value = random_state;
+    value ^= value >> 12;
+    value ^= value << 25;
+    value ^= value >> 27;
+    random_state = value;
+    return value * 2685821657736338717;
+}

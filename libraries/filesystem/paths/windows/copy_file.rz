@@ -1,0 +1,8 @@
+import text;
+import windows;
+
+bool copy_file(string from, string to) {
+    ushort wide_from[1024];
+    ushort wide_to[1024];
+    return to_utf16(wide_from, from) >= 0 && to_utf16(wide_to, to) >= 0 && CopyFileW(wide_from, wide_to, 0) != 0;
+}

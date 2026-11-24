@@ -1,0 +1,10 @@
+import http.state;
+
+void http_reset_response(HttpResponse *response, bool keep_alive) {
+    response.status = 200;
+    response.content_type = "text/plain; charset=utf-8";
+    response.header_count = 0;
+    response.body_length = 0;
+    response.scratch_used = 0;
+    response.close = !keep_alive;
+}

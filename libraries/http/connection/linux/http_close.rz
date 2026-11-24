@@ -1,0 +1,27 @@
+import http.state;
+import linux;
+import threads;
+
+void http_close(HttpWorker *worker, HttpConnection *connection) {
+    if (connection.previous != null) {
+        connection.previous.next = connection.next;
+    } else {
+        worker.connections = connection.next;
+    }
+    if (connection.next != null) {
+        connection.next.previous = connection.previous;
+    }
+    system_call(SYS_CLOSE, connection.socket, 0, 0, 0);
+    if (connection.pending != null) {
+        free(connection.pending);
+    }
+    if (connection.outgoing != null) {
+        free(connection.outgoing);
+    }
+    if (connection.tls != null) {
+        free(connection.tls.raw);
+        free(connection.tls);
+    }
+    atomic_add(&connection.server.connection_count, -1);
+    free(connection);
+}

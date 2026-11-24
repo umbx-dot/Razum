@@ -1,0 +1,124 @@
+struct GuiCommand {
+    int kind;
+    double x;
+    double y;
+    double width;
+    double height;
+    double radius;
+    double stroke;
+    uint color;
+    int font;
+    int text_start;
+    int text_length;
+    bool wrap;
+}
+
+struct GuiBox {
+    bool row;
+    double x;
+    double y;
+    double width;
+    double outer_width;
+    double cursor;
+    double extent;
+    double gap;
+    double padding;
+    int background;
+    int count;
+}
+
+struct GuiTheme {
+    uint background;
+    uint surface;
+    uint raised;
+    uint border;
+    uint text;
+    uint muted;
+    uint accent;
+    uint accent_text;
+    uint track;
+    uint knob;
+    uint shadow;
+}
+
+struct GuiState {
+    long window;
+    long memory_dc;
+    long dib;
+    long pixels;
+    long bitmap;
+    long graphics;
+    long token;
+    long fonts[4];
+    long format;
+    long wrap_format;
+    long brush;
+    long pen;
+    long path;
+    int width;
+    int height;
+    int buffer_width;
+    int buffer_height;
+    double scale;
+    double line_heights[4];
+    bool offscreen;
+    bool shown;
+    bool quit;
+    bool started;
+    bool animating;
+    bool dark;
+    bool tracking;
+    GuiTheme theme;
+    GuiTheme target;
+    GuiTheme theme_from;
+    double theme_progress;
+    double mouse_x;
+    double mouse_y;
+    bool mouse_inside;
+    bool mouse_down;
+    bool pressed;
+    bool released;
+    bool focus_claimed;
+    int events[64];
+    int event_count;
+    ushort surrogate;
+    int next_id;
+    int active;
+    int focus;
+    int caret;
+    double caret_since;
+    long cursor;
+    long last_counter;
+    long frequency;
+    double dt;
+    double time;
+    GuiCommand *commands;
+    int command_count;
+    ushort *text;
+    int text_used;
+    double *hover;
+    double *motion;
+    GuiBox boxes[32];
+    int depth;
+    double slot_x;
+    double slot_y;
+    double slot_width;
+    double slot_height;
+    double measured_height;
+}
+
+GuiState gui;
+
+const int GUI_FILL = 1;
+const int GUI_STROKE = 2;
+const int GUI_CIRCLE = 3;
+const int GUI_LINE = 4;
+const int GUI_TEXT = 5;
+const int GUI_CLIP = 6;
+const int GUI_UNCLIP = 7;
+const int GUI_SHADOW = 8;
+
+const int GUI_BODY = 0;
+const int GUI_STRONG = 1;
+const int GUI_SMALL = 2;
+const int GUI_HEADING = 3;

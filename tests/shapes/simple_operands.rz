@@ -1,0 +1,14 @@
+// asm: mov rax, qword [rsp + .a]
+// asm: add rax, qword [rsp + .b]
+// asm: imul rax, 3
+// asm: cmp rax, 100
+// asm: jge .@endwhile
+int main() {
+    int a = 1;
+    int b = 2;
+    int c = (a + b) * 3;
+    while (a < 100) {
+        a += c;
+    }
+    return a;
+}

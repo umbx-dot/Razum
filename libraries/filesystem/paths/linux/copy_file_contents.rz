@@ -1,0 +1,36 @@
+import linux;
+
+bool copy_file_contents(long source, long target) {
+    bool kernel_copy = false;
+    while (true) {
+        long copied = system_call6(SYS_COPY_FILE_RANGE, source, 0, target, 0, 1048576, 0);
+        if (copied > 0) {
+            kernel_copy = true;
+        } else if (copied == 0 && kernel_copy) {
+            return true;
+        } else if (copied != EINTR) {
+            break;
+        }
+    }
+    char buffer[65536];
+    while (true) {
+        long got = system_call(SYS_READ, source, (long)&buffer[0], buffer.length, 0);
+        if (got == EINTR) {
+            continue;
+        }
+        if (got <= 0) {
+            return got == 0;
+        }
+        long done = 0;
+        while (done < got) {
+            long wrote = system_call(SYS_WRITE, target, (long)&buffer[done], got - done, 0);
+            if (wrote == EINTR) {
+                continue;
+            }
+            if (wrote <= 0) {
+                return false;
+            }
+            done += wrote;
+        }
+    }
+}

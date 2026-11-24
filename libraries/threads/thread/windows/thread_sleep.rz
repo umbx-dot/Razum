@@ -1,0 +1,5 @@
+import windows;
+
+void thread_sleep(uint milliseconds) {
+    Sleep(milliseconds);
+}

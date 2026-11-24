@@ -1,0 +1,65 @@
+import gui.state;
+import gui.wire;
+import text;
+
+void gui_wl_event() {
+    uint words[16384];
+    if (!gui_receive((long)&words[0], 8)) {
+        return;
+    }
+    int size = (int)(words[1] >> 16);
+    int opcode = (int)(words[1] & 65535);
+    uint object = words[0];
+    if (size < 8 || (size & 3) != 0 || (size > 8 && !gui_receive((long)&words[2], size - 8))) {
+        gui.quit = true;
+        return;
+    }
+    if (object == 1 && opcode == 0) {
+        gui.quit = true;
+    } else if (object == gui_desktop.wl_barrier && opcode == 0) {
+        gui_desktop.wl_barrier = 0;
+    } else if (object == gui_desktop.wl_registry && opcode == 0 && size >= 24 && words[3] > 0 &&
+               words[3] <= (uint)(size - 20)) {
+        char *name = (char *)&words[4];
+        if (name[words[3] - 1] != "\0") {
+            gui.quit = true;
+        } else if (equals(name, "wl_compositor") && gui_desktop.wl_compositor == 0) {
+            gui_desktop.wl_compositor = gui_wl_bind(words[2], name);
+        } else if (equals(name, "wl_shm") && gui_desktop.wl_shm == 0) {
+            gui_desktop.wl_shm = gui_wl_bind(words[2], name);
+        } else if (equals(name, "wl_seat") && gui_desktop.wl_seat == 0) {
+            gui_desktop.wl_seat = gui_wl_bind(words[2], name);
+        } else if (equals(name, "xdg_wm_base") && gui_desktop.wl_shell == 0) {
+            gui_desktop.wl_shell = gui_wl_bind(words[2], name);
+        }
+    } else if (object == gui_desktop.wl_shell && opcode == 0 && size >= 12) {
+        uint pong[3] = {0, 0, words[2]};
+        gui_wl_request(object, 3, pong);
+    } else if (object == gui_desktop.wl_seat && opcode == 0 && size >= 12) {
+        gui_wl_seat(words[2]);
+    } else if (object == gui_desktop.wl_pointer) {
+        gui_wl_pointer(opcode, words, size);
+    } else if (object == gui_desktop.wl_keyboard) {
+        gui_wl_key(opcode, words, size);
+    } else if (object == gui_desktop.wl_role && opcode == 0 && size >= 12) {
+        uint ack[3] = {0, 0, words[2]};
+        gui_desktop.wl_ready = gui_wl_request(object, 4, ack);
+    } else if (object == gui_desktop.wl_window && opcode == 0 && size >= 20) {
+        int width = (int)words[2];
+        int height = (int)words[3] - GUI_TITLE_HEIGHT;
+        if (width > 0 && width <= GUI_MAX_EDGE) {
+            gui.width = width;
+        }
+        if (height > 0 && height <= GUI_MAX_EDGE) {
+            gui.height = height;
+        }
+    } else if (object == gui_desktop.wl_window && opcode == 1) {
+        gui.quit = true;
+    } else if (opcode == 0) {
+        for (int i = 0; i < gui_desktop.wl_buffers.length; i++) {
+            if (object == gui_desktop.wl_buffers[i].id) {
+                gui_desktop.wl_buffers[i].busy = false;
+            }
+        }
+    }
+}

@@ -1,0 +1,10 @@
+struct Hasher {
+    Hash kind;
+    bool active;
+    bool keyed;
+    ulong state[8];
+    byte block[128];
+    long used;
+    long total;
+    byte outer[128];
+}

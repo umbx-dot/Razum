@@ -1,0 +1,27 @@
+import windows;
+
+struct ThreadStart {
+    fn(long argument) work;
+    long argument;
+}
+
+uint thread_entry(long parameter) {
+    ThreadStart *start = (ThreadStart *)parameter;
+    fn(long argument) work = start.work;
+    long argument = start.argument;
+    free(start);
+    work(argument);
+    return 0;
+}
+
+long thread_start(fn(long argument) work, long argument) {
+    ThreadStart *start = new ThreadStart;
+    start.work = work;
+    start.argument = argument;
+    uint id = 0;
+    long thread = CreateThread(0, 0, thread_entry, (long)start, 0, &id);
+    if (thread == 0) {
+        free(start);
+    }
+    return thread;
+}

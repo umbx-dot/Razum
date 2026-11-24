@@ -1,0 +1,94 @@
+import stdio;
+import text;
+import filesystem;
+
+int main(string args[]) {
+    char base[300];
+    copy(base, args[0]);
+    concat(base, ".files");
+    char nested[300];
+    copy(nested, base);
+    concat(nested, "/inner/deep");
+    print(create_directories(nested));
+    print(is_directory(nested));
+
+    char path[300];
+    copy(path, base);
+    concat(path, "/notes.txt");
+    print(write_text(path, "first\nsecond\n"));
+    print(append_text(path, "third\n"));
+    print(file_size(path));
+    print(exists(path));
+    print(is_file(path));
+    print(is_directory(path));
+
+    char content[64];
+    print(read_text(path, content));
+    write_string(content);
+
+    File reader;
+    print(open(reader, path, "r"));
+    char line[32];
+    read_line(reader, line);
+    print(line);
+    print(tell(reader));
+    print(seek(reader, 13));
+    read_line(reader, line);
+    print(line);
+    close(reader);
+
+    File writer;
+    open(writer, path, "a");
+    write(writer, "fourth\n");
+    print(tell(writer));
+    close(writer);
+
+    char copied[300];
+    copy(copied, base);
+    concat(copied, "/copy.txt");
+    print(copy_file(path, copied));
+    print(file_size(copied));
+    char moved[300];
+    copy(moved, base);
+    concat(moved, "/moved.txt");
+    print(rename(copied, moved));
+    print(exists(copied));
+
+    Directory listing;
+    print(open_directory(listing, base));
+    char name[64];
+    long files = 0;
+    long folders = 0;
+    long bytes = 0;
+    while (next_entry(listing, name)) {
+        if (entry_is_directory(listing)) {
+            folders++;
+        } else {
+            files++;
+            bytes += entry_size(listing);
+        }
+    }
+    close_directory(listing);
+    print(files);
+    print(folders);
+    print(bytes);
+
+    char here[300];
+    print(current_directory(here) > 0);
+    char full[300];
+    print(full_path(full, "notes.txt") > length("notes.txt"));
+    char temporary[300];
+    print(temp_directory(temporary) > 0);
+
+    print(delete_file(path));
+    print(delete_file(moved));
+    print(delete_file(path));
+    print(delete_directory(nested));
+    char inner[300];
+    copy(inner, base);
+    concat(inner, "/inner");
+    print(delete_directory(inner));
+    print(delete_directory(base));
+    print(exists(base));
+    return 0;
+}

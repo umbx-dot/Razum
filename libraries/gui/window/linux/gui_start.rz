@@ -1,0 +1,23 @@
+import gui.state;
+import gui.theme;
+import time;
+
+bool gui_start() {
+    gui_desktop.socket = -1;
+    gui.commands = new GuiCommand[8195];
+    gui.text = new ushort[65536];
+    gui.hover = new double[1024];
+    gui.motion = new double[1024];
+    gui.active = -1;
+    gui.focus = -1;
+    gui.cursor = GUI_CURSOR_ARROW;
+    gui.animating = true;
+    gui.scale = 1.0;
+    gui.last_counter = time_monotonic_ns();
+    gui.line_heights[GUI_BODY] = 18;
+    gui.line_heights[GUI_STRONG] = 18;
+    gui.line_heights[GUI_SMALL] = 14;
+    gui.line_heights[GUI_HEADING] = 24;
+    gui_set_dark(false);
+    return gui.commands != null && gui.text != null && gui.hover != null && gui.motion != null;
+}

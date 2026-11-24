@@ -1,0 +1,10 @@
+long random_int(long low, long high) {
+    if (high <= low) {
+        return low;
+    }
+    ulong span = (ulong)(high - low) + 1;
+    if (span == 0) {
+        return (long)random_next();
+    }
+    return low + (long)(random_next() % span);
+}

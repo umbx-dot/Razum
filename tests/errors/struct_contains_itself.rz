@@ -1,0 +1,9 @@
+// error: 2:1: struct 'Node' contains itself, so it would never end
+struct Node {
+    int value;
+    Node next;
+}
+
+int main() {
+    return 0;
+}

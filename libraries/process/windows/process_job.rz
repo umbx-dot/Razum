@@ -1,0 +1,23 @@
+import windows;
+
+long process_job(ProcessLimits limits) {
+    long job = CreateJobObjectW(0, 0);
+    if (job == 0) {
+        return 0;
+    }
+    JOBOBJECT_EXTENDED_LIMIT_INFORMATION information;
+    information.flags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+    if (limits.max_memory > 0) {
+        information.flags |= JOB_OBJECT_LIMIT_PROCESS_MEMORY;
+        information.process_memory_limit = limits.max_memory;
+    }
+    if (limits.max_processes > 0) {
+        information.flags |= JOB_OBJECT_LIMIT_ACTIVE_PROCESS;
+        information.active_process_limit = (uint)limits.max_processes;
+    }
+    if (SetInformationJobObject(job, JOB_OBJECT_EXTENDED_LIMIT, information, (uint)sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION)) == 0) {
+        CloseHandle(job);
+        return 0;
+    }
+    return job;
+}

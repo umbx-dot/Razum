@@ -1,0 +1,85 @@
+import linux;
+import text;
+
+int gui_x11_authority(string display, byte hello[]) {
+    char path[1024];
+    if (environment_value("XAUTHORITY", path) < 0) {
+        if (environment_value("HOME", path) < 0) {
+            return 12;
+        }
+        concat(path, "/.Xauthority");
+    }
+    long fd = system_call(SYS_OPEN, (long)&path[0], O_RDONLY | O_CLOEXEC, 0, 0);
+    if (fd < 0) {
+        return 12;
+    }
+    byte *data = new byte[65536];
+    if (data == null) {
+        system_call(SYS_CLOSE, fd, 0, 0, 0);
+        return 12;
+    }
+    long size = 0;
+    while (size < 65536) {
+        long got = system_call(SYS_READ, fd, (long)&data[size], 65536 - size, 0);
+        if (got == EINTR) {
+            continue;
+        }
+        if (got <= 0) {
+            break;
+        }
+        size += got;
+    }
+    system_call(SYS_CLOSE, fd, 0, 0, 0);
+    string method = "MIT-MAGIC-COOKIE-1";
+    long position = 0;
+    int result = 12;
+    while (size - position >= 2) {
+        int family = (int)data[position] * 256 + (int)data[position + 1];
+        position += 2;
+        long starts[4];
+        int widths[4];
+        bool complete = true;
+        for (int field = 0; field < 4; field++) {
+            if (size - position < 2) {
+                complete = false;
+                break;
+            }
+            int width = (int)data[position] * 256 + (int)data[position + 1];
+            position += 2;
+            if (size - position < width) {
+                complete = false;
+                break;
+            }
+            starts[field] = position;
+            widths[field] = width;
+            position += width;
+        }
+        if (!complete) {
+            break;
+        }
+        if ((family != 256 && family != 65535) || widths[1] != length(display) || widths[2] != 18 || widths[3] != 16) {
+            continue;
+        }
+        bool match = true;
+        for (int i = 0; i < widths[1] && match; i++) {
+            match = data[starts[1] + i] == (byte)display[i];
+        }
+        for (int i = 0; i < 18 && match; i++) {
+            match = data[starts[2] + i] == (byte)method[i];
+        }
+        if (match) {
+            hello[6] = 18;
+            hello[8] = 16;
+            for (int i = 0; i < 18; i++) {
+                hello[12 + i] = (byte)method[i];
+            }
+            for (int i = 0; i < 16; i++) {
+                hello[32 + i] = data[starts[3] + i];
+            }
+            result = 48;
+            break;
+        }
+    }
+    free(data);
+    return result;
+}

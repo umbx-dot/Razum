@@ -1,0 +1,41 @@
+import gui.state;
+import gui.theme;
+import gui.typography;
+import gui.draw;
+import gui.input;
+import gui.layout;
+import gui.editing;
+
+
+bool gui_button_styled(string label, bool primary) {
+    int id = gui_next_id();
+    int start = gui.text_used;
+    int length = gui_wide(label, -1);
+    double text_width = gui_measure(GUI_STRONG, start, length, 0);
+    gui_allocate(text_width + 32, 36);
+    double x = gui.slot_x;
+    double y = gui.slot_y;
+    double width = gui.slot_width;
+    double height = gui.slot_height;
+    bool hovered = gui_hovered(id, x, y, width, height);
+    bool clicked = gui_clicked(id, hovered);
+    if (hovered) {
+        gui.cursor = GUI_CURSOR_HAND;
+    }
+    double hover = gui_animate(gui.hover, id, hovered ? 1.0 : 0.0);
+    double press = gui_animate(gui.motion, id, gui.active == id && hovered ? 1.0 : 0.0);
+    uint base = primary ? gui.theme.accent : gui.theme.surface;
+    uint lit = primary ? gui_mix(base, 0xFFFFFFFF, 0.12) : gui.theme.raised;
+    uint color = gui_mix(gui_mix(base, lit, hover), 0xFF000000, 0.12 * press);
+    double inset = press;
+    if (primary) {
+        gui_shadow(x + inset, y + inset, width - 2 * inset, height - 2 * inset, 8, 6, gui_fade(gui.theme.shadow, 0.5 + 0.5 * hover));
+    }
+    gui_fill(x + inset, y + inset, width - 2 * inset, height - 2 * inset, 8, color);
+    if (!primary) {
+        gui_stroke(x + inset, y + inset, width - 2 * inset, height - 2 * inset, 8, 1, gui.theme.border);
+    }
+    uint text_color = primary ? gui.theme.accent_text : gui.theme.text;
+    gui_text_at(x + 16, y + (height - gui.line_heights[GUI_STRONG]) / 2, GUI_STRONG, start, length, text_color);
+    return clicked;
+}

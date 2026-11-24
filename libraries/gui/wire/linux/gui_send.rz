@@ -1,0 +1,18 @@
+import gui.state;
+import linux;
+
+bool gui_send(long data, long size) {
+    while (size > 0) {
+        long sent = system_call6(SYS_SENDTO, gui_desktop.socket, data, size, MSG_NOSIGNAL, 0, 0);
+        if (sent == EINTR) {
+            continue;
+        }
+        if (sent <= 0) {
+            gui.quit = true;
+            return false;
+        }
+        size -= sent;
+        data += sent;
+    }
+    return true;
+}

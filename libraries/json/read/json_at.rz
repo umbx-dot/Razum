@@ -1,0 +1,15 @@
+import json.types;
+
+int json_at(JsonToken *tokens, int used, int array, int element) {
+    if (element < 0 || array < 0 || array >= used || tokens[array].kind != JSON_ARRAY) {
+        return -1;
+    }
+    int end = tokens[array].next;
+    for (int index = array + 1; index < end; index = tokens[index].next) {
+        if (element == 0) {
+            return index;
+        }
+        element--;
+    }
+    return -1;
+}

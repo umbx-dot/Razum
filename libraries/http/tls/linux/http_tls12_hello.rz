@@ -1,0 +1,86 @@
+import http.state;
+import crypt.bytes;
+import crypt.hash;
+import crypt.exchange;
+import crypt.sign;
+import crypt.random;
+
+bool http_tls12_hello(HttpWorker *worker, HttpConnection *connection, byte *body, long end) {
+    HttpTls *tls = connection.tls;
+    tls.version = 12;
+    hash_start(tls.transcript, Hash.SHA256);
+    hash_update(tls.transcript, body, end);
+    for (int index = 0; index < 32; index++) {
+        tls.client_random[index] = body[6 + index];
+    }
+    byte public_key[32];
+    if (!secure_bytes(&tls.server_random[0], 32) || !secure_bytes(&tls.secret_key[0], 32)) {
+        return false;
+    }
+    x25519_public(&public_key[0], &tls.secret_key[0]);
+    byte message[16384];
+    long position = http_tls_put(message, 0, 2, 1);
+    position = http_tls_put(message, position, 2 + 32 + 1 + 2 + 1 + 2 + 5, 3);
+    position = http_tls_put(message, position, 0x0303, 2);
+    position = http_tls_put_bytes(message, position, &tls.server_random[0], 32);
+    position = http_tls_put(message, position, 0, 1);
+    position = http_tls_put(message, position, 0xC02B, 2);
+    position = http_tls_put(message, position, 0, 1);
+    position = http_tls_put(message, position, 5, 2);
+    position = http_tls_put(message, position, 0xFF01, 2);
+    position = http_tls_put(message, position, 1, 2);
+    position = http_tls_put(message, position, 0, 1);
+
+    Pfx *certificate = tls.certificate;
+    long certificate_start = position;
+    position = http_tls_put(message, position, 11, 1);
+    long certificate_length_at = position;
+    position = http_tls_put(message, position, 0, 3);
+    long list_at = position;
+    position = http_tls_put(message, position, 0, 3);
+    for (int index = 0; index < certificate.certificate_count; index++) {
+        long size = certificate.certificate_lengths[index];
+        if (position + size + 3 > 12000) {
+            break;
+        }
+        position = http_tls_put(message, position, size, 3);
+        position = http_tls_put_bytes(message, position, &certificate.certificates[certificate.certificate_starts[index]], size);
+    }
+    http_tls_put(message, list_at, position - list_at - 3, 3);
+    http_tls_put(message, certificate_length_at, position - certificate_start - 4, 3);
+
+    byte signed_data[100];
+    long signed_length = http_tls_put_bytes(signed_data, 0, &tls.client_random[0], 32);
+    signed_length = http_tls_put_bytes(signed_data, signed_length, &tls.server_random[0], 32);
+    signed_length = http_tls_put(signed_data, signed_length, 3, 1);
+    signed_length = http_tls_put(signed_data, signed_length, 0x001D, 2);
+    signed_length = http_tls_put(signed_data, signed_length, 32, 1);
+    signed_length = http_tls_put_bytes(signed_data, signed_length, &public_key[0], 32);
+    byte digest[32];
+    hash(Hash.SHA256, digest, &signed_data[0], signed_length);
+    byte signature[72];
+    long signature_length = ecdsa_p256_sign(signature, &certificate.private_key[0], &digest[0]);
+    if (signature_length < 0) {
+        return false;
+    }
+    position = http_tls_put(message, position, 12, 1);
+    position = http_tls_put(message, position, 4 + 32 + 4 + signature_length, 3);
+    position = http_tls_put(message, position, 3, 1);
+    position = http_tls_put(message, position, 0x001D, 2);
+    position = http_tls_put(message, position, 32, 1);
+    position = http_tls_put_bytes(message, position, &public_key[0], 32);
+    position = http_tls_put(message, position, 0x0403, 2);
+    position = http_tls_put(message, position, signature_length, 2);
+    position = http_tls_put_bytes(message, position, &signature[0], signature_length);
+    position = http_tls_put(message, position, 0x0E000000, 4);
+    hash_update(tls.transcript, &message[0], position);
+
+    byte header[5];
+    http_tls_put(header, 0, 22, 1);
+    http_tls_put(header, 1, 0x0303, 2);
+    http_tls_put(header, 3, position, 2);
+    http_sealed_append(worker, &header[0], 5);
+    http_sealed_append(worker, &message[0], position);
+    tls.state = 3;
+    return true;
+}

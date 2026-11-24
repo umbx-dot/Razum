@@ -1,0 +1,14 @@
+import windows;
+
+bool secure_bytes(byte *target, long length) {
+    if (length < 0) {
+        return false;
+    }
+    for (long done = 0; done < length; done += 0x40000000) {
+        long part = length - done < 0x40000000 ? length - done : 0x40000000;
+        if (BCryptGenRandom(0, &target[done], (uint)part, BCRYPT_USE_SYSTEM_PREFERRED_RNG) != STATUS_SUCCESS) {
+            return false;
+        }
+    }
+    return true;
+}

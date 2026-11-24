@@ -1,0 +1,99 @@
+import http.state;
+import http.memory;
+import http.respond;
+import linux;
+import threads;
+
+void http_serve(HttpWorker *worker, HttpConnection *connection) {
+    if (connection.tls != null) {
+        http_serve_tls(worker, connection);
+        return;
+    }
+    HttpServer *server = worker.server;
+    char *buffer = worker.input;
+    long capacity = worker.input_capacity;
+    long used = 0;
+    bool own = connection.pending != null;
+    if (own) {
+        buffer = connection.pending;
+        capacity = connection.pending_capacity;
+        used = connection.pending_used;
+    }
+    connection.pending = null;
+    worker.output_used = 0;
+    while (!connection.close_after_send) {
+        if (used == capacity || connection.needed > capacity) {
+            long limit = HTTP_MAX_HEADER + server.max_body;
+            long grown = capacity * 2;
+            if (grown < connection.needed) {
+                grown = connection.needed;
+            }
+            if (grown > limit) {
+                grown = limit;
+            }
+            if (grown <= capacity) {
+                http_error_response(worker, 413);
+                connection.close_after_send = true;
+                break;
+            }
+            char *bigger = new char[grown];
+            http_copy(bigger, buffer, used);
+            if (own) {
+                free(buffer);
+            }
+            buffer = bigger;
+            capacity = grown;
+            own = true;
+        }
+        long space = capacity - used;
+        long received = system_call(SYS_READ, connection.socket, (long)&buffer[used], space, 0);
+        if (received == EINTR) {
+            continue;
+        }
+        if (received == 0) {
+            connection.close_after_send = true;
+            break;
+        }
+        if (received < 0) {
+            if (received == EAGAIN) {
+                break;
+            }
+            if (own) {
+                free(buffer);
+            }
+            worker.output_used = 0;
+            http_close(worker, connection);
+            return;
+        }
+        used += received;
+        long consumed = http_handle(worker, connection, buffer, used);
+        if (consumed > 0) {
+            http_copy(buffer, &buffer[consumed], used - consumed);
+            used -= consumed;
+        }
+        if (received < space) {
+            break;
+        }
+    }
+    if (used > 0 && !connection.close_after_send) {
+        if (!own) {
+            long size = used * 2 < 4096 ? 4096 : used * 2;
+            char *copy = new char[size];
+            http_copy(copy, buffer, used);
+            buffer = copy;
+            capacity = size;
+        }
+        connection.pending = buffer;
+        connection.pending_capacity = capacity;
+        connection.pending_used = used;
+    } else {
+        if (own) {
+            free(buffer);
+        }
+        connection.pending_capacity = 0;
+        connection.pending_used = 0;
+        connection.needed = 0;
+    }
+    connection.last_active = GetTickCount64();
+    http_flush(worker, connection);
+}

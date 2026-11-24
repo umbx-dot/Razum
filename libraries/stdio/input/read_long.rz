@@ -1,0 +1,5 @@
+long read_long() {
+    asm {
+        call rz@read_int
+    }
+}

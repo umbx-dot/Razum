@@ -1,0 +1,10 @@
+import gui.state;
+import gui.typography;
+
+int gui_step(char text[], int index, int direction) {
+    index += direction;
+    while (index > 0 && index < text.length && ((int)text[index] & 0xC0) == 0x80) {
+        index += direction;
+    }
+    return index;
+}

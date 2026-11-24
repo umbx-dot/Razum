@@ -1,0 +1,27 @@
+import text;
+
+long environment_value(string name, char target[]) {
+    long *entries = environment_entries();
+    long size = length(name);
+    target[0] = "\0";
+    if (entries == null) {
+        return -1;
+    }
+    for (long index = 0; entries[index] != 0; index++) {
+        char *entry = (char *)entries[index];
+        bool same = true;
+        for (long at = 0; at < size && same; at++) {
+            same = entry[at] == name[at];
+        }
+        if (same && entry[size] == "=") {
+            long count = 0;
+            while (entry[size + 1 + count] != "\0" && count < target.length - 1) {
+                target[count] = entry[size + 1 + count];
+                count++;
+            }
+            target[count] = "\0";
+            return count;
+        }
+    }
+    return -1;
+}

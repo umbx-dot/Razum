@@ -1,0 +1,5 @@
+long process_environment() {
+    asm {
+        mov rax, [rz@environment]
+    }
+}

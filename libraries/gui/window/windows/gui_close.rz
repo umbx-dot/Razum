@@ -1,0 +1,42 @@
+import gui.state;
+import gui.theme;
+import gui.typography;
+import gui.render;
+import gui.input;
+
+import windows;
+
+void gui_close() {
+    if (gui.graphics != 0) {
+        GdipDeleteGraphics(gui.graphics);
+        GdipDisposeImage(gui.bitmap);
+    }
+    if (gui.memory_dc != 0) {
+        DeleteDC(gui.memory_dc);
+    }
+    if (gui.dib != 0) {
+        DeleteObject(gui.dib);
+    }
+    for (int i = 0; i < gui.fonts.length; i++) {
+        if (gui.fonts[i] != 0) {
+            GdipDeleteFont(gui.fonts[i]);
+        }
+    }
+    if (gui.token != 0) {
+        GdipDeleteStringFormat(gui.format);
+        GdipDeleteStringFormat(gui.wrap_format);
+        GdipDeleteBrush(gui.brush);
+        GdipDeletePen(gui.pen);
+        GdipDeletePath(gui.path);
+        GdiplusShutdown(gui.token);
+    }
+    if (gui.window != 0) {
+        DestroyWindow(gui.window);
+    }
+    free(gui.commands);
+    free(gui.text);
+    free(gui.hover);
+    free(gui.motion);
+    GuiState empty;
+    gui = empty;
+}

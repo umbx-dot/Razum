@@ -1,0 +1,37 @@
+long from_utf16(char target[], ushort *wide) {
+    long used = 0;
+    long index = 0;
+    while (wide[index] != 0) {
+        int value = wide[index];
+        index++;
+        if (value >= 0xD800 && value <= 0xDBFF && wide[index] >= 0xDC00 && wide[index] <= 0xDFFF) {
+            value = 0x10000 + ((value - 0xD800) << 10) + (wide[index] - 0xDC00);
+            index++;
+        } else if (value >= 0xD800 && value <= 0xDFFF) {
+            value = 0xFFFD;
+        }
+        int size = value < 0x80 ? 1 : value < 0x800 ? 2 : value < 0x10000 ? 3 : 4;
+        if (used + size >= target.length) {
+            target[0] = "\0";
+            return -1;
+        }
+        if (size == 1) {
+            target[used] = (char)value;
+        } else if (size == 2) {
+            target[used] = (char)(0xC0 | (value >> 6));
+            target[used + 1] = (char)(0x80 | (value & 0x3F));
+        } else if (size == 3) {
+            target[used] = (char)(0xE0 | (value >> 12));
+            target[used + 1] = (char)(0x80 | ((value >> 6) & 0x3F));
+            target[used + 2] = (char)(0x80 | (value & 0x3F));
+        } else {
+            target[used] = (char)(0xF0 | (value >> 18));
+            target[used + 1] = (char)(0x80 | ((value >> 12) & 0x3F));
+            target[used + 2] = (char)(0x80 | ((value >> 6) & 0x3F));
+            target[used + 3] = (char)(0x80 | (value & 0x3F));
+        }
+        used += size;
+    }
+    target[used] = "\0";
+    return used;
+}

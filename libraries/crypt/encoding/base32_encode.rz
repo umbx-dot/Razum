@@ -1,0 +1,30 @@
+long base32_encode(char target[], byte *data, long length) {
+    string digits = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+    target[0] = "\0";
+    if (length < 0 || target.length <= (length + 4) / 5 * 8) {
+        return -1;
+    }
+    long size = (length + 4) / 5 * 8;
+    long bits = 0;
+    int count = 0;
+    long out = 0;
+    for (long i = 0; i < length; i++) {
+        bits = (bits << 8) | data[i];
+        count += 8;
+        while (count >= 5) {
+            count -= 5;
+            target[out] = digits[(bits >> count) & 31];
+            out++;
+        }
+    }
+    if (count > 0) {
+        target[out] = digits[(bits << (5 - count)) & 31];
+        out++;
+    }
+    while (out < size) {
+        target[out] = "=";
+        out++;
+    }
+    target[out] = "\0";
+    return out;
+}

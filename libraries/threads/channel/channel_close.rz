@@ -1,0 +1,10 @@
+import threads.system;
+
+void channel_close(Channel *channel) {
+    AcquireSRWLockExclusive(&channel.lock);
+    channel.closed = true;
+    ReleaseSRWLockExclusive(&channel.lock);
+    WakeAllConditionVariable(&channel.readable);
+    WakeAllConditionVariable(&channel.writable);
+    channel_signal();
+}

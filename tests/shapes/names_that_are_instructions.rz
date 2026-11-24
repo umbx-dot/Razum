@@ -1,0 +1,14 @@
+// asm: $add:
+// asm: call $add
+// asm: $rcx: dq 3
+// asm: mov rax, qword [rsp + .rax]
+int rcx = 3;
+
+int add(int a, int b) {
+    return a + b;
+}
+
+int main() {
+    int rax = add(rcx, 4);
+    return rax;
+}

@@ -1,0 +1,27 @@
+import http.state;
+
+bool http_buffer_reserve(HttpBuffer buffer, long more, long limit) {
+    long needed = buffer.used + more;
+    if (needed <= buffer.capacity) {
+        return true;
+    }
+    long size = buffer.capacity * 2;
+    if (size < needed) {
+        size = needed;
+    }
+    if (size > limit) {
+        size = limit;
+    }
+    if (needed > size) {
+        return false;
+    }
+    char *bigger = new char[size];
+    http_copy(bigger, buffer.data, buffer.used);
+    if (buffer.own) {
+        free(buffer.data);
+    }
+    buffer.data = bigger;
+    buffer.capacity = size;
+    buffer.own = true;
+    return true;
+}

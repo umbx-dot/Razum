@@ -1,0 +1,12 @@
+void set_color(int color) {
+    asm {
+        call rz@lock_output
+        call rz@flush
+        mov ecx, -11
+        call [iat@GetStdHandle]
+        mov rcx, rax
+        movzx edx, word [rsp + .color]
+        call [iat@SetConsoleTextAttribute]
+        call rz@unlock_output
+    }
+}

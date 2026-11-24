@@ -1,0 +1,73 @@
+struct SecHandle {
+    ulong lower;
+    ulong upper;
+}
+
+struct SecBuffer {
+    uint size;
+    uint type;
+    char *buffer;
+}
+
+struct SecBufferDesc {
+    uint version;
+    uint count;
+    SecBuffer *buffers;
+}
+
+struct SCH_CREDENTIALS {
+    uint version;
+    uint credential_format;
+    uint certificate_count;
+    long certificates;
+    long root_store;
+    uint mapper_count;
+    long mappers;
+    uint session_lifespan;
+    uint flags;
+    uint tls_parameter_count;
+    long tls_parameters;
+}
+
+struct SecPkgContext_StreamSizes {
+    uint header;
+    uint trailer;
+    uint maximum_message;
+    uint buffers;
+    uint block_size;
+}
+
+extern "secur32" uint AcquireCredentialsHandleW(long principal, ushort *package, uint use, long logon_id, SCH_CREDENTIALS data,
+                                                long get_key, long get_key_argument, SecHandle credential, long *expiry);
+extern "secur32" uint FreeCredentialsHandle(SecHandle credential);
+extern "secur32" uint AcceptSecurityContext(SecHandle *credential, SecHandle *context, SecBufferDesc *input, uint request,
+                                            uint representation, SecHandle *new_context, SecBufferDesc *output, uint *attributes,
+                                            long *expiry);
+extern "secur32" uint QueryContextAttributesW(SecHandle *context, uint attribute, byte *buffer);
+extern "secur32" uint EncryptMessage(SecHandle *context, uint quality, SecBufferDesc *message, uint sequence);
+extern "secur32" uint DecryptMessage(SecHandle *context, SecBufferDesc *message, uint sequence, long quality);
+extern "secur32" uint ApplyControlToken(SecHandle *context, SecBufferDesc *input);
+extern "secur32" uint DeleteSecurityContext(SecHandle *context);
+extern "secur32" uint FreeContextBuffer(long buffer);
+
+const uint SEC_E_OK = 0;
+const uint SEC_I_CONTINUE_NEEDED = 0x00090312;
+const uint SEC_I_CONTEXT_EXPIRED = 0x00090317;
+const uint SEC_I_RENEGOTIATE = 0x00090321;
+const uint SEC_E_INCOMPLETE_MESSAGE = 0x80090318;
+const uint SECBUFFER_EMPTY = 0;
+const uint SECBUFFER_DATA = 1;
+const uint SECBUFFER_TOKEN = 2;
+const uint SECBUFFER_EXTRA = 5;
+const uint SECBUFFER_STREAM_TRAILER = 6;
+const uint SECBUFFER_STREAM_HEADER = 7;
+const uint SECPKG_CRED_INBOUND = 1;
+const uint SECPKG_ATTR_STREAM_SIZES = 4;
+const uint SCH_CREDENTIALS_VERSION = 5;
+const uint SCH_USE_STRONG_CRYPTO = 0x00400000;
+const uint ASC_REQ_REPLAY_DETECT = 0x4;
+const uint ASC_REQ_SEQUENCE_DETECT = 0x8;
+const uint ASC_REQ_CONFIDENTIALITY = 0x10;
+const uint ASC_REQ_ALLOCATE_MEMORY = 0x100;
+const uint ASC_REQ_EXTENDED_ERROR = 0x8000;
+const uint ASC_REQ_STREAM = 0x10000;

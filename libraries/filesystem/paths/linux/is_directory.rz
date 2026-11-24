@@ -1,0 +1,5 @@
+import linux;
+
+bool is_directory(string path) {
+    return path_mode(path) == S_IFDIR;
+}

@@ -1,0 +1,1568 @@
+=== lesson welcome | Getting started | Hello, razum
+razum is a small programming language that looks like C. You write a `.rz` file, and the compiler **rzc** translates it into a native program on Windows or Linux. The learning site runs on Windows and builds an `.exe` you can run on its own. In between, rzc writes plain assembly, so you can see what the processor will do.
+
+On this page, the compiler runs on your own computer: press **Run** (or Ctrl+Enter) and the program on the right is compiled and started.
+
+```c
+import stdio;
+
+int main() {
+    print("Hello, world!");
+    return 0;
+}
+```
+
+| Line | Meaning |
+|---|---|
+| `import stdio;` | use the standard input/output library, which has `print` |
+| `int main() {` | every program starts in the function `main` |
+| `print("...");` | write text and end the line; text in double quotes is a *string* |
+| `return 0;` | end the program; 0 means "no problems" |
+
+Every instruction ends with a semicolon `;`, and braces `{ }` group lines that belong together.
+--- starter
+import stdio;
+
+int main() {
+    print("Hello, world!");
+    return 0;
+}
+--- task
+Change the program so it prints **two lines**: `Hello, razum!` and then `I am learning.`
+--- test
+--- expect
+Hello, razum!
+I am learning.
+--- hint
+Use two `print` calls, one per line.
+--- solution
+import stdio;
+
+int main() {
+    print("Hello, razum!");
+    print("I am learning.");
+    return 0;
+}
+
+=== lesson output | Getting started | Output on one line
+Use `print(value)` to write a value and end the line. It reads the type for you, so numbers, text, and results like `print(1000 * 1000)` work the same way.
+
+Use `printf(value)` to keep writing on the current line. It also reads the type for you. In text, `%n` starts a new line and `%%` writes one percent sign.
+
+```c
+printf("Apples: ");
+printf(12);
+printf(" total%n");
+printf("Progress: 50%%%n");
+```
+
+This writes `Apples: 12 total` and `Progress: 50%` on separate lines. Each call prints one value. Sequences such as `%d` print as ordinary text.
+
+The `write_*` functions are also available when you want to choose how a value is written. For example, `write_long(42)` writes a whole number, `write_string("%n")` writes those two characters literally, and `print_line()` ends the line.
+--- starter
+import stdio;
+
+int main() {
+    printf("Apples: ");
+    printf(12);
+    printf(" total%n");
+    return 0;
+}
+--- task
+Print `3 + 4 = 7` on one line. Let razum compute the result from `3 + 4`.
+--- requires (?:printf|write_long)\s*\(\s*3\s*\+\s*4\s*\) :: Pass 3 + 4 to printf or write_long.
+--- test
+--- expect
+3 + 4 = 7
+--- hint
+Start with `printf(3);` and `printf(" + ");`. Finish the line with `printf("%n");`.
+--- solution
+import stdio;
+
+int main() {
+    printf(3);
+    printf(" + ");
+    printf(4);
+    printf(" = ");
+    printf(3 + 4);
+    printf("%n");
+    return 0;
+}
+
+=== lesson variables | Getting started | Variables and types
+A **variable** is a named place that holds a value. Its **type** says what kind of value:
+
+| Type | Holds | Example |
+|---|---|---|
+| `int` | whole numbers up to about 2 billion | `int count = 10;` |
+| `long` | much larger whole numbers | `long stars = 100000000000;` |
+| `double` | numbers with a fraction | `double price = 0.25;` |
+| `bool` | `true` or `false` | `bool done = false;` |
+| `char` | one character | `char grade = "A";` |
+| `string` | text | `string name = "Ada";` |
+
+`count = count + 1;` means "compute the right side, then store it on the left". A variable keeps its type forever: `int count = 2.5;` is an error, because 2.5 does not fit a whole number. razum checks this before the program runs.
+--- starter
+import stdio;
+
+int main() {
+    int count = 10;
+    count = count + 1;
+    print(count);
+    string name = "Ada";
+    print(name);
+    return 0;
+}
+--- task
+Make an `int` called `apples` that holds 5 and a `double` called `price` that holds 0.5. Print `5 apples cost 2.5`, computing the cost as `apples * price`.
+--- requires int\s+apples :: Declare int apples.
+--- requires double\s+price :: Declare double price.
+--- requires apples\s*\*\s*price|price\s*\*\s*apples :: Compute the cost with apples * price.
+--- test
+--- expect
+5 apples cost 2.5
+--- hint
+`printf(apples);` begins the line and `printf(" apples cost ");` adds the label. Use `print(apples * price);` to display the cost and end the line.
+--- solution
+import stdio;
+
+int main() {
+    int apples = 5;
+    double price = 0.5;
+    printf(apples);
+    printf(" apples cost ");
+    print(apples * price);
+    return 0;
+}
+
+=== lesson arithmetic | Getting started | Arithmetic
+| Operator | Meaning | `7 ? 2` with whole numbers |
+|---|---|---|
+| `+` `-` `*` | add, subtract, multiply | 9, 5, 14 |
+| `/` | divide | **3** (the fraction is cut off) |
+| `%` | remainder | 1 |
+
+With a `double` on either side, `/` keeps the fraction: `7 / 2.0` is `3.5`. A cast converts on purpose: `(double)7 / 2` is `3.5`, `(int)3.9` is `3`.
+
+Shortcuts: `x += 5;` adds 5, `x++;` adds 1, `x--;` takes 1 away.
+
+```c
+int total = 135;
+print(total / 60);    // 2  (hours)
+print(total % 60);    // 15 (minutes left over)
+```
+--- starter
+import stdio;
+
+int main() {
+    int total_minutes = 135;
+    write_long(total_minutes / 60);
+    write_string(" h ");
+    write_long(total_minutes % 60);
+    print(" min");
+    return 0;
+}
+--- task
+Turn `int seconds = 7384;` into hours, minutes and seconds, and print `2 h 3 min 4 s`. Use `/` and `%`; do not write the numbers 2, 3 or 4 yourself.
+--- requires int\s+seconds\s*=\s*7384 :: Start from int seconds = 7384;
+--- requires % :: Use % for the remainders.
+--- test
+--- expect
+2 h 3 min 4 s
+--- hint
+An hour has 3600 seconds. The minutes are `seconds % 3600 / 60`.
+--- solution
+import stdio;
+
+int main() {
+    int seconds = 7384;
+    write_long(seconds / 3600);
+    write_string(" h ");
+    write_long(seconds % 3600 / 60);
+    write_string(" min ");
+    write_long(seconds % 60);
+    print(" s");
+    return 0;
+}
+
+=== lesson input | Getting started | Reading input
+Programs become interesting when they react to their user. `stdio` reads one line at a time:
+
+| Function | Reads |
+|---|---|
+| `read_int()` | a whole number |
+| `read_double()` | a number with a fraction |
+| `read_input(line)` | a line of text into a `char` array |
+
+On this page, the **Input** box under the editor is what the program reads, one value per line.
+
+```c
+int age = read_int();
+print(age + 1);
+```
+--- starter
+import stdio;
+
+int main() {
+    int age = read_int();
+    write_string("Next year you will be ");
+    print(age + 1);
+    return 0;
+}
+--- input
+41
+--- task
+Read two whole numbers and print their product, and nothing else. Checked with `6` and `7` (prints `42`) and with `-3` and `5` (prints `-15`).
+--- test
+6
+7
+--- expect
+42
+--- test
+-3
+5
+--- expect
+-15
+--- hint
+`int a = read_int(); int b = read_int(); print(a * b);`
+--- solution
+import stdio;
+
+int main() {
+    int a = read_int();
+    int b = read_int();
+    print(a * b);
+    return 0;
+}
+
+=== lesson decisions | Control flow | Decisions with if
+`if` runs statements only when a condition is true. The checks run from the top, the first true one wins, and `else` catches the rest.
+
+```c
+if (score >= 90) {
+    print("excellent");
+} else if (score >= 50) {
+    print("passed");
+} else {
+    print("not yet");
+}
+```
+
+| Comparison | True when |
+|---|---|
+| `a == b`, `a != b` | equal, not equal (two `=`!) |
+| `a < b`, `a <= b`, `a > b`, `a >= b` | less, less or equal, ... |
+| `x && y`, `x || y`, `!x` | and, or, not |
+--- starter
+import stdio;
+
+int main() {
+    int score = read_int();
+    if (score >= 50) {
+        print("passed");
+    } else {
+        print("not yet");
+    }
+    return 0;
+}
+--- input
+72
+--- task
+Read a number and print `negative`, `zero` or `positive`.
+--- test
+-3
+--- expect
+negative
+--- test
+0
+--- expect
+zero
+--- test
+8
+--- expect
+positive
+--- hint
+Three cases: `if (n < 0) ... else if (n == 0) ... else ...`
+--- solution
+import stdio;
+
+int main() {
+    int n = read_int();
+    if (n < 0) {
+        print("negative");
+    } else if (n == 0) {
+        print("zero");
+    } else {
+        print("positive");
+    }
+    return 0;
+}
+
+=== lesson switch | Control flow | Choosing with switch
+When one value is compared with many fixed values, `switch` is clearer than a chain of `if`s. Only the matching case runs; razum never "falls through" into the next case. `default` runs when nothing matches, and one case may list several values.
+
+```c
+switch (month) {
+    case 12, 1, 2:
+        print("winter");
+    case 6, 7, 8:
+        print("summer");
+    default:
+        print("in between");
+}
+```
+--- starter
+import stdio;
+
+int main() {
+    int month = read_int();
+    switch (month) {
+        case 12, 1, 2:
+            print("winter");
+        case 6, 7, 8:
+            print("summer");
+        default:
+            print("in between");
+    }
+    return 0;
+}
+--- input
+7
+--- task
+Read a day number from 1 to 7 and print its name, `Monday` to `Sunday`. For any other number print `invalid`.
+--- requires switch :: Use a switch.
+--- test
+1
+--- expect
+Monday
+--- test
+6
+--- expect
+Saturday
+--- test
+7
+--- expect
+Sunday
+--- test
+0
+--- expect
+invalid
+--- solution
+import stdio;
+
+int main() {
+    switch (read_int()) {
+        case 1:
+            print("Monday");
+        case 2:
+            print("Tuesday");
+        case 3:
+            print("Wednesday");
+        case 4:
+            print("Thursday");
+        case 5:
+            print("Friday");
+        case 6:
+            print("Saturday");
+        case 7:
+            print("Sunday");
+        default:
+            print("invalid");
+    }
+    return 0;
+}
+
+=== lesson while | Control flow | Loops with while
+`while` repeats its block as long as the condition is true. Something inside the loop must eventually make it false, or the program runs forever (here it would be stopped after 5 seconds).
+
+```c
+int countdown = 3;
+while (countdown > 0) {
+    print(countdown);
+    countdown--;
+}
+print("Liftoff!");
+```
+
+`break` leaves a loop at once; `continue` skips to the next round.
+--- starter
+import stdio;
+
+int main() {
+    int countdown = 3;
+    while (countdown > 0) {
+        print(countdown);
+        countdown--;
+    }
+    print("Liftoff!");
+    return 0;
+}
+--- task
+The **Collatz** game: start with a number n. If it is even, halve it; if it is odd, make it `3 * n + 1`. Repeat until n is 1. Read n and print how many steps that takes (6 takes 8 steps: 6, 3, 10, 5, 16, 8, 4, 2, 1).
+--- requires while :: Use a while loop.
+--- test
+6
+--- expect
+8
+--- test
+1
+--- expect
+0
+--- test
+27
+--- expect
+111
+--- hint
+`while (n != 1) { if (n % 2 == 0) { n = n / 2; } else { n = 3 * n + 1; } steps++; }`
+--- solution
+import stdio;
+
+int main() {
+    long n = read_long();
+    int steps = 0;
+    while (n != 1) {
+        if (n % 2 == 0) {
+            n = n / 2;
+        } else {
+            n = 3 * n + 1;
+        }
+        steps++;
+    }
+    print(steps);
+    return 0;
+}
+
+=== lesson for | Control flow | Counting with for
+`for` puts a counting loop on one line: where to start, when to keep going, and what to do after each round.
+
+```c
+for (int i = 1; i <= 5; i++) {
+    print(i);
+}
+```
+
+Loops can be nested: the inner loop runs completely for every round of the outer one, which is how tables are made.
+--- starter
+import stdio;
+
+int main() {
+    int sum = 0;
+    for (int i = 1; i <= 100; i++) {
+        sum += i;
+    }
+    print(sum);
+    return 0;
+}
+--- task
+**FizzBuzz** from 1 to 15, one per line: print `Fizz` for multiples of 3, `Buzz` for multiples of 5, `FizzBuzz` for multiples of both, and the number itself otherwise.
+--- requires for\s*\( :: Use a for loop.
+--- test
+--- expect
+1
+2
+Fizz
+4
+Buzz
+Fizz
+7
+8
+Fizz
+Buzz
+11
+Fizz
+13
+14
+FizzBuzz
+--- hint
+Check `i % 15 == 0` first: a multiple of 15 is also a multiple of 3.
+--- solution
+import stdio;
+
+int main() {
+    for (int i = 1; i <= 15; i++) {
+        if (i % 15 == 0) {
+            print("FizzBuzz");
+        } else if (i % 3 == 0) {
+            print("Fizz");
+        } else if (i % 5 == 0) {
+            print("Buzz");
+        } else {
+            print(i);
+        }
+    }
+    return 0;
+}
+
+=== lesson functions | Functions and data | Functions
+A **function** is a named piece of program you can use again and again. It takes **parameters** and can **return** a value; `void` means it returns nothing. Functions can be written in any order.
+
+```c
+int square(int x) {
+    return x * x;
+}
+
+void greet(string name) {
+    write_string("Hello, ");
+    print(name);
+}
+```
+
+Good names make code explain itself: `is_prime(n)` says what it checks.
+--- starter
+import stdio;
+
+int square(int x) {
+    return x * x;
+}
+
+int main() {
+    print(square(7));
+    print(square(3) + square(4));
+    return 0;
+}
+--- task
+Write `bool is_prime(int n)` (a prime has exactly two divisors, 1 and itself; 1 is not prime) and print all primes below 30 on one line, separated by spaces.
+--- requires bool\s+is_prime\s*\( :: Write a function bool is_prime(int n).
+--- test
+--- expect
+2 3 5 7 11 13 17 19 23 29
+--- hint
+Try every divisor from 2 while `divisor * divisor <= n`; if `n % divisor == 0`, it is not prime.
+--- solution
+import stdio;
+
+bool is_prime(int n) {
+    if (n < 2) {
+        return false;
+    }
+    for (int divisor = 2; divisor * divisor <= n; divisor++) {
+        if (n % divisor == 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+int main() {
+    for (int n = 2; n < 30; n++) {
+        if (is_prime(n)) {
+            write_long(n);
+            write_char(' ');
+        }
+    }
+    print_line();
+    return 0;
+}
+
+=== lesson recursion | Functions and data | Recursion
+A function may call itself. This works when every call gets closer to a case that needs no further call:
+
+```c
+long factorial(int n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+```
+
+`factorial(4)` is `4 * factorial(3)` = `4 * 3 * factorial(2)` = `4 * 3 * 2 * 1` = 24.
+--- starter
+import stdio;
+
+long factorial(int n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+int main() {
+    print(factorial(10));
+    return 0;
+}
+--- task
+The **Fibonacci** numbers start 0, 1, and each next one is the sum of the two before. Write `long fib(int n)` that calls itself (`fib(n - 1) + fib(n - 2)`) and print `fib(0)` to `fib(10)` on one line.
+--- requires fib\s*\(\s*n\s*-\s*1\s*\) :: fib should call itself: fib(n - 1) + fib(n - 2).
+--- test
+--- expect
+0 1 1 2 3 5 8 13 21 34 55
+--- solution
+import stdio;
+
+long fib(int n) {
+    if (n < 2) {
+        return n;
+    }
+    return fib(n - 1) + fib(n - 2);
+}
+
+int main() {
+    for (int n = 0; n <= 10; n++) {
+        write_long(fib(n));
+        write_char(' ');
+    }
+    print_line();
+    return 0;
+}
+
+=== lesson arrays | Functions and data | Arrays
+An **array** holds a fixed number of values of one type. Each element has an **index**, starting at **0**; `.length` is how many there are.
+
+```c
+int scores[5] = {72, 95, 61, 88, 79};
+print(scores[0]);         // 72, the first
+print(scores.length);     // 5
+scores[2] = 65;
+for (int i = 0; i < scores.length; i++) {
+    print(scores[i]);
+}
+```
+
+The first and last elements have names of their own: `scores.first` and `scores.last` (the same as `scores[0]` and `scores[scores.length - 1]`, and you can assign to them). Loop with `i < scores.length`, never `<=`, or you read past the end.
+--- starter
+import stdio;
+
+int main() {
+    int scores[5] = {72, 95, 61, 88, 79};
+    int total = 0;
+    for (int i = 0; i < scores.length; i++) {
+        total += scores[i];
+    }
+    print(total);
+    return 0;
+}
+--- task
+Given `int scores[8] = {72, 95, 61, 88, 79, 54, 99, 67};`, print the largest score, the smallest score, and the average (as a `double`), each on its own line.
+--- requires \.length :: Loop with scores.length.
+--- test
+--- expect
+99
+54
+76.875
+--- hint
+Start `best` and `worst` at `scores[0]` and compare with each element. The average is `(double)total / scores.length`.
+--- solution
+import stdio;
+
+int main() {
+    int scores[8] = {72, 95, 61, 88, 79, 54, 99, 67};
+    int best = scores[0];
+    int worst = scores[0];
+    long total = 0;
+    for (int i = 0; i < scores.length; i++) {
+        if (scores[i] > best) {
+            best = scores[i];
+        }
+        if (scores[i] < worst) {
+            worst = scores[i];
+        }
+        total += scores[i];
+    }
+    print(best);
+    print(worst);
+    print((double)total / scores.length);
+    return 0;
+}
+
+=== lesson arraytools | Functions and data | Sorting and array tools
+Writing a loop for the largest value is good practice, but you do not have to do it every time. With `import array;` every array of numbers or characters gets **methods**, written after a dot:
+
+```c
+import stdio;
+import array;
+
+int main() {
+    int scores[6] = {72, 95, 61, 88, 79, 95};
+    scores.sort();                  // 61 72 79 88 95 95
+    scores.sort_descending();       // 95 95 88 79 72 61
+    print(scores.first);            // 95, the best
+    print(scores.last);             // 61, the worst
+    print(scores.sum());            // 490
+    print(scores.max());            // 95
+    print(scores.contains(88));     // true
+    print(scores.index_of(79));     // 3, or -1 if it is not there
+    scores.reverse();               // 61 72 79 88 95 95
+    scores.fill(0);                 // every element becomes 0
+    return 0;
+}
+```
+
+| Method | Does |
+|---|---|
+| `sort()`, `sort_descending()` | smallest first, largest first |
+| `reverse()` | turns the order around |
+| `min()`, `max()`, `sum()` | smallest, largest, total |
+| `contains(x)`, `index_of(x)` | is `x` there, and where |
+| `fill(x)` | sets every element to `x` |
+
+`sort` is fast: for big arrays it is a radix sort, which puts numbers in order byte by byte instead of comparing them, and on five million numbers it beats C++'s `std::sort`. It works for every number type and for `char`, so `letters.sort()` puts letters in alphabetical order.
+--- starter
+import stdio;
+import array;
+
+int main() {
+    int points[8] = {12, 40, 7, 33, 40, 18, 25, 3};
+    print(points.max());
+    return 0;
+}
+--- task
+A game kept these scores: `int points[8] = {12, 40, 7, 33, 40, 18, 25, 3};`. Print the **three highest** scores, highest first, each on its own line. Then print the total of all scores, and finally whether anyone scored exactly 18 (`true` or `false`).
+--- requires sort_descending\(\) :: Sort with points.sort_descending().
+--- requires \.sum\(\) :: Use points.sum() for the total.
+--- test
+--- expect
+40
+40
+33
+178
+true
+--- hint
+After `points.sort_descending();` the three highest are `points[0]`, `points[1]` and `points[2]`. Check for 18 before or after sorting; `contains` does not care about the order.
+--- solution
+import stdio;
+import array;
+
+int main() {
+    int points[8] = {12, 40, 7, 33, 40, 18, 25, 3};
+    points.sort_descending();
+    for (int i = 0; i < 3; i++) {
+        print(points[i]);
+    }
+    print(points.sum());
+    print(points.contains(18));
+    return 0;
+}
+
+=== lesson text | Functions and data | Text
+A `string` points at text that exists already, like `"hello"`. To build or change text, use a `char` array, and the `text` library:
+
+| Function | Does |
+|---|---|
+| `length(text)` | number of bytes |
+| `copy(target, text)`, `concat(target, text)` | replace, append |
+| `equals(a, b)` | the same text? (`==` does not work on text) |
+| `to_upper(target)`, `reverse(target)` | change the text in place |
+| `int_to_text(target, 42)` | a number as text |
+
+```c
+char name[32];
+read_input(name);
+char greeting[64] = "Hello, ";
+concat(greeting, name);
+print(greeting);
+```
+--- starter
+import stdio;
+import text;
+
+int main() {
+    char name[32];
+    read_input(name);
+    char greeting[64] = "Hello, ";
+    concat(greeting, name);
+    concat(greeting, "!");
+    print(greeting);
+    return 0;
+}
+--- input
+Ada
+--- task
+Read a word and print it in capital letters and backwards: `razum` becomes `MUZAR`.
+--- test
+razum
+--- expect
+MUZAR
+--- test
+Hello
+--- expect
+OLLEH
+--- hint
+`read_input(word); to_upper(word); reverse(word); print(word);` with `import text;`.
+--- solution
+import stdio;
+import text;
+
+int main() {
+    char word[64];
+    read_input(word);
+    to_upper(word);
+    reverse(word);
+    print(word);
+    return 0;
+}
+
+=== lesson structs | Functions and data | Structs
+A **struct** groups values that belong together into a new type. Each part is a **field**.
+
+```c
+struct Point {
+    double x;
+    double y;
+}
+
+Point home = {3, 4};
+print(home.x);
+```
+
+A struct given to a function is the caller's struct, not a copy, so the function can change it.
+--- starter
+import stdio;
+
+struct Point {
+    double x;
+    double y;
+}
+
+void move(Point point, double dx) {
+    point.x += dx;
+}
+
+int main() {
+    Point home = {3, 4};
+    move(home, 10);
+    print(home.x);
+    return 0;
+}
+--- task
+Make `struct Rectangle { double width; double height; }`, write `double area(Rectangle r)` and `double perimeter(Rectangle r)`, and print them for a 3 by 4.5 rectangle as `area 13.5` and `perimeter 15.0`.
+--- requires struct\s+Rectangle :: Define struct Rectangle.
+--- test
+--- expect
+area 13.5
+perimeter 15.0
+--- solution
+import stdio;
+
+struct Rectangle {
+    double width;
+    double height;
+}
+
+double area(Rectangle r) {
+    return r.width * r.height;
+}
+
+double perimeter(Rectangle r) {
+    return 2 * (r.width + r.height);
+}
+
+int main() {
+    Rectangle door = {3, 4.5};
+    write_string("area ");
+    print(area(door));
+    write_string("perimeter ");
+    print(perimeter(door));
+    return 0;
+}
+
+=== lesson enums | Functions and data | Constants and enums
+`const` names a value that never changes; razum computes it while compiling, so it costs nothing at run time, and it can size arrays:
+
+```c
+const int SIZE = 3;
+int board[SIZE * SIZE];
+```
+
+An `enum` is a type with a fixed set of named values, written with the enum's name in front:
+
+```c
+enum Direction { NORTH, EAST, SOUTH, WEST }
+
+Direction facing = Direction.NORTH;
+if (facing == Direction.NORTH) {
+    print("up");
+}
+```
+
+`Direction facing = 2;` is an error: 2 is not a direction. `(Direction)2` converts on purpose.
+--- starter
+import stdio;
+
+enum Direction { NORTH, EAST, SOUTH, WEST }
+
+int main() {
+    Direction facing = Direction.EAST;
+    switch (facing) {
+        case Direction.NORTH:
+            print("up");
+        case Direction.EAST:
+            print("right");
+        default:
+            print("somewhere else");
+    }
+    return 0;
+}
+--- task
+A traffic light goes red, green, yellow, red, ... Write `enum Light { RED, GREEN, YELLOW }`, a function `Light next_light(Light light)`, and print five lights starting at red: `red`, `green`, `yellow`, `red`, `green`.
+--- requires enum\s+Light :: Define enum Light.
+--- requires next_light :: Write next_light.
+--- test
+--- expect
+red
+green
+yellow
+red
+green
+--- solution
+import stdio;
+
+enum Light { RED, GREEN, YELLOW }
+
+Light next_light(Light light) {
+    switch (light) {
+        case Light.RED:
+            return Light.GREEN;
+        case Light.GREEN:
+            return Light.YELLOW;
+        default:
+            return Light.RED;
+    }
+}
+
+string light_name(Light light) {
+    switch (light) {
+        case Light.RED:
+            return "red";
+        case Light.GREEN:
+            return "green";
+        default:
+            return "yellow";
+    }
+}
+
+int main() {
+    Light light = Light.RED;
+    for (int step = 0; step < 5; step++) {
+        print(light_name(light));
+        light = next_light(light);
+    }
+    return 0;
+}
+
+=== lesson pointers | Going deeper | Pointers and the heap
+A **pointer** holds the address of a value. `&x` is the address of `x`; `*p` is the value at an address.
+
+```c
+void double_it(int *value) {
+    *value = *value * 2;
+}
+
+int x = 21;
+double_it(&x);    // x is now 42
+```
+
+`new` asks for memory while the program runs, so its size can come from the user; `free` gives it back:
+
+```c
+long *squares = new long[count];
+squares[0] = 0;
+free(squares);
+```
+--- starter
+import stdio;
+
+void double_it(int *value) {
+    *value = *value * 2;
+}
+
+int main() {
+    int x = 21;
+    double_it(&x);
+    print(x);
+    return 0;
+}
+--- input
+5
+--- task
+Write `void swap(int *a, int *b)` and use it so `int x = 3; int y = 9;` prints `9 3`. Then read n, make an array of n `long`s with `new`, fill it with 1², 2², ..., n², print their sum, and `free` it.
+--- requires void\s+swap\s*\(\s*int\s*\*\s*\w+\s*,\s*int\s*\* :: Write void swap(int *a, int *b).
+--- requires new\s+long\s*\[ :: Use new long[n].
+--- requires free\s*\( :: Free the array.
+--- test
+5
+--- expect
+9 3
+55
+--- test
+3
+--- expect
+9 3
+14
+--- solution
+import stdio;
+
+void swap(int *a, int *b) {
+    int keep = *a;
+    *a = *b;
+    *b = keep;
+}
+
+int main() {
+    int x = 3;
+    int y = 9;
+    swap(&x, &y);
+    write_long(x);
+    write_char(' ');
+    print(y);
+    int n = read_int();
+    long *squares = new long[n];
+    long sum = 0;
+    for (int i = 0; i < n; i++) {
+        squares[i] = (long)(i + 1) * (i + 1);
+        sum += squares[i];
+    }
+    print(sum);
+    free(squares);
+    return 0;
+}
+
+=== lesson functionvalues | Going deeper | Functions as values
+A function can be stored in a variable and handed to another function. `fn(long) -> long` is the type of "a function that takes a long and returns a long":
+
+```c
+long twice(long x) {
+    return x * 2;
+}
+
+fn(long) -> long change = twice;
+print(change(21));    // 42
+```
+
+Passing functions around is how you write code that decides *what* to do later: a sort that takes a comparison, a button that takes what to do when clicked.
+--- starter
+import stdio;
+
+long twice(long x) {
+    return x * 2;
+}
+
+long apply_twice(fn(long) -> long change, long value) {
+    return change(change(value));
+}
+
+int main() {
+    print(apply_twice(twice, 5));
+    return 0;
+}
+--- task
+Write `void apply(long values[], fn(long) -> long change)` that replaces every element with `change(element)`. Start with `{1, 2, 3, 4}`, apply a doubling function and print the values on one line, then apply a squaring function and print them again: `2 4 6 8` and `4 16 36 64`.
+--- requires fn\s*\(\s*long\s*\)\s*->\s*long :: Take a fn(long) -> long parameter.
+--- test
+--- expect
+2 4 6 8
+4 16 36 64
+--- solution
+import stdio;
+
+long double_it(long x) {
+    return x * 2;
+}
+
+long square(long x) {
+    return x * x;
+}
+
+void apply(long values[], fn(long) -> long change) {
+    for (int i = 0; i < values.length; i++) {
+        values[i] = change(values[i]);
+    }
+}
+
+void show(long values[]) {
+    for (int i = 0; i < values.length; i++) {
+        write_long(values[i]);
+        write_char(' ');
+    }
+    print_line();
+}
+
+int main() {
+    long values[4] = {1, 2, 3, 4};
+    apply(values, double_it);
+    show(values);
+    apply(values, square);
+    show(values);
+    return 0;
+}
+
+=== lesson errors | Going deeper | Reading error messages
+Mistakes are normal. rzc reports every error it finds as `file:line:column: error: message`, and the editor marks the lines. Read the message, look at the line, and look just **before** the column: a missing `;` is reported at the first thing after it.
+
+After a syntax error (like a missing `;`), rzc stops before checking types, so fixing it can reveal the next errors. That is expected: fix them one round at a time.
+
+| Message | Fix |
+|---|---|
+| `expected ';', found ...` | add the `;` at the end of the line before |
+| `'x' is not declared` | check the spelling and where it was declared |
+| `cannot store a string in int 'x'` | the value does not fit the type |
+--- starter
+import stdio;
+
+int add(int a, int b) {
+    return a + b
+}
+
+int main() {
+    int total = add(5, 10);
+    string label = 42;
+    write_string(lable);
+    print(total);
+    return 0;
+}
+--- task
+This program has three mistakes. Fix them so it prints `total 15`. Press Run to see the errors.
+--- test
+--- expect
+total 15
+--- hint
+A missing `;`, a number where text belongs (`"total "`), and a misspelled name.
+--- solution
+import stdio;
+
+int add(int a, int b) {
+    return a + b;
+}
+
+int main() {
+    int total = add(5, 10);
+    string label = "total ";
+    write_string(label);
+    print(total);
+    return 0;
+}
+
+=== lesson unicode | Going deeper | Text in every language
+razum text is **UTF-8**: strings may hold any language and emoji, and the console, file names and command-line arguments all handle it. Characters outside English take more than one byte, so there are two different counts:
+
+```c
+import text;
+
+string word = "Grüße";
+print(length(word));        // 7 bytes
+print(utf8_length(word));   // 5 characters
+```
+--- starter
+import stdio;
+import text;
+
+int main() {
+    string word = "Grüße";
+    print(word);
+    print(length(word));
+    print(utf8_length(word));
+    return 0;
+}
+--- task
+Print `Grüße, 世界!`, then on the next line its length in bytes and in characters, separated by a space: `16 10`.
+--- requires utf8_length :: Count characters with utf8_length.
+--- test
+--- expect
+Grüße, 世界!
+16 10
+--- solution
+import stdio;
+import text;
+
+int main() {
+    string text = "Grüße, 世界!";
+    print(text);
+    write_long(length(text));
+    write_char(' ');
+    print(utf8_length(text));
+    return 0;
+}
+
+=== lesson threads | Going deeper | Threads and channels
+Modern computers have many cores. `import threads;` runs functions on real threads at the same time, and **channels** let them hand values to each other safely, as in Go:
+
+```c
+Channel *results = channel_new(16);
+
+void work(long part) {
+    channel_send(results, part * part);
+}
+
+long worker = thread_start(work, 7);
+long value = 0;
+channel_receive(results, &value);   // waits for the worker: 49
+thread_join(worker);
+```
+
+A thread function takes one `long` and returns nothing.
+--- starter
+import stdio;
+import threads;
+
+Channel *results;
+
+void work(long part) {
+    channel_send(results, part * part);
+}
+
+int main() {
+    results = channel_new(16);
+    long worker = thread_start(work, 7);
+    long value = 0;
+    channel_receive(results, &value);
+    print(value);
+    thread_join(worker);
+    return 0;
+}
+--- task
+Add up 1 to 1,000,000 with **four** threads: thread `part` (0 to 3) sums its quarter (`part * 250000 + 1` to `(part + 1) * 250000`) and sends the result through a channel. `main` receives the four results and prints the total, `500000500000`.
+--- requires thread_start :: Start threads with thread_start.
+--- requires channel_send :: Send results through a channel.
+--- test
+--- expect
+500000500000
+--- solution
+import stdio;
+import threads;
+
+Channel *results;
+
+void sum_quarter(long part) {
+    long total = 0;
+    for (long n = part * 250000 + 1; n <= (part + 1) * 250000; n++) {
+        total += n;
+    }
+    channel_send(results, total);
+}
+
+int main() {
+    results = channel_new(4);
+    long workers[4];
+    for (int part = 0; part < 4; part++) {
+        workers[part] = thread_start(sum_quarter, part);
+    }
+    long total = 0;
+    long value = 0;
+    for (int i = 0; i < 4; i++) {
+        channel_receive(results, &value);
+        total += value;
+    }
+    for (int part = 0; part < 4; part++) {
+        thread_join(workers[part]);
+    }
+    print(total);
+    return 0;
+}
+
+=== lesson assembly | Going deeper | A look at the machine
+razum lets you write processor instructions directly in an `asm { }` block. A variable `x` is at `[rsp + .x]`, and a function's result goes in `rax`:
+
+```c
+long add_one(long value) {
+    asm {
+        mov rax, qword [rsp + .value]
+        add rax, 1
+    }
+}
+```
+
+This is how the libraries reach instructions that no language has a word for, like counting bits.
+--- starter
+import stdio;
+
+long add_one(long value) {
+    asm {
+        mov rax, qword [rsp + .value]
+        add rax, 1
+    }
+}
+
+int main() {
+    print(add_one(41));
+    return 0;
+}
+--- task
+Write `long bits(long value)` that returns how many bits are 1, using the `popcnt` instruction (`popcnt rax, rcx` counts the bits of `rcx` into `rax`). Print `bits(255)` and `bits(1024)`.
+--- requires popcnt :: Use the popcnt instruction.
+--- test
+--- expect
+8
+1
+--- solution
+import stdio;
+
+long bits(long value) {
+    asm {
+        mov rcx, qword [rsp + .value]
+        popcnt rax, rcx
+    }
+}
+
+int main() {
+    print(bits(255));
+    print(bits(1024));
+    return 0;
+}
+
+=== lesson project | Going deeper | Project: a grade book
+Time to combine everything. Write a grade book that reads how many students there are, then each student's name and score, and prints a report.
+
+Input, one value per line: the count, then name, score, name, score, ...
+
+Output:
+
+- one line per student: `name: score pass` (50 or more) or `name: score fail`
+- `average` and the average score as a `double`
+- `best` and the name of the student with the highest score
+
+Plan first: a `struct Student { char name[32]; int score; }`, an array of them, and a function for each part.
+--- starter
+import stdio;
+import text;
+
+struct Student {
+    char name[32];
+    int score;
+}
+
+int main() {
+    Student students[20];
+    int count = read_int();
+    return 0;
+}
+--- input
+3
+Ada
+91
+Linus
+42
+Grace
+85
+--- task
+Build the grade book. Checked with the input shown and with a single student.
+--- test
+3
+Ada
+91
+Linus
+42
+Grace
+85
+--- expect
+Ada: 91 pass
+Linus: 42 fail
+Grace: 85 pass
+average 72.6666666666667
+best Ada
+--- test
+1
+Solo
+50
+--- expect
+Solo: 50 pass
+average 50.0
+best Solo
+--- solution
+import stdio;
+import text;
+
+struct Student {
+    char name[32];
+    int score;
+}
+
+int main() {
+    Student students[20];
+    int count = read_int();
+    long total = 0;
+    int best = 0;
+    for (int i = 0; i < count; i++) {
+        read_input(students[i].name);
+        students[i].score = read_int();
+        total += students[i].score;
+        if (students[i].score > students[best].score) {
+            best = i;
+        }
+    }
+    for (int i = 0; i < count; i++) {
+        write_string(students[i].name);
+        write_string(": ");
+        write_long(students[i].score);
+        print(students[i].score >= 50 ? " pass" : " fail");
+    }
+    write_string("average ");
+    print((double)total / count);
+    write_string("best ");
+    print(students[best].name);
+    return 0;
+}
+
+=== lesson json | Useful libraries | Read and write JSON
+JSON is a text format for exchanging structured data. `{"count":6}` is a JSON **object** with a key called `count` and a numeric value. In a razum string, escape the inner quotes with a backslash: `"{\"count\":6}"`.
+
+`json_parse` takes the source, its length in bytes, and an array of `JsonToken` values. A token describes a range in the original text. Keep the text available while using the tokens. A negative parse result means an error, and token `0` is the root after a successful parse.
+
+| To do this | Use |
+|---|---|
+| Find a named value in an object | `json_member` returns its token index, or `-1` if it is missing |
+| Read a signed whole number | `json_read_long` takes a token and the address of a `long`, like `&count` |
+| Write an object | Use `JSON_OBJECT`, then `JSON_KEY` followed by its value, and finally `JSON_END` |
+| Finish the output | `json_writer_finish` returns its length or a negative error |
+
+The writer inserts punctuation and escapes text. The output buffer must have room for the JSON and its terminating zero. Each write returns `0` on success.
+--- starter
+import json;
+import stdio;
+import text;
+
+bool read_count(string source, long *count) {
+    JsonToken tokens[32];
+    int used = json_parse(source, length(source), tokens, tokens.length);
+    if (used < 0) {
+        return false;
+    }
+    int field = json_member(source, tokens, used, 0, "count");
+    return field >= 0 && json_read_long(source, tokens[field], count);
+}
+
+int main() {
+    char source[256];
+    long count;
+    if (!read_input(source) || !read_count(source, &count)) {
+        print("Invalid count");
+        return 0;
+    }
+    print(count);
+    return 0;
+}
+--- input
+{"count":6}
+--- task
+Use the JSON writer to output an object with a key called `double` and a value of `count * 2`. For `{"count":6}`, print `{"double":12}`. Keep the existing `Invalid count` message if the input lacks a whole-number count.
+--- requires json_writer_init\s*\( :: Initialize a JSON writer.
+--- requires json_write_long\s*\([^,]+,\s*count\s*\*\s*2\s*\) :: Write count * 2 with json_write_long.
+--- test
+{"count":6}
+--- expect
+{"double":12}
+--- test
+{"ignored":[null,true],"count":-4}
+--- expect
+{"double":-8}
+--- test
+{"count":"6"}
+--- expect
+Invalid count
+--- test
+{}
+--- expect
+Invalid count
+--- hint
+Start a `JSON_OBJECT`, write the `JSON_KEY` event for `"double"` with length `6`, call `json_write_long`, and close with `JSON_END`. Print the buffer after `json_writer_finish` succeeds.
+--- solution
+import json;
+import stdio;
+import text;
+
+bool read_count(string source, long *count) {
+    JsonToken tokens[32];
+    int used = json_parse(source, length(source), tokens, tokens.length);
+    if (used < 0) {
+        return false;
+    }
+    int field = json_member(source, tokens, used, 0, "count");
+    return field >= 0 && json_read_long(source, tokens[field], count);
+}
+
+int main() {
+    char source[256];
+    long count;
+    if (!read_input(source) || !read_count(source, &count)) {
+        print("Invalid count");
+        return 0;
+    }
+    char result[64];
+    JsonOutput output;
+    json_writer_init(&output, result, result.length);
+    if (json_write_event(&output, JSON_OBJECT, "", 0) != 0 ||
+        json_write_event(&output, JSON_KEY, "double", 6) != 0 ||
+        json_write_long(&output, count * 2) != 0 ||
+        json_write_event(&output, JSON_END, "", 0) != 0 ||
+        json_writer_finish(&output) < 0) {
+        return 1;
+    }
+    print(result);
+    return 0;
+}
+
+=== lesson time | Useful libraries | Clocks and UTC timestamps
+Use a monotonic clock for measuring an interval and the system clock for printing a date.
+
+| Function | Result |
+|---|---|
+| `time_monotonic_ns()` | Nanoseconds since an unspecified starting point. Subtract an earlier reading from a later one to get an elapsed time. |
+| `time_unix_us()` | UTC time in microseconds since midnight on 1 January 1970. System clock adjustments can change this reading. |
+| `time_format_utc(microseconds, target)` | Writes a UTC timestamp with six fractional digits and a trailing `Z`. The buffer needs at least 28 bytes, including its terminating zero. |
+
+One second is `1000000` microseconds and `1000000000` nanoseconds. For example, Unix time `0` formats as `1970-01-01T00:00:00.000000Z`. Negative Unix times represent dates before 1970.
+--- starter
+import stdio;
+import time;
+
+int main() {
+    char stamp[28];
+    if (time_format_utc(0, stamp)) {
+        print(stamp);
+    }
+    return 0;
+}
+--- input
+951782400
+--- task
+Read a Unix timestamp in whole seconds with `read_long()`. Convert it to microseconds, format it in UTC, and print it. With the sample input, the date should be 29 February 2000.
+--- requires read_long\s*\(\s*\) :: Read whole seconds with read_long.
+--- requires time_format_utc\s*\( :: Format the result with time_format_utc.
+--- test
+951782400
+--- expect
+2000-02-29T00:00:00.000000Z
+--- test
+-1
+--- expect
+1969-12-31T23:59:59.000000Z
+--- test
+0
+--- expect
+1970-01-01T00:00:00.000000Z
+--- hint
+Multiply the seconds by `1000000` to get microseconds. Check that `time_format_utc` succeeds before printing the buffer.
+--- solution
+import stdio;
+import time;
+
+int main() {
+    long seconds = read_long();
+    char stamp[28];
+    if (time_format_utc(seconds * 1000000, stamp)) {
+        print(stamp);
+    }
+    return 0;
+}
+
+=== lesson next | Next steps | Where to go next
+You know the core of razum now: values and types, decisions, loops, functions, arrays, text, structs, enums, pointers, function values, threads and a bit of assembly.
+
+On your own computer, `rzc file.rz --run` builds and runs a file, and VS Code shows errors, types on hover and Go to Definition. Things to try next:
+
+| Topic | Where |
+|---|---|
+| Windows with buttons and sliders | `import gui;` and `examples/gui_demo.rz` |
+| A web server | `import http;` and `examples/http_hello.rz` |
+| Structured data and UTC timestamps | The JSON and time lessons in **Useful libraries** |
+| Splitting a program into files | `import geometry;` loads `geometry.rz` next to your file |
+| Every rule of the language | `docs/language.md` |
+| Every library function | `docs/libraries.md` |
+
+The **Playground** (top of the page) is a free editor for your own programs; they are saved in this browser.
+--- starter
+import stdio;
+
+int main() {
+    print("I finished the razum course!");
+    return 0;
+}

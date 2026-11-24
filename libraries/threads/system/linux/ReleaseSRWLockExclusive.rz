@@ -1,0 +1,7 @@
+import linux;
+
+void ReleaseSRWLockExclusive(long *lock) {
+    if (futex_exchange(lock, 0) == 2) {
+        futex(lock, FUTEX_WAKE_PRIVATE, 1, 0);
+    }
+}

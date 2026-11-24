@@ -1,0 +1,12 @@
+import windows;
+
+bool file_fill(File file) {
+    uint got[1];
+    file.position = 0;
+    file.used = 0;
+    if (ReadFile(file.handle, file.buffer, (uint)file.buffer.length, got, 0) == 0) {
+        return false;
+    }
+    file.used = got[0];
+    return got[0] > 0;
+}

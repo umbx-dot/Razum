@@ -1,0 +1,23 @@
+import gui.state;
+import gui.typography;
+
+import text;
+
+int gui_caret_at(char text[], double x) {
+    int size = (int)length(text);
+    int best = 0;
+    double best_distance = x < 0 ? -x : x;
+    int index = 0;
+    while (index < size) {
+        index = gui_step(text, index, 1);
+        double distance = gui_prefix_width(text, index) - x;
+        if (distance < 0) {
+            distance = -distance;
+        }
+        if (distance < best_distance) {
+            best = index;
+            best_distance = distance;
+        }
+    }
+    return best;
+}

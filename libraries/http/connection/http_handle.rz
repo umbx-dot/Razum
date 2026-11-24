@@ -1,0 +1,55 @@
+import http.state;
+import http.parse;
+import http.output;
+import http.respond;
+import http.routing;
+
+long http_handle(HttpWorker *worker, HttpConnection *connection, char *buffer, long used) {
+    HttpServer *server = worker.server;
+    long offset = 0;
+    connection.needed = 0;
+    while (offset < used && !connection.close_after_send) {
+        long header_size = http_header_end(&buffer[offset], used - offset);
+        if (header_size < 0) {
+            if (used - offset > HTTP_MAX_HEADER) {
+                http_error_response(worker, 431);
+                connection.close_after_send = true;
+            }
+            break;
+        }
+        if (header_size > HTTP_MAX_HEADER) {
+            http_error_response(worker, 431);
+            connection.close_after_send = true;
+            break;
+        }
+        int problem = http_parse(worker, &buffer[offset], header_size);
+        if (problem != 0) {
+            http_error_response(worker, problem);
+            connection.close_after_send = true;
+            break;
+        }
+        HttpRequest *request = &worker.request;
+        if (request.body_length > server.max_body) {
+            http_error_response(worker, 413);
+            connection.close_after_send = true;
+            break;
+        }
+        long total = header_size + request.body_length;
+        if (used - offset < total) {
+            connection.needed = total;
+            if (request.expects_continue && !connection.continue_sent) {
+                http_out(worker, "HTTP/1.1 100 Continue\r\n\r\n", 25);
+                connection.continue_sent = true;
+            }
+            break;
+        }
+        connection.continue_sent = false;
+        request.body = &buffer[offset + header_size];
+        http_dispatch(worker);
+        if (worker.response.close) {
+            connection.close_after_send = true;
+        }
+        offset += total;
+    }
+    return offset;
+}

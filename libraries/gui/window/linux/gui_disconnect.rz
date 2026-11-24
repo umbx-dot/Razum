@@ -1,0 +1,18 @@
+import gui.state;
+import gui.wayland;
+import linux;
+
+void gui_disconnect() {
+    if (gui_desktop.socket >= 0) {
+        system_call(SYS_CLOSE, gui_desktop.socket, 0, 0, 0);
+    }
+    for (int i = 0; i < gui_desktop.fd_count; i++) {
+        system_call(SYS_CLOSE, gui_desktop.fds[i], 0, 0, 0);
+    }
+    gui.quit = true;
+    gui_wl_drop_buffers();
+    free(gui_desktop.x_keys);
+    GuiDesktop empty;
+    gui_desktop = empty;
+    gui_desktop.socket = -1;
+}

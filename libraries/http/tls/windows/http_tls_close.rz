@@ -1,0 +1,14 @@
+import http.state;
+import windows;
+
+void http_tls_close(HttpConnection *connection) {
+    HttpTls *tls = connection.tls;
+    if (tls.started) {
+        DeleteSecurityContext(&tls.context);
+    }
+    if (tls.raw != null) {
+        free(tls.raw);
+    }
+    free(tls);
+    connection.tls = null;
+}

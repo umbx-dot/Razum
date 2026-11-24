@@ -1,0 +1,12 @@
+const uint AES_NI = 1 << 25;
+const uint GHASH_SIMD = (1 << 9) | (1 << 1);
+
+uint aes_cpu_features() {
+    asm {
+        mov r11, rbx
+        mov eax, 1
+        cpuid
+        mov rbx, r11
+        mov eax, ecx
+    }
+}

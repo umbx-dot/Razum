@@ -1,0 +1,11 @@
+struct ThreadControl {
+    long id;
+    long stack;
+    long stack_size;
+    fn(long argument) work;
+    long argument;
+    ThreadControl *next;
+}
+
+long thread_detached_lock;
+ThreadControl *thread_detached;

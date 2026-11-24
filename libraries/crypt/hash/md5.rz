@@ -1,0 +1,3 @@
+long md5(byte digest[], byte *data, long length) {
+    return hash(Hash.MD5, digest, data, length);
+}

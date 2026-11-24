@@ -1,0 +1,49 @@
+void sha512_block(Hasher hasher, byte *block) {
+    ulong words[80];
+    for (int index = 0; index < 16; index++) {
+        ulong value = 0;
+        for (int part = 0; part < 8; part++) {
+            value = (value << 8) | (ulong)block[8 * index + part];
+        }
+        words[index] = value;
+    }
+    for (int index = 16; index < 80; index++) {
+        ulong early = words[index - 15];
+        ulong late = words[index - 2];
+        ulong small0 = ((early >> 1) | (early << 63)) ^ ((early >> 8) | (early << 56)) ^ (early >> 7);
+        ulong small1 = ((late >> 19) | (late << 45)) ^ ((late >> 61) | (late << 3)) ^ (late >> 6);
+        words[index] = words[index - 16] + small0 + words[index - 7] + small1;
+    }
+    ulong a = hasher.state[0];
+    ulong b = hasher.state[1];
+    ulong c = hasher.state[2];
+    ulong d = hasher.state[3];
+    ulong e = hasher.state[4];
+    ulong f = hasher.state[5];
+    ulong g = hasher.state[6];
+    ulong h = hasher.state[7];
+    for (int round = 0; round < 80; round++) {
+        ulong big1 = ((e >> 14) | (e << 50)) ^ ((e >> 18) | (e << 46)) ^ ((e >> 41) | (e << 23));
+        ulong choose = (e & f) ^ (~e & g);
+        ulong first = h + big1 + choose + sha512_constants[round] + words[round];
+        ulong big0 = ((a >> 28) | (a << 36)) ^ ((a >> 34) | (a << 30)) ^ ((a >> 39) | (a << 25));
+        ulong majority = (a & b) ^ (a & c) ^ (b & c);
+        ulong second = big0 + majority;
+        h = g;
+        g = f;
+        f = e;
+        e = d + first;
+        d = c;
+        c = b;
+        b = a;
+        a = first + second;
+    }
+    hasher.state[0] += a;
+    hasher.state[1] += b;
+    hasher.state[2] += c;
+    hasher.state[3] += d;
+    hasher.state[4] += e;
+    hasher.state[5] += f;
+    hasher.state[6] += g;
+    hasher.state[7] += h;
+}

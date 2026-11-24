@@ -1,0 +1,38 @@
+import threads;
+import text;
+
+Channel *queue;
+
+void produce(long rounds) {
+    for (long i = 0; i < rounds; i++) {
+        channel_send(queue, i);
+    }
+    channel_close(queue);
+}
+
+int main(string args[]) {
+    long capacity = args.length > 1 ? parse_int(args[1]) : 256;
+    long rounds = args.length > 2 ? parse_int(args[2]) : 250000;
+    if (capacity < 0 || capacity > 1048576 || rounds <= 0 || rounds > 100000000) {
+        return 4;
+    }
+    queue = channel_new((int)capacity);
+    if (queue == null) {
+        return 1;
+    }
+    long worker = thread_start(produce, rounds);
+    if (worker == 0) {
+        return 2;
+    }
+    long value;
+    long expected = 0;
+    while (channel_receive(queue, &value)) {
+        if (value != expected) {
+            return 3;
+        }
+        expected++;
+    }
+    thread_join(worker);
+    channel_free(queue);
+    return expected == rounds ? 0 : 3;
+}

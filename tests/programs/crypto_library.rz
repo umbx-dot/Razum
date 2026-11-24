@@ -1,0 +1,312 @@
+import stdio;
+import text;
+import crypt;
+
+char line[1024];
+
+void show(string label, byte *data, long size) {
+    write_string(label);
+    write_string(" ");
+    if (size < 0) {
+        print("error");
+        return;
+    }
+    hex_encode(line, data, size);
+    print(line);
+}
+
+void show_text(string label, long size, string result) {
+    write_string(label);
+    write_string(" ");
+    write_long(size);
+    write_string(" ");
+    print(result);
+}
+
+void show_hash(Hash kind, string label, string message) {
+    hash_text_hex(kind, line, message);
+    write_string(label);
+    write_string(" \"");
+    write_string(message);
+    write_string("\" ");
+    print(line);
+}
+
+void check_hashes() {
+    show_hash(Hash.MD5, "md5", "");
+    show_hash(Hash.MD5, "md5", "a");
+    show_hash(Hash.MD5, "md5", "abc");
+    show_hash(Hash.MD5, "md5", "message digest");
+    show_hash(Hash.MD5, "md5", "abcdefghijklmnopqrstuvwxyz");
+    show_hash(Hash.MD5, "md5", "12345678901234567890123456789012345678901234567890123456789012345678901234567890");
+    show_hash(Hash.SHA1, "sha1", "abc");
+    show_hash(Hash.SHA1, "sha1", "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq");
+    show_hash(Hash.SHA256, "sha256", "abc");
+    show_hash(Hash.SHA256, "sha256", "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq");
+    show_hash(Hash.SHA384, "sha384", "abc");
+    show_hash(Hash.SHA512, "sha512", "abc");
+
+    byte digest[64];
+    show("sha256()", digest, sha256(digest, as_bytes("abc"), 3));
+    show("sha512()", digest, sha512(digest, as_bytes(""), 0));
+
+    byte block[1000];
+    for (int i = 0; i < block.length; i++) {
+        block[i] = 'a';
+    }
+    Hasher hasher;
+    hash_start(hasher, Hash.SHA256);
+    for (int i = 0; i < 1000; i++) {
+        hash_update(hasher, block, block.length);
+    }
+    show("sha256 million a", digest, hash_finish(hasher, digest));
+    byte small[16];
+    hash_start(hasher, Hash.SHA256);
+    print(hash_finish(hasher, small));
+    print(hash_update(hasher, block, 1));
+}
+
+void check_hmac() {
+    byte key[131];
+    byte data[64];
+    byte mac[64];
+    for (int i = 0; i < 20; i++) {
+        key[i] = 0x0b;
+    }
+    show("hmac-sha256 4231.1", mac, hmac(Hash.SHA256, mac, key, 20, as_bytes("Hi There"), 8));
+    string question = "what do ya want for nothing?";
+    show("hmac-sha256 4231.2", mac, hmac(Hash.SHA256, mac, as_bytes("Jefe"), 4, as_bytes(question), length(question)));
+    for (int i = 0; i < key.length; i++) {
+        key[i] = 0xaa;
+    }
+    for (int i = 0; i < 50; i++) {
+        data[i] = 0xdd;
+    }
+    show("hmac-sha256 4231.3", mac, hmac(Hash.SHA256, mac, key, 20, data, 50));
+    string large = "Test Using Larger Than Block-Size Key - Hash Key First";
+    show("hmac-sha256 4231.6", mac, hmac(Hash.SHA256, mac, key, 131, as_bytes(large), length(large)));
+    show("hmac-sha512 4231.2", mac, hmac(Hash.SHA512, mac, as_bytes("Jefe"), 4, as_bytes(question), length(question)));
+    show("hmac-sha1 2202.2", mac, hmac(Hash.SHA1, mac, as_bytes("Jefe"), 4, as_bytes(question), length(question)));
+    hmac_hex(Hash.MD5, line, as_bytes("Jefe"), 4, as_bytes(question), length(question));
+    show_text("hmac-md5 2104.2", length(line), line);
+
+    byte other[32];
+    hmac(Hash.SHA256, other, as_bytes("Jefe"), 4, as_bytes(question), length(question));
+    hmac(Hash.SHA256, mac, as_bytes("Jefe"), 4, as_bytes(question), length(question));
+    print(compare_digest(mac, 32, other, 32));
+    other[31] ^= 1;
+    print(compare_digest(mac, 32, other, 32));
+    print(compare_digest(mac, 32, other, 31));
+}
+
+void check_pbkdf2() {
+    byte key20[20];
+    byte key25[25];
+    byte key16[16];
+    byte key32[32];
+    show("pbkdf2-sha1 c=1", key20, pbkdf2(Hash.SHA1, key20, as_bytes("password"), 8, as_bytes("salt"), 4, 1));
+    show("pbkdf2-sha1 c=2", key20, pbkdf2(Hash.SHA1, key20, as_bytes("password"), 8, as_bytes("salt"), 4, 2));
+    show("pbkdf2-sha1 c=4096", key20, pbkdf2(Hash.SHA1, key20, as_bytes("password"), 8, as_bytes("salt"), 4, 4096));
+    string password = "passwordPASSWORDpassword";
+    string salt = "saltSALTsaltSALTsaltSALTsaltSALTsalt";
+    show("pbkdf2-sha1 dk=25", key25,
+         pbkdf2(Hash.SHA1, key25, as_bytes(password), length(password), as_bytes(salt), length(salt), 4096));
+    byte zero_password[9];
+    byte zero_salt[5];
+    hex_decode(zero_password, "7061737300776f7264");
+    hex_decode(zero_salt, "7361006c74");
+    show("pbkdf2-sha1 nul", key16, pbkdf2(Hash.SHA1, key16, zero_password, 9, zero_salt, 5, 4096));
+    show("pbkdf2-sha256 c=1", key32, pbkdf2(Hash.SHA256, key32, as_bytes("password"), 8, as_bytes("salt"), 4, 1));
+    print(pbkdf2(Hash.SHA256, key32, as_bytes("password"), 8, as_bytes("salt"), 4, 0));
+}
+
+void check_ciphers() {
+    byte key[32];
+    byte nonce[12];
+    byte plain[64];
+    byte sealed[80];
+    byte opened[80];
+    show("gcm 13", sealed, aes_gcm_encrypt(sealed, key, 32, nonce, null, 0, plain, 0));
+    show("gcm 14", sealed, aes_gcm_encrypt(sealed, key, 32, nonce, null, 0, plain, 16));
+
+    byte aad[20];
+    hex_decode(key, "feffe9928665731c6d6a8f9467308308feffe9928665731c6d6a8f9467308308");
+    hex_decode(nonce, "cafebabefacedbaddecaf888");
+    hex_decode(plain, "d9313225f88406e5a55909c5aff5269a86a7a9531534f7da2e4c303d8a318a721c3c0c95956809532fcf0e2449a6b525b16aedf5aa0de657ba637b39");
+    hex_decode(aad, "feedfacedeadbeeffeedfacedeadbeefabaddad2");
+    long sealed_size = aes_gcm_encrypt(sealed, key, 32, nonce, aad, 20, plain, 60);
+    show("gcm 16", sealed, sealed_size);
+    show("gcm 16 open", opened, aes_gcm_decrypt(opened, key, 32, nonce, aad, 20, sealed, sealed_size));
+    sealed[5] ^= 1;
+    print(aes_gcm_decrypt(opened, key, 32, nonce, aad, 20, sealed, sealed_size));
+    print(opened[0]);
+    sealed[5] ^= 1;
+    aad[0] ^= 1;
+    print(aes_gcm_decrypt(opened, key, 32, nonce, aad, 20, sealed, sealed_size));
+    aad[0] ^= 1;
+    print(aes_gcm_decrypt(opened, key, 32, nonce, aad, 20, sealed, 15));
+    print(aes_gcm_encrypt(sealed, key, 31, nonce, aad, 20, plain, 60));
+    print(aes_gcm_encrypt(opened, key, 32, nonce, aad, 20, plain, 65));
+
+    byte iv[16];
+    byte counter[16];
+    hex_decode(key, "603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4");
+    hex_decode(iv, "000102030405060708090a0b0c0d0e0f");
+    hex_decode(counter, "f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff");
+    hex_decode(plain, "6bc1bee22e409f96e93d7e117393172aae2d8a571e03ac9c9eb76fac45af8e5130c81c46a35ce411e5fbc1191a0a52eff69f2445df4f9b17ad2b417be66c3710");
+    long cbc_size = aes_cbc_encrypt(sealed, key, 32, iv, plain, 64);
+    show("cbc", sealed, cbc_size);
+    show("cbc open", opened, aes_cbc_decrypt(opened, key, 32, iv, sealed, cbc_size));
+    print(aes_cbc_encrypt(sealed, key, 32, iv, plain, 64) == cbc_size);
+    sealed[79] ^= 0xFF;
+    print(aes_cbc_decrypt(opened, key, 32, iv, sealed, cbc_size));
+    show("ctr", sealed, aes_ctr(sealed, key, 32, counter, plain, 64));
+    show("ctr open", opened, aes_ctr(opened, key, 32, counter, sealed, 64));
+    show("ctr 5", sealed, aes_ctr(sealed, key, 32, counter, plain, 5));
+
+    byte big[10000];
+    byte big_out[10000];
+    for (int i = 0; i < big.length; i++) {
+        big[i] = (byte)i;
+    }
+    hex_decode(counter, "ffffffffffffffffffffffffffffffff");
+    aes_ctr(big_out, key, 32, counter, big, big.length);
+    hash_hex(Hash.SHA256, line, big_out, big_out.length);
+    show_text("ctr wrap sha256", big_out.length, line);
+    aes_ctr(big_out, key, 32, counter, big_out, big.length);
+    print(compare_digest(big, big.length, big_out, big.length));
+}
+
+void check_encoding() {
+    string inputs[] = {"", "f", "fo", "foo", "foob", "fooba", "foobar"};
+    byte decoded[16];
+    for (int i = 0; i < inputs.length; i++) {
+        string input = inputs[i];
+        long size = length(input);
+        base64_encode(line, as_bytes(input), size);
+        write_string(line);
+        write_string(" ");
+        base32_encode(line, as_bytes(input), size);
+        write_string(line);
+        write_string(" ");
+        base16_encode(line, as_bytes(input), size);
+        write_string(line);
+        write_string(" ");
+        base85_encode(line, as_bytes(input), size);
+        print(line);
+    }
+    show("base64 decode", decoded, base64_decode(decoded, "Zm9vYmFy"));
+    show("base64 decode unpadded", decoded, base64_decode(decoded, "Zm9vYg"));
+    show("base32 decode", decoded, base32_decode(decoded, "MZXW6YTBOI======"));
+    show("base32 decode lower", decoded, base32_decode(decoded, "mzxw6ytboi"));
+    show("hex decode", decoded, hex_decode(decoded, "666F6f"));
+    show("base85 decode", decoded, base85_decode(decoded, "Xk~0{Zv"));
+    show("base85 decode foobar", decoded, base85_decode(decoded, "W^Zp|VR8"));
+
+    byte edge[] = {0xfb, 0xff, 0xbf};
+    base64_encode(line, edge, 2);
+    write_string(line);
+    write_string(" ");
+    base64_url_encode(line, edge, 2);
+    write_string(line);
+    write_string(" ");
+    base64_encode_with(line, edge, 2, true, false);
+    write_string(line);
+    write_string(" ");
+    base64_url_encode(line, edge, 3);
+    print(line);
+    show("url decode", decoded, base64_url_decode(decoded, "-_8"));
+
+    print(base64_decode(decoded, "Zm9v!"));
+    print(base64_decode(decoded, "Zg="));
+    print(base64_decode(decoded, "Z"));
+    print(base64_decode(decoded, "Zg==Zg=="));
+    print(base64_decode(decoded, "-_8="));
+    print(base64_url_decode(decoded, "+/8="));
+    print(base64_decode(decoded, "Zm9vYmFyZm9vYmFyZm9vYmFy"));
+    print(base32_decode(decoded, "MZXW6YT1"));
+    print(base32_decode(decoded, "MZX"));
+    print(hex_decode(decoded, "abc"));
+    print(hex_decode(decoded, "zz"));
+    print(base85_decode(decoded, "~~~~~"));
+    print(base85_decode(decoded, "X"));
+    char tiny[4];
+    print(base64_encode(tiny, as_bytes("foo"), 3));
+    print(tiny);
+    print(hex_encode(tiny, as_bytes("ab"), 2));
+}
+
+void check_bytes() {
+    print_hex(crc32(0, as_bytes("123456789"), 9));
+    print_hex(crc32(crc32(0, as_bytes("1234"), 4), as_bytes("56789"), 5));
+    print_hex(crc32(0, as_bytes(""), 0));
+    print_hex(adler32(1, as_bytes("Wikipedia"), 9));
+    byte block[100000];
+    for (int i = 0; i < block.length; i++) {
+        block[i] = 0xff;
+    }
+    print_hex(adler32(1, block, block.length));
+    byte mixed[8];
+    xor_key(mixed, as_bytes("razum!!!"), 8, as_bytes("key"), 3);
+    show("xor key", mixed, 8);
+    xor_key(mixed, mixed, 8, as_bytes("key"), 3);
+    print_bytes_as_text(mixed, 8);
+    print(xor_key(mixed, mixed, 8, as_bytes("key"), 0));
+    byte left[] = {0x0f, 0xf0, 0xaa};
+    byte right[] = {0xff, 0xff, 0x55};
+    xor_bytes(mixed, left, right, 3);
+    show("xor bytes", mixed, 3);
+}
+
+void print_bytes_as_text(byte *data, long size) {
+    for (long i = 0; i < size; i++) {
+        write_char((char)data[i]);
+    }
+    print_line();
+}
+
+void check_random() {
+    byte first[32];
+    byte second[32];
+    print(secure_bytes(first, 32));
+    secure_bytes(second, 32);
+    print(compare_digest(first, 32, second, 32));
+    print(token_hex(line, 16));
+    print(token_urlsafe(line, 32));
+    print(token_hex(line, 600));
+    long size = uuid4(line);
+    print(size);
+    print(line[8] == '-' && line[13] == '-' && line[18] == '-' && line[23] == '-');
+    print(line[14]);
+    print(line[19] == '8' || line[19] == '9' || line[19] == 'a' || line[19] == 'b');
+    bool inside = true;
+    bool saw_low = false;
+    bool saw_high = false;
+    for (int i = 0; i < 2000; i++) {
+        long value = secure_int(-3, 3);
+        inside = inside && value >= -3 && value <= 3;
+        saw_low = saw_low || value == -3;
+        saw_high = saw_high || value == 3;
+    }
+    print(inside && saw_low && saw_high);
+    print(secure_int(5, 5));
+    bool saw_negative = false;
+    bool saw_positive = false;
+    for (int i = 0; i < 64; i++) {
+        long value = secure_int(-9223372036854775807 - 1, 9223372036854775807);
+        saw_negative = saw_negative || value < 0;
+        saw_positive = saw_positive || value > 0;
+    }
+    print(saw_negative && saw_positive);
+}
+
+int main() {
+    check_hashes();
+    check_hmac();
+    check_pbkdf2();
+    check_ciphers();
+    check_encoding();
+    check_bytes();
+    check_random();
+    return 0;
+}

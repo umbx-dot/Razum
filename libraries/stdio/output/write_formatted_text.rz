@@ -1,0 +1,57 @@
+void write_formatted_text(string text) {
+    asm {
+        mov rcx, [rsp + .text]
+        test rcx, rcx
+        jz .done
+        push rsi
+        push rdi
+        sub rsp, 32
+        mov rsi, rcx
+        mov rdi, rcx
+        call rz@lock_output
+    .scan:
+        mov al, [rdi]
+        test al, al
+        jz .tail
+        cmp al, '%'
+        jne .advance
+        cmp byte [rdi + 1], '%'
+        je .percent
+        cmp byte [rdi + 1], 'n'
+        jne .advance
+        mov rcx, rsi
+        mov rdx, rdi
+        sub rdx, rsi
+        jz .newline
+        call rz@write
+    .newline:
+        call rz@write_newline
+        add rdi, 2
+        mov rsi, rdi
+        jmp .scan
+    .percent:
+        inc rdi
+        mov rcx, rsi
+        mov rdx, rdi
+        sub rdx, rsi
+        call rz@write
+        inc rdi
+        mov rsi, rdi
+        jmp .scan
+    .advance:
+        inc rdi
+        jmp .scan
+    .tail:
+        mov rcx, rsi
+        mov rdx, rdi
+        sub rdx, rsi
+        jz .unlock
+        call rz@write
+    .unlock:
+        call rz@unlock_output
+        add rsp, 32
+        pop rdi
+        pop rsi
+    .done:
+    }
+}

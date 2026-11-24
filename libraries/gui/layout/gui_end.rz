@@ -1,0 +1,22 @@
+import gui.state;
+import gui.draw;
+
+void gui_end() {
+    if (gui.depth == 0) {
+        return;
+    }
+    GuiBox *box = &gui.boxes[gui.depth];
+    double width = box.outer_width;
+    double height = (box.row ? box.extent : box.cursor) + 2 * box.padding;
+    if (box.background >= 0) {
+        for (int i = 0; i < 3; i++) {
+            GuiCommand *command = &gui.commands[box.background + i];
+            command.x = box.x - box.padding;
+            command.y = box.y - box.padding;
+            command.width = width;
+            command.height = height;
+        }
+    }
+    gui.depth--;
+    gui_allocate(width, height);
+}

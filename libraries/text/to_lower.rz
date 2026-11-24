@@ -1,0 +1,7 @@
+import text.characters;
+
+void to_lower(char text[]) {
+    for (int index = 0; index < text.length && text[index] != "\0"; index++) {
+        text[index] = lower_char(text[index]);
+    }
+}

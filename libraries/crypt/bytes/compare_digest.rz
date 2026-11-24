@@ -1,0 +1,10 @@
+bool compare_digest(byte *left, long left_length, byte *right, long right_length) {
+    if (left_length != right_length) {
+        return false;
+    }
+    int difference = 0;
+    for (long i = 0; i < left_length; i++) {
+        difference |= left[i] ^ right[i];
+    }
+    return difference == 0;
+}

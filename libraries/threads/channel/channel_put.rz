@@ -1,0 +1,9 @@
+import threads.system;
+
+void channel_put(Channel *channel, long value) {
+    int tail = (channel.head + channel.count) % channel.capacity;
+    channel.items[tail] = value;
+    channel.count++;
+    channel.sent++;
+    WakeConditionVariable(&channel.readable);
+}

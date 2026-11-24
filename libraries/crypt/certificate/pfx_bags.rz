@@ -1,0 +1,77 @@
+bool pfx_bags(Pfx pfx, byte *data, long start, long end, string password, byte *wide_password, long wide_length) {
+    long content = 0;
+    long length = 0;
+    if (der_read(data, start, end, 0x30, &content, &length) < 0) {
+        return false;
+    }
+    long at = content;
+    long finish = content + length;
+    while (at < finish) {
+        long bag = 0;
+        long bag_length = 0;
+        long next = der_read(data, at, finish, 0x30, &bag, &bag_length);
+        long oid = 0;
+        long oid_length = 0;
+        long value_at = next < 0 ? -1 : der_read(data, bag, bag + bag_length, 6, &oid, &oid_length);
+        long value = 0;
+        long value_length = 0;
+        if (value_at < 0 || der_read(data, value_at, bag + bag_length, 0xA0, &value, &value_length) < 0) {
+            return false;
+        }
+        long value_end = value + value_length;
+        if (der_is(data, oid, oid_length, "2a864886f70d010c0a0101")) {
+            if (!pfx_private_key(pfx, data, value, value_end)) {
+                return false;
+            }
+        } else if (der_is(data, oid, oid_length, "2a864886f70d010c0a0102")) {
+            long shrouded = 0;
+            long shrouded_length = 0;
+            long algorithm = 0;
+            long algorithm_length = 0;
+            long cipher = 0;
+            long cipher_length = 0;
+            if (der_read(data, value, value_end, 0x30, &shrouded, &shrouded_length) < 0) {
+                return false;
+            }
+            long after = der_read(data, shrouded, shrouded + shrouded_length, 0x30, &algorithm, &algorithm_length);
+            if (after < 0 || der_read(data, after, shrouded + shrouded_length, 4, &cipher, &cipher_length) < 0) {
+                return false;
+            }
+            byte plain[16384];
+            long plain_length = pfx_decrypt(data, shrouded, after, &data[cipher], cipher_length, password, wide_password,
+                                            wide_length, plain);
+            if (plain_length < 0 || !pfx_private_key(pfx, &plain[0], 0, plain_length)) {
+                return false;
+            }
+        } else if (der_is(data, oid, oid_length, "2a864886f70d010c0a0103")) {
+            long certificate = 0;
+            long certificate_length = 0;
+            long type = 0;
+            long type_length = 0;
+            long holder = 0;
+            long holder_length = 0;
+            long octets = 0;
+            long octets_length = 0;
+            if (der_read(data, value, value_end, 0x30, &certificate, &certificate_length) < 0) {
+                return false;
+            }
+            long after = der_read(data, certificate, certificate + certificate_length, 6, &type, &type_length);
+            if (after < 0 || der_read(data, after, certificate + certificate_length, 0xA0, &holder, &holder_length) < 0 ||
+                der_read(data, holder, holder + holder_length, 4, &octets, &octets_length) < 0) {
+                return false;
+            }
+            if (der_is(data, type, type_length, "2a864886f70d01091601") && pfx.certificate_count < pfx.certificate_starts.length &&
+                pfx.certificate_used + octets_length <= 65536) {
+                pfx.certificate_starts[pfx.certificate_count] = pfx.certificate_used;
+                pfx.certificate_lengths[pfx.certificate_count] = octets_length;
+                for (long index = 0; index < octets_length; index++) {
+                    pfx.certificates[pfx.certificate_used + index] = data[octets + index];
+                }
+                pfx.certificate_used += octets_length;
+                pfx.certificate_count++;
+            }
+        }
+        at = next;
+    }
+    return true;
+}

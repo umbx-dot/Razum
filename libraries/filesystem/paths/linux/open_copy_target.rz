@@ -1,0 +1,31 @@
+import linux;
+import text;
+
+long open_copy_target(string to, char temporary[], long mode) {
+    long prefix = find_last_char(to, "/") + 1;
+    if (prefix + 33 > temporary.length) {
+        return -1;
+    }
+    for (long index = 0; index < prefix; index++) {
+        temporary[index] = to[index];
+    }
+    temporary[prefix] = "\0";
+    long stem = concat(temporary, ".razum-copy-");
+    char digits[21];
+    long target = EEXIST;
+    while (target == EEXIST) {
+        ulong nonce = 0;
+        long bytes = system_call(SYS_GETRANDOM, (long)&nonce, 8, 0, 0);
+        if (bytes == EINTR) {
+            continue;
+        }
+        if (bytes != 8) {
+            return -1;
+        }
+        ulong_to_text(digits, nonce);
+        temporary[stem] = "\0";
+        concat(temporary, digits);
+        target = system_call(SYS_OPEN, (long)&temporary[0], O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, mode, 0);
+    }
+    return target;
+}

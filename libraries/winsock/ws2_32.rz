@@ -1,0 +1,54 @@
+struct WSABUF {
+    uint length;
+    char *buffer;
+}
+
+struct GUID {
+    uint data1;
+    ushort data2;
+    ushort data3;
+    byte data4[8];
+}
+
+extern "ws2_32" int WSAStartup(ushort version, byte *data);
+extern "ws2_32" int WSACleanup();
+extern "ws2_32" int WSAGetLastError();
+extern "ws2_32" long WSASocketW(int family, int type, int protocol, long info, uint group, uint flags);
+extern "ws2_32" int bind(long socket, byte *address, int length);
+extern "ws2_32" int listen(long socket, int backlog);
+extern "ws2_32" int connect(long socket, byte *address, int length);
+extern "ws2_32" int setsockopt(long socket, int level, int name, byte *value, int length);
+extern "ws2_32" int getsockname(long socket, byte *address, int *length);
+extern "ws2_32" int getpeername(long socket, byte *address, int *length);
+extern "ws2_32" int closesocket(long socket);
+extern "ws2_32" int shutdown(long socket, int how);
+extern "ws2_32" int recv(long socket, char *buffer, int length, int flags);
+extern "ws2_32" int send(long socket, char *buffer, int length, int flags);
+extern "ws2_32" int ioctlsocket(long socket, uint command, uint *argument);
+extern "ws2_32" int WSAIoctl(long socket, uint code, byte *input, uint input_length, byte *output, uint output_length,
+                             uint *returned, long overlapped, long routine);
+extern "ws2_32" int WSARecv(long socket, WSABUF *buffers, uint count, uint *received, uint *flags, long overlapped, long routine);
+extern "ws2_32" int WSASend(long socket, WSABUF *buffers, uint count, uint *sent, uint flags, long overlapped, long routine);
+extern "ws2_32" int inet_pton(int family, string text, byte *address);
+extern "ws2_32" long inet_ntop(int family, byte *address, char *text, ulong size);
+
+const int AF_INET = 2;
+const int AF_INET6 = 23;
+const int SOCK_STREAM = 1;
+const int IPPROTO_TCP = 6;
+const int IPPROTO_IPV6 = 41;
+const int SOL_SOCKET = 0xFFFF;
+const int SO_EXCLUSIVEADDRUSE = -5;
+const int SO_UPDATE_ACCEPT_CONTEXT = 0x700B;
+const int TCP_NODELAY = 1;
+const int IPV6_V6ONLY = 27;
+const uint WSA_FLAG_OVERLAPPED = 1;
+const uint WSA_FLAG_NO_HANDLE_INHERIT = 0x80;
+const long INVALID_SOCKET = -1;
+const int SOCKET_ERROR = -1;
+const int WSA_IO_PENDING = 997;
+const int WSAEWOULDBLOCK = 10035;
+const uint FIONBIO = 0x8004667E;
+const uint SIO_GET_EXTENSION_FUNCTION_POINTER = 0xC8000006;
+const int SD_SEND = 1;
+const int SD_BOTH = 2;

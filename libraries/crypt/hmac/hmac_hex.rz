@@ -1,0 +1,12 @@
+import crypt.hash;
+import crypt.encoding;
+
+long hmac_hex(Hash kind, char target[], byte *key, long key_length, byte *data, long length) {
+    byte mac[64];
+    long size = hmac(kind, mac, key, key_length, data, length);
+    if (size < 0) {
+        target[0] = "\0";
+        return -1;
+    }
+    return hex_encode(target, mac, size);
+}

@@ -1,0 +1,34 @@
+import http;
+
+void json_write(HttpResponse *response, char *text, long length) {
+    char hex[17] = "0123456789abcdef";
+    char escape[8] = "\\u00";
+    http_write(response, "\"");
+    long start = 0;
+    for (long index = 0; index < length; index++) {
+        int value = (int)text[index];
+        bool special = value < 32 || value == "\"" || value == "\\";
+        if (!special) {
+            continue;
+        }
+        http_write_bytes(response, &text[start], index - start);
+        if (value == "\"") {
+            http_write(response, "\\\"");
+        } else if (value == "\\") {
+            http_write(response, "\\\\");
+        } else if (value == "\n") {
+            http_write(response, "\\n");
+        } else if (value == "\r") {
+            http_write(response, "\\r");
+        } else if (value == "\t") {
+            http_write(response, "\\t");
+        } else {
+            escape[4] = hex[value >> 4];
+            escape[5] = hex[value & 15];
+            http_write_bytes(response, escape, 6);
+        }
+        start = index + 1;
+    }
+    http_write_bytes(response, &text[start], length - start);
+    http_write(response, "\"");
+}

@@ -1,0 +1,12 @@
+import linux;
+import threads.system;
+
+void thread_join(long thread) {
+    ThreadControl *control = (ThreadControl *)thread;
+    int id = futex_load(&control.id);
+    while (id != 0) {
+        futex(&control.id, FUTEX_WAIT, (long)id, 0);
+        id = futex_load(&control.id);
+    }
+    thread_release(control);
+}

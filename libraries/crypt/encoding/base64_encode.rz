@@ -1,0 +1,3 @@
+long base64_encode(char target[], byte *data, long length) {
+    return base64_encode_with(target, data, length, false, true);
+}

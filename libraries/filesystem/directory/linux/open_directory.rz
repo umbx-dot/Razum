@@ -1,0 +1,13 @@
+import linux;
+
+bool open_directory(Directory directory, string path) {
+    directory.handle = system_call(SYS_OPEN, (long)path, O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0, 0);
+    directory.used = 0;
+    directory.position = 0;
+    directory.entry = -1;
+    if (directory.handle < 0) {
+        directory.handle = -1;
+        return false;
+    }
+    return true;
+}

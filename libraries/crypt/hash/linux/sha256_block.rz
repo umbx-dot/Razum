@@ -1,0 +1,46 @@
+void sha256_block(Hasher hasher, byte *block) {
+    uint words[64];
+    for (int index = 0; index < 16; index++) {
+        words[index] = ((uint)block[4 * index] << 24) | ((uint)block[4 * index + 1] << 16) | ((uint)block[4 * index + 2] << 8) |
+                       (uint)block[4 * index + 3];
+    }
+    for (int index = 16; index < 64; index++) {
+        uint early = words[index - 15];
+        uint late = words[index - 2];
+        uint small0 = ((early >> 7) | (early << 25)) ^ ((early >> 18) | (early << 14)) ^ (early >> 3);
+        uint small1 = ((late >> 17) | (late << 15)) ^ ((late >> 19) | (late << 13)) ^ (late >> 10);
+        words[index] = words[index - 16] + small0 + words[index - 7] + small1;
+    }
+    uint a = (uint)hasher.state[0];
+    uint b = (uint)hasher.state[1];
+    uint c = (uint)hasher.state[2];
+    uint d = (uint)hasher.state[3];
+    uint e = (uint)hasher.state[4];
+    uint f = (uint)hasher.state[5];
+    uint g = (uint)hasher.state[6];
+    uint h = (uint)hasher.state[7];
+    for (int round = 0; round < 64; round++) {
+        uint big1 = ((e >> 6) | (e << 26)) ^ ((e >> 11) | (e << 21)) ^ ((e >> 25) | (e << 7));
+        uint choose = (e & f) ^ (~e & g);
+        uint first = h + big1 + choose + sha256_constants[round] + words[round];
+        uint big0 = ((a >> 2) | (a << 30)) ^ ((a >> 13) | (a << 19)) ^ ((a >> 22) | (a << 10));
+        uint majority = (a & b) ^ (a & c) ^ (b & c);
+        uint second = big0 + majority;
+        h = g;
+        g = f;
+        f = e;
+        e = d + first;
+        d = c;
+        c = b;
+        b = a;
+        a = first + second;
+    }
+    hasher.state[0] = (uint)(hasher.state[0] + a);
+    hasher.state[1] = (uint)(hasher.state[1] + b);
+    hasher.state[2] = (uint)(hasher.state[2] + c);
+    hasher.state[3] = (uint)(hasher.state[3] + d);
+    hasher.state[4] = (uint)(hasher.state[4] + e);
+    hasher.state[5] = (uint)(hasher.state[5] + f);
+    hasher.state[6] = (uint)(hasher.state[6] + g);
+    hasher.state[7] = (uint)(hasher.state[7] + h);
+}

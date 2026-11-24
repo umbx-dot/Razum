@@ -1,0 +1,40 @@
+import http.state;
+import http.connection;
+import linux;
+import threads;
+
+bool http_start(HttpServer *server) {
+    if (server.running || server.listener_count == 0) {
+        return false;
+    }
+    long ignore[4];
+    ignore[0] = SIG_IGN;
+    system_call(SYS_RT_SIGACTION, SIGPIPE, (long)&ignore[0], 0, 8);
+    server.running = true;
+    http_update_date();
+    server.workers = new HttpWorker[server.worker_count];
+    for (int index = 0; index < server.worker_count; index++) {
+        HttpWorker *worker = &server.workers[index];
+        worker.server = server;
+        worker.events = system_call(SYS_EPOLL_CREATE1, O_CLOEXEC, 0, 0, 0);
+        worker.input_capacity = HTTP_INPUT_SIZE;
+        worker.input = new char[HTTP_INPUT_SIZE];
+        worker.head = new char[HTTP_MAX_HEADER + 1];
+        worker.output_capacity = 65536;
+        worker.output = new char[worker.output_capacity];
+        worker.sealed_capacity = 65536;
+        worker.sealed = new char[worker.sealed_capacity];
+        worker.response.body_capacity = 16384;
+        worker.response.body = new char[worker.response.body_capacity];
+        worker.response.scratch = new char[HTTP_SCRATCH_SIZE];
+        for (int listener = 0; listener < server.listener_count; listener++) {
+            http_epoll_set(worker.events, EPOLL_CTL_ADD, server.listeners[listener].socket, EPOLLIN | EPOLLEXCLUSIVE, listener);
+        }
+    }
+    for (int index = 0; index < server.worker_count; index++) {
+        server.workers[index].thread = thread_start(http_worker_loop, (long)&server.workers[index]);
+    }
+    http_current_server = server;
+    http_catch_interrupt();
+    return true;
+}

@@ -1,0 +1,18 @@
+import text;
+import filesystem;
+import windows;
+import threads;
+
+bool learn_workspace(char folder[]) {
+    char number[24];
+    temp_directory(folder);
+    concat(folder, "razum-learn");
+    create_directory(folder);
+    concat(folder, "\\");
+    int_to_text(number, GetCurrentProcessId());
+    concat(folder, number);
+    concat(folder, "-");
+    int_to_text(number, atomic_add(&learn_runs, 1));
+    concat(folder, number);
+    return create_directory(folder);
+}

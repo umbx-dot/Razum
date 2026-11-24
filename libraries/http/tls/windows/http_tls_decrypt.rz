@@ -1,0 +1,62 @@
+import http.state;
+import http.memory;
+import windows;
+
+int http_tls_decrypt(HttpWorker *worker, HttpConnection *connection, HttpBuffer plain, long limit) {
+    HttpTls *tls = connection.tls;
+    while (tls.raw_used > 0) {
+        if (!tls.ready) {
+            if (!http_tls_handshake(worker, connection)) {
+                return -1;
+            }
+            if (!tls.ready) {
+                return 0;
+            }
+            continue;
+        }
+        SecBuffer buffers[4];
+        buffers[0].size = (uint)tls.raw_used;
+        buffers[0].type = SECBUFFER_DATA;
+        buffers[0].buffer = tls.raw;
+        for (int index = 1; index < buffers.length; index++) {
+            buffers[index].size = 0;
+            buffers[index].type = SECBUFFER_EMPTY;
+            buffers[index].buffer = null;
+        }
+        SecBufferDesc description;
+        description.version = 0;
+        description.count = 4;
+        description.buffers = &buffers[0];
+        uint status = DecryptMessage(&tls.context, &description, 0, 0);
+        if (status == SEC_E_INCOMPLETE_MESSAGE) {
+            return 0;
+        }
+        if (status != SEC_E_OK && status != SEC_I_RENEGOTIATE && status != SEC_I_CONTEXT_EXPIRED) {
+            http_last_error = status;
+            return -1;
+        }
+        long extra = 0;
+        for (int index = 1; index < buffers.length; index++) {
+            if (buffers[index].type == SECBUFFER_DATA && buffers[index].size > 0) {
+                if (!http_buffer_reserve(plain, buffers[index].size, limit)) {
+                    return -1;
+                }
+                http_copy(&plain.data[plain.used], buffers[index].buffer, buffers[index].size);
+                plain.used += buffers[index].size;
+            } else if (buffers[index].type == SECBUFFER_EXTRA) {
+                extra = buffers[index].size;
+            }
+        }
+        if (extra > 0) {
+            http_copy(tls.raw, &tls.raw[tls.raw_used - extra], extra);
+        }
+        tls.raw_used = extra;
+        if (status == SEC_I_CONTEXT_EXPIRED) {
+            return 1;
+        }
+        if (status == SEC_I_RENEGOTIATE) {
+            tls.ready = false;
+        }
+    }
+    return 0;
+}

@@ -1,0 +1,26 @@
+import gui.state;
+import gui.wire;
+import gui.wayland;
+import gui.x11;
+
+void gui_wait() {
+    if (gui.offscreen || gui.quit) {
+        return;
+    }
+    int delay = -1;
+    if (gui.animating) {
+        delay = 16;
+    } else if (gui.focus >= 0) {
+        long elapsed = (long)((gui.time - gui.caret_since) * 1000);
+        delay = (int)(530 - elapsed % 530);
+    }
+    int ready = gui_poll_event(delay);
+    for (int events = 0; events < 128 && ready > 0 && !gui.quit; events++) {
+        if (gui_desktop.backend == GUI_WAYLAND) {
+            gui_wl_event();
+        } else {
+            gui_x11_event();
+        }
+        ready = gui.quit ? 0 : gui_poll_event(0);
+    }
+}

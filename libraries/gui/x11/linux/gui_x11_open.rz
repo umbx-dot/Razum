@@ -1,0 +1,50 @@
+import gui.state;
+import gui.wire;
+import linux;
+import text;
+
+bool gui_x11_open(string title) {
+    char variable[64];
+    if (environment_value("DISPLAY", variable) <= 0) {
+        return false;
+    }
+    int start = variable[0] == ":" ? 1 : starts_with(variable, "unix:") ? 5 : 0;
+    if (start == 0) {
+        return false;
+    }
+    int end = start;
+    while (variable[end] >= "0" && variable[end] <= "9") {
+        end++;
+    }
+    if (end == start || (variable[end] != "\0" && !equals(&variable[end], ".0"))) {
+        return false;
+    }
+    variable[end] = "\0";
+    char path[108];
+    copy(path, "/tmp/.X11-unix/X");
+    concat(path, &variable[start]);
+    gui_desktop.socket = gui_connect(path);
+    if (gui_desktop.socket < 0 || !gui_x11_setup(&variable[start]) || !gui_x11_keyboard()) {
+        return false;
+    }
+    gui_desktop.x_protocols = gui_x11_atom("WM_PROTOCOLS");
+    gui_desktop.x_delete = gui_x11_atom("WM_DELETE_WINDOW");
+    uint utf8 = gui_x11_atom("UTF8_STRING");
+    uint title_atom = gui_x11_atom("_NET_WM_NAME");
+    if (gui_desktop.x_delete == 0 || gui_desktop.x_protocols == 0 || utf8 == 0 || title_atom == 0) {
+        return false;
+    }
+    uint window = gui_desktop.x_resource | 1;
+    uint context = gui_desktop.x_resource | 2;
+    gui_desktop.x_window = window;
+    gui_desktop.x_context = context;
+    const uint EVENTS = 0x22807D;
+    uint create[10] = {0x000A0001, window, gui_desktop.x_root, 0, (uint)(gui.width | (gui.height << 16)),
+                       0x00010000, 0, 0x802, 0, EVENTS};
+    uint paint[4] = {0x00040037, context, window, 0};
+    uint protocol[7] = {0x00070012, window, gui_desktop.x_protocols, 4, 32, 1, gui_desktop.x_delete};
+    uint map[2] = {0x00020008, window};
+    return gui_send((long)&create[0], 40) && gui_send((long)&paint[0], 16) &&
+           gui_send((long)&protocol[0], 28) && gui_x11_title(title, title_atom, utf8) && gui_x11_title(title, 39, 31) &&
+           gui_send((long)&map[0], 8);
+}

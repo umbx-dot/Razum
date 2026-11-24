@@ -1,0 +1,3 @@
+void reset_color() {
+    set_color(COLOR_WHITE);
+}

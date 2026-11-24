@@ -1,0 +1,12 @@
+import gui.state;
+
+double gui_prefix_width(string text, int bytes) {
+    if (bytes <= 0) {
+        return 0.0;
+    }
+    int start = gui.text_used;
+    int length = gui_wide(text, bytes);
+    double width = gui_measure(GUI_BODY, start, length, 0);
+    gui.text_used = start;
+    return width;
+}

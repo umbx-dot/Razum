@@ -1,0 +1,30 @@
+struct Channel {
+    long lock;
+    long readable;
+    long writable;
+    long *items;
+    int capacity;
+    int head;
+    int count;
+    bool closed;
+    bool unbuffered;
+    long sent;
+    long taken;
+}
+
+enum ChannelResult {
+    RECEIVED,
+    EMPTY,
+    TIMED_OUT,
+    CLOSED,
+}
+
+struct ChannelSignals {
+    long lock;
+    long changed;
+    long sequence;
+    long waiters;
+    long turn;
+}
+
+ChannelSignals channel_signals;

@@ -1,0 +1,9 @@
+import gui.state;
+
+int gui_next_id() {
+    int id = gui.next_id;
+    if (id < 1023) {
+        gui.next_id++;
+    }
+    return id;
+}

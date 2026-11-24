@@ -1,0 +1,58 @@
+import http.state;
+import http.respond;
+import linux;
+import text;
+
+void http_serve_file(HttpRoute *route, HttpRequest *request, HttpResponse *response) {
+    string rest = request.rest;
+    if (contains(rest, "..") || find_char(rest, "\\") >= 0 || find_char(rest, ":") >= 0) {
+        http_status(response, 403);
+        http_text(response, "Forbidden");
+        return;
+    }
+    char path[1024];
+    copy(path, route.directory);
+    if (!ends_with(path, "/")) {
+        concat(path, "/");
+    }
+    long added = concat(path, rest);
+    long size = length(rest);
+    if (size == 0 || rest[size - 1] == "/") {
+        added = concat(path, "index.html");
+    }
+    if (added >= path.length - 1) {
+        http_status(response, 414);
+        http_text(response, "URI Too Long");
+        return;
+    }
+    long file = system_call(SYS_OPEN, (long)&path[0], O_RDONLY | O_CLOEXEC, 0, 0);
+    long status[18];
+    if (file < 0 || system_call(SYS_FSTAT, file, (long)&status[0], 0, 0) != 0 || (status[3] & S_IFMT) != S_IFREG) {
+        if (file >= 0) {
+            system_call(SYS_CLOSE, file, 0, 0, 0);
+        }
+        http_status(response, 404);
+        http_text(response, "Not Found");
+        return;
+    }
+    long file_size = status[6];
+    response.content_type = http_mime_type(path);
+    if (request.head) {
+        response.body_length = file_size;
+        system_call(SYS_CLOSE, file, 0, 0, 0);
+        return;
+    }
+    response.body_length = 0;
+    char chunk[65536];
+    while (response.body_length < file_size) {
+        long read = system_call(SYS_READ, file, (long)&chunk[0], chunk.length, 0);
+        if (read == EINTR) {
+            continue;
+        }
+        if (read <= 0) {
+            break;
+        }
+        http_write_bytes(response, chunk, read);
+    }
+    system_call(SYS_CLOSE, file, 0, 0, 0);
+}

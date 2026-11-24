@@ -1,0 +1,24 @@
+// asm: add rax, 10
+// asm: movzx eax, al
+// asm: movsxd rax, eax
+// asm: movsx rax, ax
+// asm: jae .@endif
+// asm: xor edx, edx
+// asm: div rcx
+// asm: movss dword [rsp + .ratio], xmm0
+// asm: cvtss2sd xmm0, dword [rsp + .ratio]
+// absent: idiv
+int main() {
+    byte level = 250;
+    level += 10;
+    int product = 70000 * 70000;
+    short small = (short)product;
+    ulong big = 18446744073709551615;
+    ulong half = big / 2;
+    if (half < big) {
+        float ratio = 0.5;
+        double wide = ratio;
+        return (int)wide + level + small;
+    }
+    return 0;
+}

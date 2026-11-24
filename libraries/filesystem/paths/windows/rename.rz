@@ -1,0 +1,9 @@
+import text;
+import windows;
+
+bool rename(string from, string to) {
+    ushort wide_from[1024];
+    ushort wide_to[1024];
+    return to_utf16(wide_from, from) >= 0 && to_utf16(wide_to, to) >= 0 &&
+           MoveFileExW(wide_from, wide_to, MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED) != 0;
+}

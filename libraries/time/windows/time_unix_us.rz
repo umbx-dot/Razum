@@ -1,0 +1,13 @@
+long time_unix_us() {
+    long ticks;
+    asm {
+        lea rcx, [rsp + .ticks]
+        call [iat@kernel32@GetSystemTimePreciseAsFileTime]
+        mov rax, [rsp + .ticks]
+        mov rcx, 116444736000000000
+        sub rax, rcx
+        cqo
+        mov ecx, 10
+        idiv rcx
+    }
+}

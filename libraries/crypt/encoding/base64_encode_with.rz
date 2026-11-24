@@ -1,0 +1,41 @@
+long base64_encode_with(char target[], byte *data, long length, bool url_safe, bool padding) {
+    string digits = url_safe ? "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+                             : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    target[0] = "\0";
+    if (length < 0) {
+        return -1;
+    }
+    long rest = length % 3;
+    long size = length / 3 * 4 + (rest == 0 ? 0 : padding ? 4 : rest + 1);
+    if (target.length <= size) {
+        return -1;
+    }
+    long out = 0;
+    for (long i = 0; i < length - rest; i += 3) {
+        int group = (data[i] << 16) | (data[i + 1] << 8) | data[i + 2];
+        target[out] = digits[group >> 18];
+        target[out + 1] = digits[(group >> 12) & 63];
+        target[out + 2] = digits[(group >> 6) & 63];
+        target[out + 3] = digits[group & 63];
+        out += 4;
+    }
+    if (rest > 0) {
+        int group = data[length - rest] << 16;
+        if (rest == 2) {
+            group |= data[length - 1] << 8;
+        }
+        target[out] = digits[group >> 18];
+        target[out + 1] = digits[(group >> 12) & 63];
+        out += 2;
+        if (rest == 2) {
+            target[out] = digits[(group >> 6) & 63];
+            out++;
+        }
+        while (out < size) {
+            target[out] = "=";
+            out++;
+        }
+    }
+    target[out] = "\0";
+    return out;
+}

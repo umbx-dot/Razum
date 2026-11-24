@@ -1,0 +1,7 @@
+void flush_output() {
+    asm {
+        call rz@lock_output
+        call rz@flush
+        call rz@unlock_output
+    }
+}

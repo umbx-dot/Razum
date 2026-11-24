@@ -1,0 +1,82 @@
+import filesystem;
+import stdio;
+import text;
+
+int main(string args[]) {
+    char path[512];
+    copy(path, args[0]);
+    concat(path, ".binary");
+    byte data[8193];
+    for (int i = 0; i < data.length; i++) {
+        data[i] = (byte)(i * 13 + (i >> 8));
+    }
+    File file;
+    if (!open(file, path, "w")) {
+        return 1;
+    }
+    byte prefix[2] = {0, 128};
+    write_bytes(file, prefix, 0);
+    write_bytes(file, prefix, -2);
+    if (tell(file) != 0) {
+        return 2;
+    }
+    byte single[1] = {255};
+    write_bytes(file, single, 1);
+    write_bytes(file, prefix, 99);
+    write_bytes(file, data, 8192);
+    if (tell(file) != 8195 || !flush(file) || tell(file) != 8195) {
+        return 3;
+    }
+    close(file);
+    if (!open(file, path, "r")) {
+        return 4;
+    }
+    byte first[5];
+    if (read_bytes(file, first) != 5 || first[0] != 255 || first[1] != 0 ||
+        first[2] != 128 || first[3] != data[0] || first[4] != data[1]) {
+        return 5;
+    }
+    byte rest[8200];
+    rest[8190] = 242;
+    if (read_bytes(file, rest) != 8190 || rest[8190] != 242 || tell(file) != 8195 ||
+        read_bytes(file, first) != 0) {
+        return 6;
+    }
+    for (int i = 0; i < 8190; i++) {
+        if (rest[i] != data[i + 2]) {
+            return 7;
+        }
+    }
+    if (!seek(file, 4094) || read_bytes(file, first) != 5) {
+        return 8;
+    }
+    for (int i = 0; i < first.length; i++) {
+        if (first[i] != data[4091 + i]) {
+            return 9;
+        }
+    }
+    if (!seek(file, 1) || read_bytes(file, single) != 1 || single[0] != 0) {
+        return 14;
+    }
+    write_bytes(file, prefix, 2);
+    if (flush(file)) {
+        return 10;
+    }
+    close(file);
+    if (!open(file, path, "w")) {
+        return 11;
+    }
+    long handle = file.handle;
+    file.handle = -1;
+    write_bytes(file, data, 4097);
+    file.handle = handle;
+    if (flush(file) || file_size(path) != 1) {
+        return 12;
+    }
+    close(file);
+    if (!delete_file(path)) {
+        return 13;
+    }
+    print("binary buffers ok");
+    return 0;
+}

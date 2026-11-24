@@ -1,0 +1,9 @@
+import http.state;
+import http.memory;
+
+long http_body_text(HttpRequest *request, char target[]) {
+    long size = request.body_length < target.length - 1 ? request.body_length : target.length - 1;
+    http_copy(&target[0], request.body, size);
+    target[size] = "\0";
+    return size;
+}

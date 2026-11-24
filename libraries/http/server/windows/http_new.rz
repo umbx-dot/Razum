@@ -1,0 +1,26 @@
+import http.state;
+import windows;
+import winsock;
+import threads;
+
+HttpServer *http_new() {
+    byte data[408];
+    if (WSAStartup(0x0202, data) != 0) {
+        return null;
+    }
+    long port = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
+    if (port == 0) {
+        return null;
+    }
+    HttpServer *server = new HttpServer;
+    server.port = port;
+    server.idle_timeout = 60000;
+    server.request_timeout = 10000;
+    server.max_body = 1048576;
+    server.worker_count = cpu_count();
+    server.accepts_per_listener = 0;
+    server.slot_capacity = 1024;
+    server.slots = new long[server.slot_capacity];
+    server.free_slots = new int[server.slot_capacity];
+    return server;
+}

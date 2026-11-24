@@ -1,0 +1,22 @@
+import text;
+
+bool create_directories(string path) {
+    char prefix[260];
+    long count = length(path);
+    if (count >= prefix.length) {
+        return false;
+    }
+    for (long index = 0; index < count; index++) {
+        char next = path[index];
+        bool is_separator = next == "\\" || next == "/";
+        if (is_separator && index > 0 && path[index - 1] != ":") {
+            prefix[index] = "\0";
+            if (!create_directory(prefix)) {
+                return false;
+            }
+        }
+        prefix[index] = next;
+    }
+    prefix[count] = "\0";
+    return create_directory(prefix);
+}

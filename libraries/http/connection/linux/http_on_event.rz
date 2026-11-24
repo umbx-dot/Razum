@@ -1,0 +1,33 @@
+import http.state;
+import linux;
+import threads;
+
+void http_on_event(HttpWorker *worker, HttpConnection *connection, uint flags) {
+    if ((flags & EPOLLERR) != 0) {
+        http_close(worker, connection);
+        return;
+    }
+    if (connection.outgoing != null) {
+        int state = http_send_pending(connection);
+        if (state == 1) {
+            return;
+        }
+        if (state == 2) {
+            http_close(worker, connection);
+            return;
+        }
+        connection.last_active = GetTickCount64();
+        if (connection.close_after_send) {
+            system_call(SYS_SHUTDOWN, connection.socket, SHUT_WR, 0, 0);
+            http_close(worker, connection);
+            return;
+        }
+        if (!http_epoll_set(worker.events, EPOLL_CTL_MOD, connection.socket, EPOLLIN | EPOLLRDHUP, (long)connection)) {
+            http_close(worker, connection);
+            return;
+        }
+    }
+    if ((flags & (EPOLLIN | EPOLLHUP | EPOLLRDHUP)) != 0) {
+        http_serve(worker, connection);
+    }
+}

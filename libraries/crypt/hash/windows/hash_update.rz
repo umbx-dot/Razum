@@ -1,0 +1,14 @@
+import windows;
+
+bool hash_update(Hasher hasher, byte *data, long length) {
+    if (hasher.handle == 0 || length < 0) {
+        return false;
+    }
+    for (long done = 0; done < length; done += 0x40000000) {
+        long part = length - done < 0x40000000 ? length - done : 0x40000000;
+        if (BCryptHashData(hasher.handle, &data[done], (uint)part, 0) != STATUS_SUCCESS) {
+            return false;
+        }
+    }
+    return true;
+}

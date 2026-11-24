@@ -1,0 +1,25 @@
+import gui.state;
+
+void gui_set_dark(bool dark) {
+    uint accent = gui.target.accent;
+    if (accent == 0) {
+        accent = 0xFF6366F1;
+    }
+    if (dark) {
+        GuiTheme theme = {0xFF0F0F12, 0xFF18181C, 0xFF222228, 0xFF2A2A31, 0xFFF2F2F5, 0xFF8E8E99, 0, 0xFFFFFFFF,
+                          0xFF303038, 0xFFFFFFFF, 0x73000000};
+        gui.target = theme;
+    } else {
+        GuiTheme theme = {0xFFF5F5F7, 0xFFFFFFFF, 0xFFF2F2F5, 0xFFE3E3E8, 0xFF17171C, 0xFF6E6E78, 0, 0xFFFFFFFF,
+                          0xFFE3E3E8, 0xFFFFFFFF, 0x17000000};
+        gui.target = theme;
+    }
+    gui.target.accent = accent;
+    gui.dark = dark;
+    gui.theme_from = gui.theme;
+    gui.theme_progress = 0.0;
+    if (!gui.started) {
+        gui.theme = gui.target;
+        gui.theme_progress = 1.0;
+    }
+}

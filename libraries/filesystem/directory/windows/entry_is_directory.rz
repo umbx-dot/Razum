@@ -1,0 +1,5 @@
+import windows;
+
+bool entry_is_directory(Directory directory) {
+    return (directory.entry.attributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+}

@@ -1,0 +1,11 @@
+import stdio;
+
+int main() {
+    int a = read_int();
+    int b = read_int();
+    double c = read_double();
+    print(a + b);
+    print(c * 2);
+    print(read_int());
+    return 0;
+}

@@ -1,0 +1,20 @@
+import windows;
+
+long aes_cbc_decrypt(byte target[], byte *key, long key_length, byte *iv, byte *data, long length) {
+    if (length <= 0 || length % AES_BLOCK_SIZE != 0 || length > 0xFFFFFFFF || target.length < length) {
+        return -1;
+    }
+    long handle = aes_key(BCRYPT_AES_CBC_ALG_HANDLE, key, key_length);
+    if (handle == 0) {
+        return -1;
+    }
+    byte chain[AES_BLOCK_SIZE];
+    for (int i = 0; i < AES_BLOCK_SIZE; i++) {
+        chain[i] = iv[i];
+    }
+    uint written = 0;
+    int status = BCryptDecrypt(handle, data, (uint)length, null, chain, AES_BLOCK_SIZE, target, (uint)length, &written,
+                               BCRYPT_BLOCK_PADDING);
+    BCryptDestroyKey(handle);
+    return status == STATUS_SUCCESS ? written : -1;
+}

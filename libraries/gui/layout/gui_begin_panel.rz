@@ -1,0 +1,10 @@
+import gui.state;
+import gui.draw;
+
+void gui_begin_panel(double width) {
+    gui_begin_box(false, width, 20, 12);
+    int shadow = gui_shadow(0, 0, 0, 0, 12, 16, gui.theme.shadow);
+    gui_fill(0, 0, 0, 0, 12, gui.theme.surface);
+    gui_stroke(0, 0, 0, 0, 12, 1, gui.theme.border);
+    gui.boxes[gui.depth].background = shadow;
+}

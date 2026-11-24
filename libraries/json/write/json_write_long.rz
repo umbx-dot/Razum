@@ -1,0 +1,8 @@
+import json.types;
+import text;
+
+int json_write_long(JsonOutput *output, long value) {
+    char digits[21];
+    int size = (int)int_to_text(digits, value);
+    return json_write_event(output, JSON_NUMBER, digits, size);
+}

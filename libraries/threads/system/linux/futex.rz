@@ -1,0 +1,5 @@
+import linux;
+
+long futex(long *word, long operation, long value, long timeout) {
+    return system_call(SYS_FUTEX, (long)word, operation, value, timeout);
+}

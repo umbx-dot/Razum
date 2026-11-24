@@ -1,0 +1,15 @@
+import crypt.encoding;
+
+long token_urlsafe(char target[], long count) {
+    target[0] = "\0";
+    if (count < 0) {
+        return -1;
+    }
+    byte *bytes = new byte[count + 1];
+    long size = -1;
+    if (bytes != null && secure_bytes(bytes, count)) {
+        size = base64_encode_with(target, bytes, count, true, false);
+    }
+    free(bytes);
+    return size;
+}

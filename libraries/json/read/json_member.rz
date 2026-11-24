@@ -1,0 +1,15 @@
+import json.types;
+import json.strings;
+
+int json_member(string source, JsonToken *tokens, int used, int object, string key) {
+    if (object < 0 || object >= used || tokens[object].kind != JSON_OBJECT) {
+        return -1;
+    }
+    int end = tokens[object].next;
+    for (int index = object + 1; index < end; index = tokens[index + 1].next) {
+        if (json_key_matches(source, tokens[index], key)) {
+            return index + 1;
+        }
+    }
+    return -1;
+}

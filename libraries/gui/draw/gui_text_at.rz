@@ -1,0 +1,8 @@
+import gui.state;
+
+void gui_text_at(double x, double y, int font, int start, int length, uint color) {
+    int index = gui_push(GUI_TEXT, x, y, 100000, gui.line_heights[font], color);
+    gui.commands[index].font = font;
+    gui.commands[index].text_start = start;
+    gui.commands[index].text_length = length;
+}

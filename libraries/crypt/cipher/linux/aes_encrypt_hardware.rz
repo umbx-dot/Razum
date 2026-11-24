@@ -1,0 +1,21 @@
+void aes_encrypt_hardware(byte *round_keys, int rounds, byte *input, byte *output) {
+    asm {
+        mov rcx, [rsp + .round_keys]
+        mov edx, dword [rsp + .rounds]
+        mov r8, [rsp + .input]
+        mov r9, [rsp + .output]
+        movdqu xmm0, [r8]
+        movdqu xmm1, [rcx]
+        pxor xmm0, xmm1
+    .round:
+        add rcx, 16
+        dec edx
+        movdqu xmm1, [rcx]
+        jz .last
+        aesenc xmm0, xmm1
+        jmp .round
+    .last:
+        aesenclast xmm0, xmm1
+        movdqu [r9], xmm0
+    }
+}

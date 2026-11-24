@@ -1,0 +1,33 @@
+import linux;
+
+bool next_entry(Directory directory, char name[]) {
+    while (directory.handle >= 0) {
+        if (directory.position >= directory.used) {
+            long got = system_call(SYS_GETDENTS64, directory.handle, (long)&directory.buffer[0], directory.buffer.length, 0);
+            if (got <= 0) {
+                break;
+            }
+            directory.used = got;
+            directory.position = 0;
+        }
+        long at = directory.position;
+        long size = (long)directory.buffer[at + 16] | ((long)directory.buffer[at + 17] << 8);
+        directory.entry = at;
+        directory.position = at + size;
+        long start = at + 19;
+        bool is_dot = directory.buffer[start] == "." &&
+                      (directory.buffer[start + 1] == "\0" || (directory.buffer[start + 1] == "." && directory.buffer[start + 2] == "\0"));
+        if (!is_dot) {
+            long count = 0;
+            while (directory.buffer[start + count] != "\0" && count < name.length - 1) {
+                name[count] = directory.buffer[start + count];
+                count++;
+            }
+            name[count] = "\0";
+            return true;
+        }
+    }
+    directory.entry = -1;
+    name[0] = "\0";
+    return false;
+}

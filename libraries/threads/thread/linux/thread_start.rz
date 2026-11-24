@@ -1,0 +1,28 @@
+import linux;
+
+const long THREAD_STACK_SIZE = 1048576;
+const long THREAD_GUARD_SIZE = 4096;
+
+long thread_start(fn(long argument) work, long argument) {
+    thread_reap();
+    ThreadControl *control = new ThreadControl;
+    if (control == null) {
+        return 0;
+    }
+    long size = THREAD_STACK_SIZE + THREAD_GUARD_SIZE;
+    long stack = system_call6(SYS_MMAP, 0, size, PROT_READ_WRITE, MAP_PRIVATE_ANONYMOUS_STACK, -1, 0);
+    if (stack < 0 && stack > -4096) {
+        free(control);
+        return 0;
+    }
+    system_call(SYS_MPROTECT, stack, THREAD_GUARD_SIZE, PROT_NONE, 0);
+    control.stack = stack;
+    control.stack_size = size;
+    control.work = work;
+    control.argument = argument;
+    if (thread_clone(stack + size, control, thread_run) <= 0) {
+        thread_release(control);
+        return 0;
+    }
+    return (long)control;
+}

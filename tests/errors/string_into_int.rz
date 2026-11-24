@@ -1,0 +1,5 @@
+// error: 3:13: cannot store a string in int 'x'; convert it with (int)
+int main() {
+    int x = "text";
+    return x;
+}

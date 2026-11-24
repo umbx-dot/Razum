@@ -1,0 +1,26 @@
+long time_monotonic_ns() {
+    long counter;
+    long frequency;
+    asm {
+        lea rcx, [rsp + .counter]
+        call [iat@kernel32@QueryPerformanceCounter]
+        test eax, eax
+        jz .failed
+        lea rcx, [rsp + .frequency]
+        call [iat@kernel32@QueryPerformanceFrequency]
+        test eax, eax
+        jz .failed
+        mov rax, [rsp + .counter]
+        mov ecx, 1000000000
+        mul rcx
+        mov rcx, [rsp + .frequency]
+        cmp rdx, rcx
+        jae .failed
+        div rcx
+        test rax, rax
+        jns .done
+    .failed:
+        mov rax, -1
+    .done:
+    }
+}

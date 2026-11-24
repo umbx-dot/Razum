@@ -1,0 +1,8 @@
+import http.state;
+
+int http_port(HttpServer *server, int listener) {
+    if (listener < 0 || listener >= server.listener_count) {
+        return 0;
+    }
+    return server.listeners[listener].port;
+}

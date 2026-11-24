@@ -1,0 +1,28 @@
+import gui.state;
+import gui.draw;
+
+void gui_begin_box(bool row, double width, double padding, double gap) {
+    GuiBox *parent = &gui.boxes[gui.depth];
+    double spacing = parent.count > 0 ? parent.gap : 0.0;
+    double available = gui_available_width();
+    if (width <= 0 || width > available) {
+        width = available;
+    }
+    double x = parent.row ? parent.x + parent.cursor + spacing : parent.x;
+    double y = parent.row ? parent.y : parent.y + parent.cursor + spacing;
+    if (gui.depth < gui.boxes.length - 1) {
+        gui.depth++;
+    }
+    GuiBox *box = &gui.boxes[gui.depth];
+    box.row = row;
+    box.x = x + padding;
+    box.y = y + padding;
+    box.outer_width = width;
+    box.width = width - 2 * padding;
+    box.cursor = 0;
+    box.extent = 0;
+    box.gap = gap;
+    box.padding = padding;
+    box.background = -1;
+    box.count = 0;
+}

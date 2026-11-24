@@ -1,0 +1,12 @@
+import windows;
+
+void aes_gcm_info(BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO info, byte *nonce, byte *aad, long aad_length, byte *tag) {
+    info.size = sizeof(BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO);
+    info.info_version = BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO_VERSION;
+    info.nonce = nonce;
+    info.nonce_size = AES_GCM_NONCE_SIZE;
+    info.auth_data = aad;
+    info.auth_data_size = (uint)aad_length;
+    info.tag = tag;
+    info.tag_size = AES_GCM_TAG_SIZE;
+}

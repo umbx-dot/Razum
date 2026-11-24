@@ -1,0 +1,35 @@
+import http.state;
+import http.connection;
+import linux;
+import threads;
+
+void http_worker_loop(long argument) {
+    HttpWorker *worker = (HttpWorker *)argument;
+    HttpServer *server = worker.server;
+    byte events[1536];
+    while (!server.stopping) {
+        long count = system_call(SYS_EPOLL_WAIT, worker.events, (long)&events[0], 128, 250);
+        for (long index = 0; index < count; index++) {
+            uint *flags_at = (uint *)&events[index * 12];
+            long *data_at = (long *)&events[index * 12 + 4];
+            uint flags = *flags_at;
+            long data = *data_at;
+            if (data < server.listeners.length) {
+                http_accept_all(worker, (int)data);
+            } else {
+                http_on_event(worker, (HttpConnection *)data, flags);
+            }
+        }
+        ulong now = GetTickCount64();
+        if (now - worker.last_sweep >= 250) {
+            worker.last_sweep = now;
+            if (worker == &server.workers[0]) {
+                http_update_date();
+            }
+            http_sweep_worker(worker, now);
+        }
+    }
+    while (worker.connections != null) {
+        http_close(worker, worker.connections);
+    }
+}

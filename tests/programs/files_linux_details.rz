@@ -1,0 +1,30 @@
+// platform: linux
+import stdio;
+import filesystem;
+
+int main() {
+    char full[300];
+    full_path(full, "/usr/./lib/../bin//env");
+    print(full);
+    full_path(full, "/a/b/../../..");
+    print(full);
+    full_path(full, "/tmp/x/");
+    print(full);
+    char temporary[300];
+    print(temp_directory(temporary) > 0);
+    print(temporary[length_of(temporary) - 1] == "/");
+    write_text("/dev/shm/razum_cross.txt", "across");
+    print(rename("/dev/shm/razum_cross.txt", "/tmp/razum_cross_moved.txt"));
+    print(exists("/dev/shm/razum_cross.txt"));
+    print(file_size("/tmp/razum_cross_moved.txt"));
+    delete_file("/tmp/razum_cross_moved.txt");
+    return 0;
+}
+
+long length_of(char text[]) {
+    long count = 0;
+    while (text[count] != "\0") {
+        count++;
+    }
+    return count;
+}

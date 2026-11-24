@@ -1,0 +1,14 @@
+double fmod(double value, double divisor) {
+    asm {
+        fld qword [rsp + .divisor]
+        fld qword [rsp + .value]
+    .again:
+        fprem
+        fnstsw ax
+        test ah, 4
+        jnz .again
+        fstp st1
+        fstp qword [rsp + .value]
+        movsd xmm0, qword [rsp + .value]
+    }
+}

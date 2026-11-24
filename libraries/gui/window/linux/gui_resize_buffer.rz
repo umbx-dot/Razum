@@ -1,0 +1,18 @@
+import gui.state;
+
+bool gui_resize_buffer() {
+    int width = gui.width;
+    int height = gui.height;
+    if (width <= 0 || width > GUI_MAX_EDGE || height <= 0 || height > GUI_MAX_EDGE) {
+        return false;
+    }
+    uint *pixels = new uint[(long)width * height];
+    if (pixels == null) {
+        return false;
+    }
+    free((uint *)gui.pixels);
+    gui.pixels = (long)pixels;
+    gui.buffer_width = width;
+    gui.buffer_height = height;
+    return true;
+}

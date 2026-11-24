@@ -1,0 +1,129 @@
+import http.state;
+import crypt.cipher;
+
+void http_tls_nonce(byte iv[], long sequence, byte nonce[]) {
+    for (int index = 0; index < 12; index++) {
+        nonce[index] = iv[index];
+    }
+    for (int index = 0; index < 8; index++) {
+        nonce[4 + index] = (byte)(nonce[4 + index] ^ (byte)(sequence >> (8 * (7 - index))));
+    }
+}
+
+bool http_tls12_seal(HttpWorker *worker, HttpConnection *connection, int type, byte *data, long length) {
+    HttpTls *tls = connection.tls;
+    byte record[16400];
+    byte header[13];
+    byte nonce[12];
+    byte aad[13];
+    long at = 0;
+    while (at < length || (length == 0 && at == 0)) {
+        long part = length - at < 16384 ? length - at : 16384;
+        for (int index = 0; index < 4; index++) {
+            nonce[index] = tls.server_iv[index];
+        }
+        http_tls_put(nonce, 4, tls.server_sequence, 8);
+        http_tls_put(aad, 0, tls.server_sequence, 8);
+        http_tls_put(aad, 8, type, 1);
+        http_tls_put(aad, 9, 0x0303, 2);
+        http_tls_put(aad, 11, part, 2);
+        long size = aes_gcm_encrypt(record, &tls.server_key[0], 16, &nonce[0], &aad[0], 13, &data[at], part);
+        if (size < 0) {
+            return false;
+        }
+        tls.server_sequence++;
+        http_tls_put(header, 0, type, 1);
+        http_tls_put(header, 1, 0x0303, 2);
+        http_tls_put(header, 3, size + 8, 2);
+        http_tls_put_bytes(header, 5, &nonce[4], 8);
+        http_sealed_append(worker, &header[0], 13);
+        http_sealed_append(worker, &record[0], size);
+        at += part;
+        if (length == 0) {
+            break;
+        }
+    }
+    return true;
+}
+
+bool http_tls_seal(HttpWorker *worker, HttpConnection *connection, int type, byte *data, long length) {
+    HttpTls *tls = connection.tls;
+    if (tls.version == 12) {
+        return http_tls12_seal(worker, connection, type, data, length);
+    }
+    byte inner[16385];
+    byte record[16401];
+    byte header[5];
+    byte nonce[12];
+    long at = 0;
+    while (at < length || (length == 0 && at == 0)) {
+        long part = length - at < 16384 ? length - at : 16384;
+        for (long index = 0; index < part; index++) {
+            inner[index] = data[at + index];
+        }
+        inner[part] = (byte)type;
+        header[0] = 23;
+        header[1] = 3;
+        header[2] = 3;
+        header[3] = (byte)((part + 17) >> 8);
+        header[4] = (byte)(part + 17);
+        http_tls_nonce(tls.server_iv, tls.server_sequence, nonce);
+        long size = aes_gcm_encrypt(record, &tls.server_key[0], 16, &nonce[0], &header[0], 5, &inner[0], part + 1);
+        if (size < 0) {
+            return false;
+        }
+        tls.server_sequence++;
+        http_sealed_append(worker, &header[0], 5);
+        http_sealed_append(worker, &record[0], size);
+        at += part;
+        if (length == 0) {
+            break;
+        }
+    }
+    return true;
+}
+
+long http_tls_open(HttpTls *tls, byte *header, byte *body, long length, byte plain[], int *type) {
+    if (tls.version == 12) {
+        if (length < 24 || length > 16408) {
+            return -1;
+        }
+        byte nonce12[12];
+        byte aad[13];
+        for (int index = 0; index < 4; index++) {
+            nonce12[index] = tls.client_iv[index];
+        }
+        for (int index = 0; index < 8; index++) {
+            nonce12[4 + index] = body[index];
+        }
+        http_tls_put(aad, 0, tls.client_sequence, 8);
+        http_tls_put(aad, 8, header[0], 1);
+        http_tls_put(aad, 9, 0x0303, 2);
+        http_tls_put(aad, 11, length - 24, 2);
+        long plain_length = aes_gcm_decrypt(plain, &tls.client_key[0], 16, &nonce12[0], &aad[0], 13, &body[8], length - 8);
+        if (plain_length < 0) {
+            return -1;
+        }
+        tls.client_sequence++;
+        *type = header[0];
+        return plain_length;
+    }
+    if (length < 17 || length > 16640) {
+        return -1;
+    }
+    byte nonce[12];
+    http_tls_nonce(tls.client_iv, tls.client_sequence, nonce);
+    long size = aes_gcm_decrypt(plain, &tls.client_key[0], 16, &nonce[0], header, 5, body, length);
+    if (size < 0) {
+        return -1;
+    }
+    tls.client_sequence++;
+    while (size > 0 && plain[size - 1] == 0) {
+        size--;
+    }
+    if (size == 0) {
+        return -1;
+    }
+    *type = plain[size - 1];
+    return size - 1;
+}

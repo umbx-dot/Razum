@@ -1,0 +1,20 @@
+import gui.wire;
+import text;
+
+bool gui_wl_text(uint object, int opcode, string label) {
+    uint words[259];
+    long size = length(label);
+    if (size > 1023) {
+        return false;
+    }
+    int count = (int)size + 1;
+    int bytes = 12 + ((count + 3) & ~3);
+    words[0] = object;
+    words[1] = (uint)((bytes << 16) | opcode);
+    words[2] = (uint)count;
+    byte *target = (byte *)&words[3];
+    for (int i = 0; i < count - 1; i++) {
+        target[i] = (byte)label[i];
+    }
+    return gui_send((long)&words[0], bytes);
+}

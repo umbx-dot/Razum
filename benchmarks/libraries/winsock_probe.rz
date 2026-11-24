@@ -1,0 +1,17 @@
+import winsock;
+
+int main() {
+    byte setup[512];
+    byte address[16];
+    char text[48];
+    if (WSAStartup(0x0202, setup) != 0) {
+        return 1;
+    }
+    for (int i = 0; i < 750000; i++) {
+        if (inet_pton(AF_INET, "127.0.0.1", address) != 1 ||
+            inet_ntop(AF_INET, address, text, (ulong)text.length) == 0 || text[8] != "1") {
+            return 2;
+        }
+    }
+    return WSACleanup() == 0 ? 0 : 3;
+}

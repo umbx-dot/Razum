@@ -1,0 +1,9 @@
+import stdio;
+import geometry.area;
+
+void describe_square(int side) {
+    write_string("square of ");
+    write_long(side);
+    write_string(" has area ");
+    print(square_area(side));
+}

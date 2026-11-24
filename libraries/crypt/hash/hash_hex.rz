@@ -1,0 +1,11 @@
+import crypt.encoding;
+
+long hash_hex(Hash kind, char target[], byte *data, long length) {
+    byte digest[64];
+    long size = hash(kind, digest, data, length);
+    if (size < 0) {
+        target[0] = "\0";
+        return -1;
+    }
+    return hex_encode(target, digest, size);
+}

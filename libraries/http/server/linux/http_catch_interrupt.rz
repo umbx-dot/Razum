@@ -1,0 +1,19 @@
+import linux;
+
+fn(uint type) -> int http_interrupt_handler = http_console_stop;
+
+void http_catch_interrupt() {
+    if (http_interrupt_handler == null) {
+        return;
+    }
+    long action[4];
+    asm {
+        lea rax, [rz@http_interrupt]
+        mov qword [rsp + .action], rax
+        lea rax, [rz@signal_return]
+        mov qword [rsp + .action + 16], rax
+    }
+    action[1] = SA_RESTORER | SA_RESTART;
+    action[3] = 0;
+    system_call(SYS_RT_SIGACTION, SIGINT, (long)&action[0], 0, 8);
+}

@@ -1,0 +1,5 @@
+// error: 3:21: 3 values do not fit in int[2] 'values'
+int main() {
+    int values[2] = {1, 2, 3};
+    return 0;
+}

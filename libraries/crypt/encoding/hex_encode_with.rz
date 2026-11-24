@@ -1,0 +1,12 @@
+long hex_encode_with(char target[], byte *data, long length, string digits) {
+    target[0] = "\0";
+    if (length < 0 || target.length <= 2 * length) {
+        return -1;
+    }
+    for (long i = 0; i < length; i++) {
+        target[2 * i] = digits[data[i] >> 4];
+        target[2 * i + 1] = digits[data[i] & 15];
+    }
+    target[2 * length] = "\0";
+    return 2 * length;
+}

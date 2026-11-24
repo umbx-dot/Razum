@@ -1,0 +1,7 @@
+import http.state;
+
+void http_max_body(HttpServer *server, long bytes) {
+    if (bytes >= 0) {
+        server.max_body = bytes;
+    }
+}

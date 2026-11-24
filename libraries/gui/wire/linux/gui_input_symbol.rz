@@ -1,0 +1,27 @@
+import gui.state;
+import gui.input;
+
+void gui_input_symbol(uint symbol) {
+    switch (symbol) {
+        case 0xFF08: gui_push_event(-GUI_KEY_BACKSPACE); return;
+        case 0xFF0D, 0xFF8D: gui_push_event(-GUI_KEY_ENTER); return;
+        case 0xFF1B: gui_push_event(-GUI_KEY_ESCAPE); return;
+        case 0xFF50: gui_push_event(-GUI_KEY_HOME); return;
+        case 0xFF51: gui_push_event(-GUI_KEY_LEFT); return;
+        case 0xFF53: gui_push_event(-GUI_KEY_RIGHT); return;
+        case 0xFF57: gui_push_event(-GUI_KEY_END); return;
+        case 0xFFFF: gui_push_event(-GUI_KEY_DELETE); return;
+    }
+    uint value = symbol;
+    if ((symbol >> 24) == 1) {
+        value = symbol & 0xFFFFFF;
+    } else if (symbol > 255) {
+        return;
+    }
+    if (value < 0x10000) {
+        gui_type((ushort)value);
+    } else if (value <= 0x10FFFF) {
+        gui_type((ushort)(0xD800 + ((value - 0x10000) >> 10)));
+        gui_type((ushort)(0xDC00 + ((value - 0x10000) & 1023)));
+    }
+}

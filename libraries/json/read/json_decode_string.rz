@@ -1,0 +1,41 @@
+import json.types;
+import json.strings;
+
+int json_decode_string(string source, JsonToken token, char target[]) {
+    if (token.kind != JSON_STRING) {
+        return JSON_INVALID;
+    }
+    int position = token.start + 1;
+    int end = token.end - 1;
+    int used = 0;
+    char bytes[4];
+    while (position < end) {
+        char current = source[position];
+        position++;
+        if (current == "\\") {
+            int value = json_read_escape(source, end, &position);
+            if (value < 0) {
+                return JSON_INVALID;
+            }
+            int width = json_encode_codepoint(bytes, value);
+            if (width >= target.length - used) {
+                return JSON_CAPACITY;
+            }
+            for (int i = 0; i < width; i++) {
+                target[used] = bytes[i];
+                used++;
+            }
+        } else {
+            if (target.length - used <= 1) {
+                return JSON_CAPACITY;
+            }
+            target[used] = current;
+            used++;
+        }
+    }
+    if (used >= target.length) {
+        return JSON_CAPACITY;
+    }
+    target[used] = "\0";
+    return used;
+}

@@ -1,0 +1,52 @@
+import http.state;
+import http.respond;
+import windows;
+import winsock;
+import text;
+
+void http_serve_file(HttpRoute *route, HttpRequest *request, HttpResponse *response) {
+    string rest = request.rest;
+    if (contains(rest, "..") || find_char(rest, "\\") >= 0 || find_char(rest, ":") >= 0) {
+        http_status(response, 403);
+        http_text(response, "Forbidden");
+        return;
+    }
+    char path[1024];
+    copy(path, route.directory);
+    if (!ends_with(path, "/")) {
+        concat(path, "/");
+    }
+    long added = concat(path, rest);
+    long size = length(rest);
+    if (size == 0 || rest[size - 1] == "/") {
+        added = concat(path, "index.html");
+    }
+    if (added >= path.length - 1) {
+        http_status(response, 414);
+        http_text(response, "URI Too Long");
+        return;
+    }
+    ushort wide[1024];
+    long file = to_utf16(wide, path) < 0 ? INVALID_HANDLE_VALUE
+                : CreateFileW(wide, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0x08000000, 0);
+    if (file == INVALID_HANDLE_VALUE) {
+        http_status(response, 404);
+        http_text(response, "Not Found");
+        return;
+    }
+    long file_size = 0;
+    GetFileSizeEx(file, &file_size);
+    response.content_type = http_mime_type(path);
+    if (request.head) {
+        response.body_length = file_size;
+        CloseHandle(file);
+        return;
+    }
+    response.body_length = 0;
+    char chunk[65536];
+    uint read = 0;
+    while (response.body_length < file_size && ReadFile(file, chunk, (uint)chunk.length, &read, 0) != 0 && read > 0) {
+        http_write_bytes(response, chunk, read);
+    }
+    CloseHandle(file);
+}

@@ -1,0 +1,65 @@
+import gui.state;
+import gui.wire;
+import linux;
+import text;
+import time;
+
+bool gui_wl_open(string title) {
+    char display[108];
+    if (environment_value("WAYLAND_DISPLAY", display) <= 0) {
+        return false;
+    }
+    char path[108];
+    if (display[0] == "/") {
+        copy(path, display);
+    } else {
+        if (environment_value("XDG_RUNTIME_DIR", path) <= 0 ||
+            length(path) + 1 + length(display) >= path.length) {
+            return false;
+        }
+        concat(path, "/");
+        concat(path, display);
+    }
+    gui_desktop.socket = gui_connect(path);
+    if (gui_desktop.socket < 0) {
+        return false;
+    }
+    gui_desktop.wl_registry = 2;
+    gui_desktop.wl_barrier = 3;
+    gui_desktop.wl_next = 4;
+    uint registry[3] = {0, 0, 2};
+    uint sync[3] = {0, 0, 3};
+    if (!gui_wl_request(1, 1, registry) || !gui_wl_request(1, 0, sync)) {
+        return false;
+    }
+    long end = time_monotonic_ns() + 3000000000;
+    while (!gui.quit && gui_desktop.wl_barrier != 0 && time_monotonic_ns() < end) {
+        if (gui_poll_event(50) > 0) {
+            gui_wl_event();
+        }
+    }
+    if (gui.quit || gui_desktop.wl_barrier != 0 || gui_desktop.wl_compositor == 0 ||
+        gui_desktop.wl_shm == 0 || gui_desktop.wl_shell == 0) {
+        return false;
+    }
+    gui_desktop.wl_surface = gui_desktop.wl_next;
+    gui_desktop.wl_role = gui_desktop.wl_next + 1;
+    gui_desktop.wl_window = gui_desktop.wl_next + 2;
+    gui_desktop.wl_next += 3;
+    uint surface[3] = {0, 0, gui_desktop.wl_surface};
+    uint role[4] = {0, 0, gui_desktop.wl_role, gui_desktop.wl_surface};
+    uint window[3] = {0, 0, gui_desktop.wl_window};
+    uint commit[2];
+    if (!gui_wl_request(gui_desktop.wl_compositor, 0, surface) || !gui_wl_request(gui_desktop.wl_shell, 2, role) ||
+        !gui_wl_request(gui_desktop.wl_role, 1, window) || !gui_wl_text(gui_desktop.wl_window, 2, title) ||
+        !gui_wl_text(gui_desktop.wl_window, 3, "razum.gui") || !gui_wl_request(gui_desktop.wl_surface, 6, commit)) {
+        return false;
+    }
+    end = time_monotonic_ns() + 3000000000;
+    while (!gui.quit && !gui_desktop.wl_ready && time_monotonic_ns() < end) {
+        if (gui_poll_event(50) > 0) {
+            gui_wl_event();
+        }
+    }
+    return !gui.quit && gui_desktop.wl_ready;
+}

@@ -1,0 +1,12 @@
+import filesystem.file;
+
+bool append_text(string path, string text) {
+    File file;
+    if (!open(file, path, "a")) {
+        return false;
+    }
+    write(file, text);
+    bool written = flush(file);
+    close(file);
+    return written;
+}

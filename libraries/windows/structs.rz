@@ -1,0 +1,199 @@
+struct POINT {
+    int x;
+    int y;
+}
+
+struct RECT {
+    int left;
+    int top;
+    int right;
+    int bottom;
+}
+
+struct FILETIME {
+    uint low;
+    uint high;
+}
+
+struct SYSTEMTIME {
+    ushort year;
+    ushort month;
+    ushort day_of_week;
+    ushort day;
+    ushort hour;
+    ushort minute;
+    ushort second;
+    ushort milliseconds;
+}
+
+struct WIN32_FIND_DATAA {
+    uint attributes;
+    FILETIME creation_time;
+    FILETIME access_time;
+    FILETIME write_time;
+    uint size_high;
+    uint size_low;
+    uint reserved0;
+    uint reserved1;
+    char name[260];
+    char alternate_name[14];
+}
+
+struct STARTUPINFOA {
+    uint size;
+    long reserved;
+    long desktop;
+    long title;
+    uint x;
+    uint y;
+    uint width;
+    uint height;
+    uint columns;
+    uint rows;
+    uint fill;
+    uint flags;
+    ushort show_window;
+    ushort reserved2_size;
+    long reserved2;
+    long input;
+    long output;
+    long error;
+}
+
+struct PROCESS_INFORMATION {
+    long process;
+    long thread;
+    uint process_id;
+    uint thread_id;
+}
+
+struct WNDCLASSEXA {
+    uint size;
+    uint style;
+    fn(long window, uint message, ulong wparam, long lparam) -> long procedure;
+    int class_extra;
+    int window_extra;
+    long instance;
+    long icon;
+    long cursor;
+    long background;
+    long menu_name;
+    string class_name;
+    long small_icon;
+}
+
+struct MSG {
+    long window;
+    uint message;
+    ulong wparam;
+    long lparam;
+    uint time;
+    POINT point;
+    uint private_data;
+}
+
+struct PAINTSTRUCT {
+    long dc;
+    int erase;
+    RECT area;
+    int restore;
+    int incremental_update;
+    byte reserved[32];
+}
+
+struct BITMAPINFOHEADER {
+    uint size;
+    int width;
+    int height;
+    ushort planes;
+    ushort bit_count;
+    uint compression;
+    uint image_size;
+    int x_pixels_per_meter;
+    int y_pixels_per_meter;
+    uint colors_used;
+    uint colors_important;
+}
+
+struct WNDCLASSEXW {
+    uint size;
+    uint style;
+    fn(long window, uint message, ulong wparam, long lparam) -> long procedure;
+    int class_extra;
+    int window_extra;
+    long instance;
+    long icon;
+    long cursor;
+    long background;
+    long menu_name;
+    ushort *class_name;
+    long small_icon;
+}
+
+struct TRACKMOUSEEVENT {
+    uint size;
+    uint flags;
+    long window;
+    uint hover_time;
+}
+
+struct OVERLAPPED {
+    ulong internal;
+    ulong internal_high;
+    uint offset;
+    uint offset_high;
+    long event;
+}
+
+struct OVERLAPPED_ENTRY {
+    ulong key;
+    long overlapped;
+    ulong internal;
+    uint bytes;
+}
+
+struct WIN32_FIND_DATAW {
+    uint attributes;
+    FILETIME creation_time;
+    FILETIME access_time;
+    FILETIME write_time;
+    uint size_high;
+    uint size_low;
+    uint reserved0;
+    uint reserved1;
+    ushort name[260];
+    ushort alternate_name[14];
+}
+
+struct CONSOLE_KEY_INPUT {
+    ushort event_type;
+    int key_down;
+    ushort repeat_count;
+    ushort virtual_key;
+    ushort scan_code;
+    ushort character;
+    uint control_state;
+}
+
+struct SECURITY_ATTRIBUTES {
+    uint length;
+    long descriptor;
+    int inherit;
+}
+
+struct JOBOBJECT_EXTENDED_LIMIT_INFORMATION {
+    long per_process_time;
+    long per_job_time;
+    uint flags;
+    long minimum_working_set;
+    long maximum_working_set;
+    uint active_process_limit;
+    long affinity;
+    uint priority_class;
+    uint scheduling_class;
+    long io_counters[6];
+    long process_memory_limit;
+    long job_memory_limit;
+    long peak_process_memory;
+    long peak_job_memory;
+}

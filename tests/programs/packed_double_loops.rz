@@ -1,0 +1,150 @@
+import stdio;
+
+uint floating_status() {
+    uint flags;
+    asm {
+        stmxcsr dword [rsp + .flags]
+    }
+    return flags;
+}
+
+void set_floating_status(uint flags) {
+    asm {
+        ldmxcsr dword [rsp + .flags]
+    }
+}
+
+double quiet_nan() {
+    double value;
+    asm {
+        mov rax, 0x7ff8000000000001
+        mov qword [rsp + .value], rax
+    }
+    return value;
+}
+
+long trajectories(int first, int end, int limit, double threshold, double shift) {
+    long total = 0;
+    for (int i = first; i < end; i++) {
+        double coordinate = 0.25 * i;
+        double point = coordinate - 1.0;
+        int steps = 0;
+        while (steps < limit && point * point <= threshold) {
+            point = point + shift;
+            steps++;
+        }
+        if (steps == limit) {
+            total++;
+        }
+    }
+    return total;
+}
+
+long wide_product(int end, int limit, double ceiling, double scale) {
+    long total = 0;
+    for (int i = 0; i < end; i++) {
+        double point = 1.0 * i;
+        int steps = 0;
+        while (steps < limit && point < ceiling) {
+            point = point * scale;
+            steps++;
+        }
+        if (steps == limit) {
+            total++;
+        }
+    }
+    return total;
+}
+
+long rounded_count(double half) {
+    long total = 0;
+    for (int i = 0; i < 5; i++) {
+        double point = 1.0 + half;
+        int steps = 0;
+        while (steps < 2 && 1.0 >= point) {
+            point = point + 0.0;
+            steps++;
+        }
+        if (steps == 2) {
+            total++;
+        }
+    }
+    return total;
+}
+
+int dependent_total() {
+    int total = 0;
+    for (int i = 0; i < 9; i++) {
+        double point = total;
+        int steps = 0;
+        while (steps < 2 && point < 2.0) {
+            point = point + 0.25;
+            steps++;
+        }
+        if (steps == 2) {
+            total++;
+        }
+    }
+    return total;
+}
+
+long isolated_nan(int end) {
+    long total = 0;
+    for (int i = 0; i < end; i++) {
+        double point = 0.0 / (1.0 * i - 7.0);
+        int steps = 0;
+        while (steps < 2 && point <= 0.0) {
+            point = point + 0.0;
+            steps++;
+        }
+        if (steps == 2) {
+            total++;
+        }
+    }
+    return total;
+}
+
+int narrow_total() {
+    int total = 2147483646;
+    for (int i = 0; i < 5; i++) {
+        double point = 0.0;
+        int steps = 0;
+        while (steps < 1 && point <= 0.0) {
+            point = point + 1.0;
+            steps++;
+        }
+        if (steps == 1) {
+            total++;
+        }
+    }
+    return total;
+}
+
+int main() {
+    uint original = floating_status();
+    print(trajectories(-3, 12, 4, 1.0, 0.25));
+    print(trajectories(1, 2, 1, 1.0, 0.25));
+    print(trajectories(5, 1, 2, 1.0, 0.25));
+    print(trajectories(-3, 12, 0, 1.0, 0.25));
+    print(trajectories(-3, 12, -1, 1.0, 0.25));
+    print(trajectories(-2147483648, -2147483643, 2, 1.0e18, 0.25));
+    print(trajectories(2147483642, 2147483647, 2, 1.0e18, 0.25));
+    print(dependent_total());
+    set_floating_status(0x1f80);
+    print(wide_product(9, 3, 2.0, 1.0e308));
+    print((floating_status() & 63) == 0);
+    double nan = quiet_nan();
+    print(trajectories(-3, 12, 4, nan, 0.25));
+    print((floating_status() & 63) == 0);
+    print(rounded_count(1.1102230246251565e-16));
+    set_floating_status(0x5f80);
+    print(rounded_count(1.1102230246251565e-16));
+    set_floating_status(0x1f00);
+    print(trajectories(-3, 12, 4, nan, 0.25));
+    set_floating_status(0x1f80);
+    print(isolated_nan(11));
+    print((floating_status() & 63) == 1);
+    print(narrow_total());
+    set_floating_status(original);
+    return 0;
+}

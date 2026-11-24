@@ -1,0 +1,46 @@
+import http.state;
+import http.connection;
+import windows;
+import winsock;
+import threads;
+
+bool http_start(HttpServer *server) {
+    if (server.running || server.listener_count == 0) {
+        return false;
+    }
+    server.running = true;
+    http_update_date();
+    server.workers = new HttpWorker[server.worker_count];
+    for (int index = 0; index < server.worker_count; index++) {
+        HttpWorker *worker = &server.workers[index];
+        worker.server = server;
+        worker.input_capacity = HTTP_INPUT_SIZE;
+        worker.input = new char[HTTP_INPUT_SIZE];
+        worker.head = new char[HTTP_MAX_HEADER + 1];
+        worker.output_capacity = 65536;
+        worker.output = new char[worker.output_capacity];
+        worker.sealed_capacity = 65536;
+        worker.sealed = new char[worker.sealed_capacity];
+        worker.response.body_capacity = 16384;
+        worker.response.body = new char[worker.response.body_capacity];
+        worker.response.scratch = new char[HTTP_SCRATCH_SIZE];
+    }
+    int accepts = server.accepts_per_listener > 0 ? server.accepts_per_listener : 32 * server.worker_count;
+    for (int listener = 0; listener < server.listener_count; listener++) {
+        for (int count = 0; count < accepts; count++) {
+            HttpAccept *accept = new HttpAccept;
+            accept.listener = listener;
+            accept.server = server;
+            if (!http_post_accept(server, accept)) {
+                free(accept);
+            }
+        }
+    }
+    for (int index = 0; index < server.worker_count; index++) {
+        server.workers[index].thread = thread_start(http_worker_loop, (long)&server.workers[index]);
+    }
+    server.sweeper = thread_start(http_sweep, (long)server);
+    http_current_server = server;
+    SetConsoleCtrlHandler(http_console_stop, 1);
+    return true;
+}

@@ -1,0 +1,14 @@
+int hash_size(Hash kind) {
+    switch (kind) {
+        case Hash.MD5:
+            return 16;
+        case Hash.SHA1:
+            return 20;
+        case Hash.SHA256:
+            return 32;
+        case Hash.SHA384:
+            return 48;
+        default:
+            return 64;
+    }
+}

@@ -1,0 +1,8 @@
+long copy(char target[], string source) {
+    asm {
+        mov rcx, qword [rsp + .target]
+        mov rdx, qword [rsp + .target@length]
+        mov r8, qword [rsp + .source]
+        call rz@text_copy
+    }
+}

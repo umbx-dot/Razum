@@ -1,0 +1,7 @@
+import http.state;
+
+void http_html(HttpResponse *response, string html) {
+    response.content_type = "text/html; charset=utf-8";
+    response.body_length = 0;
+    http_write(response, html);
+}

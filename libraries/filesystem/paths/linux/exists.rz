@@ -1,0 +1,3 @@
+bool exists(string path) {
+    return path_mode(path) >= 0;
+}

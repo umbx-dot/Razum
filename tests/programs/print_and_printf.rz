@@ -1,0 +1,29 @@
+import stdio;
+
+int main() {
+    print(3);
+    print("a");
+    print("yo");
+    print(1000 * 1000);
+    print(-123123123123123);
+    printf(3);
+    printf((char)'-');
+    printf(true);
+    printf(false);
+    printf((float)2.5);
+    printf(3.0);
+    printf((ulong)18446744073709551615);
+    printf("%n");
+    char message[] = "%%n %d 50%% trailing%";
+    printf(message);
+    printf("%n");
+    printf("Grüße%n😃%n%n");
+    string blank;
+    printf(blank);
+    printf("");
+    write_string("raw %n %%");
+    printf("%n");
+    print("literal %n %%");
+    printf("no final newline");
+    return 0;
+}

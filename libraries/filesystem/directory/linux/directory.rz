@@ -1,0 +1,7 @@
+struct Directory {
+    long handle;
+    long used;
+    long position;
+    long entry;
+    char buffer[4096];
+}

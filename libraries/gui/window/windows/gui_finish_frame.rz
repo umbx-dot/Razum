@@ -1,0 +1,27 @@
+import gui.state;
+import gui.theme;
+import gui.typography;
+import gui.render;
+import gui.input;
+
+import windows;
+
+void gui_finish_frame() {
+    if (gui.pressed && !gui.focus_claimed) {
+        gui.focus = -1;
+    }
+    if (!gui.mouse_down) {
+        gui.active = -1;
+    }
+    if (gui.pressed || gui.released || gui.event_count > 0) {
+        gui.animating = true;
+    }
+    gui_render();
+    gui_present();
+    if (gui.window != 0 && gui.mouse_inside) {
+        SetCursor(LoadCursorA(0, gui.cursor));
+    }
+    gui.pressed = false;
+    gui.released = false;
+    gui.event_count = 0;
+}

@@ -1,0 +1,21 @@
+long http_tls_put(byte buffer[], long at, long value, int size) {
+    for (int index = 0; index < size; index++) {
+        buffer[at + index] = (byte)(value >> (8 * (size - 1 - index)));
+    }
+    return at + size;
+}
+
+long http_tls_put_bytes(byte buffer[], long at, byte *data, long length) {
+    for (long index = 0; index < length; index++) {
+        buffer[at + index] = data[index];
+    }
+    return at + length;
+}
+
+long http_tls_number(byte *data, long at, int size) {
+    long value = 0;
+    for (int index = 0; index < size; index++) {
+        value = (value << 8) | data[at + index];
+    }
+    return value;
+}

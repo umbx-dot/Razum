@@ -1,0 +1,53 @@
+import gui.state;
+import linux;
+
+bool gui_wl_build_cursor() {
+    const int WIDTH = 16;
+    const int HEIGHT = 24;
+    const int SIZE = WIDTH * HEIGHT * 4;
+    long fd = system_call(SYS_MEMFD_CREATE, (long)"razum-cursor", MFD_CLOEXEC, 0, 0);
+    if (fd < 0) {
+        return false;
+    }
+    if (system_call(SYS_FTRUNCATE, fd, SIZE, 0, 0) < 0) {
+        system_call(SYS_CLOSE, fd, 0, 0, 0);
+        return false;
+    }
+    long address = system_call6(SYS_MMAP, 0, SIZE, PROT_READ_WRITE, MAP_SHARED, fd, 0);
+    if (address < 0) {
+        system_call(SYS_CLOSE, fd, 0, 0, 0);
+        return false;
+    }
+    uint *pixels = (uint *)address;
+    for (int y = 1; y < 21; y++) {
+        int limit = y < 15 ? y : 7;
+        for (int x = 1; x <= limit; x++) {
+            if (y <= 14 || x >= 5) {
+                pixels[y * WIDTH + x] = (uint)(x == 1 || x == limit || y == 14 || y == 20 ? 0xFF171717 : 0xFFFFFFFF);
+            }
+        }
+    }
+    uint pool = gui_desktop.wl_next;
+    uint buffer = pool + 1;
+    uint surface = pool + 2;
+    gui_desktop.wl_next += 3;
+    bool good = gui_wl_send_fd(gui_desktop.wl_shm, pool, SIZE, fd);
+    system_call(SYS_MUNMAP, address, SIZE, 0, 0);
+    system_call(SYS_CLOSE, fd, 0, 0, 0);
+    if (!good) {
+        return false;
+    }
+
+    uint create[8] = {0, 0, buffer, 0, (uint)WIDTH, (uint)HEIGHT, (uint)(WIDTH * 4), 0};
+    uint destroy[2];
+    uint new_surface[3] = {0, 0, surface};
+    uint attach[5] = {0, 0, buffer, 0, 0};
+    uint commit[2];
+    if (!gui_wl_request(pool, 0, create) || !gui_wl_request(pool, 1, destroy) ||
+        !gui_wl_request(gui_desktop.wl_compositor, 0, new_surface) ||
+        !gui_wl_request(surface, 1, attach) || !gui_wl_request(surface, 6, commit)) {
+        return false;
+    }
+    gui_desktop.wl_cursor = surface;
+    return true;
+}

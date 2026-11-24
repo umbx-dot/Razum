@@ -1,0 +1,19 @@
+import json;
+import text;
+
+int main() {
+    string source = "{\"name\":\"Razum JSON benchmark with a longer ASCII string and \\u00e9\",\"count\":42,\"array\":[1,2,3,true,null]}";
+    long size = length(source);
+    JsonToken tokens[16];
+    char decoded[96];
+    long checksum = 0;
+    for (int i = 0; i < 300000; i++) {
+        int used = json_parse(source, size, tokens, tokens.length);
+        int name = json_member(source, tokens, used, 0, "name");
+        if (used != 12 || name < 0) {
+            return 1;
+        }
+        checksum += json_decode_string(source, tokens[name], decoded);
+    }
+    return checksum == 16200000 ? 0 : 2;
+}

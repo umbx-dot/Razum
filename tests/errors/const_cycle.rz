@@ -1,0 +1,7 @@
+// error: 2:1: const 'A' depends on its own value
+const int A = B + 1;
+const int B = A * 2;
+
+int main() {
+    return A;
+}

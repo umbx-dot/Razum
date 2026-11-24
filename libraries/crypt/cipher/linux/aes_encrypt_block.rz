@@ -1,0 +1,42 @@
+void aes_encrypt_block(AesKey key, byte *input, byte *output) {
+    if ((key.features & AES_NI) != 0) {
+        aes_encrypt_hardware(&key.rounds_keys[0], key.rounds, input, output);
+        return;
+    }
+    byte state[16];
+    for (int index = 0; index < 16; index++) {
+        state[index] = (byte)(input[index] ^ key.rounds_keys[index]);
+    }
+    for (int round = 1; round <= key.rounds; round++) {
+        byte moved[16];
+        for (int column = 0; column < 4; column++) {
+            for (int row = 0; row < 4; row++) {
+                moved[4 * column + row] = aes_forward[state[4 * ((column + row) % 4) + row]];
+            }
+        }
+        for (int column = 0; column < 4; column++) {
+            int a = moved[4 * column];
+            int b = moved[4 * column + 1];
+            int c = moved[4 * column + 2];
+            int d = moved[4 * column + 3];
+            if (round < key.rounds) {
+                int all = a ^ b ^ c ^ d;
+                state[4 * column] = (byte)(a ^ all ^ aes_double(a ^ b));
+                state[4 * column + 1] = (byte)(b ^ all ^ aes_double(b ^ c));
+                state[4 * column + 2] = (byte)(c ^ all ^ aes_double(c ^ d));
+                state[4 * column + 3] = (byte)(d ^ all ^ aes_double(d ^ a));
+            } else {
+                state[4 * column] = (byte)a;
+                state[4 * column + 1] = (byte)b;
+                state[4 * column + 2] = (byte)c;
+                state[4 * column + 3] = (byte)d;
+            }
+        }
+        for (int index = 0; index < 16; index++) {
+            state[index] = (byte)(state[index] ^ key.rounds_keys[16 * round + index]);
+        }
+    }
+    for (int index = 0; index < 16; index++) {
+        output[index] = state[index];
+    }
+}

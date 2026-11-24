@@ -1,0 +1,28 @@
+import http.state;
+
+void http_on_completion(HttpWorker *worker, HttpConnection *connection, uint bytes) {
+    if (connection.overlapped.internal != 0) {
+        http_close(connection);
+        return;
+    }
+    if (connection.operation == HTTP_SENDING) {
+        connection.outgoing_sent += bytes;
+        if (bytes == 0) {
+            http_close(connection);
+            return;
+        }
+        if (connection.outgoing_sent < connection.outgoing_used) {
+            if (!http_post_send(connection)) {
+                http_close(connection);
+            }
+            return;
+        }
+        free(connection.outgoing);
+        connection.outgoing = null;
+        if (connection.close_after_send) {
+            http_close(connection);
+            return;
+        }
+    }
+    http_serve(worker, connection);
+}

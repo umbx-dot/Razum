@@ -1,0 +1,8 @@
+// error: 2:10: write an array parameter without its size, as in int values[]; its .length comes with it
+long sum(int values[4]) {
+    return 0;
+}
+
+int main() {
+    return 0;
+}

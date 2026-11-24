@@ -1,0 +1,22 @@
+import gui.state;
+import gui.wire;
+import text;
+
+uint gui_wl_bind(uint global, string interface_name) {
+    uint message[18];
+    int size = (int)length(interface_name) + 1;
+    int bytes = (size + 3) & ~3;
+    uint id = gui_desktop.wl_next;
+    gui_desktop.wl_next++;
+    message[0] = gui_desktop.wl_registry;
+    message[1] = (uint)((24 + bytes) << 16);
+    message[2] = global;
+    message[3] = (uint)size;
+    byte *target = (byte *)&message[4];
+    for (int i = 0; i < size - 1; i++) {
+        target[i] = (byte)interface_name[i];
+    }
+    message[4 + bytes / 4] = 1;
+    message[5 + bytes / 4] = id;
+    return gui_send((long)&message[0], 24 + bytes) ? id : 0;
+}

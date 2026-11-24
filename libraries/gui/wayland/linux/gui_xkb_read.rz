@@ -1,0 +1,93 @@
+import gui.state;
+
+void gui_xkb_read(char *text, long limit) {
+    uint names[256];
+    for (int i = 0; i < gui_desktop.keys.length; i++) {
+        gui_desktop.keys[i] = 0;
+    }
+    for (long i = 0; i < limit && text[i] != "\0"; i++) {
+        if (text[i] != "<") {
+            continue;
+        }
+        long end = i + 1;
+        while (end < limit && end - i <= 6 && text[end] != ">" && text[end] > " ") {
+            end++;
+        }
+        if (end >= limit || text[end] != ">") {
+            continue;
+        }
+        long after = end + 1;
+        while (after < limit && (text[after] == " " || text[after] == "\t")) {
+            after++;
+        }
+        if (after == limit) {
+            break;
+        }
+        uint name = gui_xkb_hash(&text[i + 1], (int)(end - i - 1));
+        if (text[after] == "=") {
+            after++;
+            while (after < limit && (text[after] == " " || text[after] == "\t")) {
+                after++;
+            }
+            int code = 0;
+            while (after < limit && code < 256 && text[after] >= "0" && text[after] <= "9") {
+                code = code * 10 + (int)text[after] - 48;
+                after++;
+            }
+            if (code >= 8 && code < 256) {
+                names[code] = name;
+            }
+        } else if (text[after] == "{") {
+            int code = 8;
+            while (code < 256 && names[code] != name) {
+                code++;
+            }
+            if (code == 256) {
+                continue;
+            }
+            after++;
+            int group = 0;
+            while (after < limit && text[after] != "}" && text[after] != ";") {
+                if (text[after] != "[") {
+                    after++;
+                    continue;
+                }
+                if (limit - after >= 8 && text[after + 1] == "G" && text[after + 2] == "r" &&
+                    text[after + 3] == "o" && text[after + 4] == "u" && text[after + 5] == "p" &&
+                    text[after + 6] >= "1" && text[after + 6] <= "4" && text[after + 7] == "]") {
+                    group = (int)text[after + 6] - 49;
+                    after += 8;
+                    continue;
+                }
+                after++;
+                for (int level = 0; level < 4 && after < limit; level++) {
+                    while (after < limit && text[after] <= " " && text[after] != "\0") {
+                        after++;
+                    }
+                    long start = after;
+                    while (after < limit && text[after] > " " && text[after] != "," && text[after] != "]" && text[after] != "}") {
+                        after++;
+                    }
+                    if (after == start) {
+                        break;
+                    }
+                    gui_desktop.keys[code * 16 + group * 4 + level] = gui_xkb_symbol(&text[start], (int)(after - start));
+                    while (after < limit && (text[after] == " " || text[after] == "\t")) {
+                        after++;
+                    }
+                    if (after == limit || text[after] != ",") {
+                        break;
+                    }
+                    after++;
+                }
+                while (after < limit && text[after] != "]" && text[after] != "}" && text[after] != ";") {
+                    after++;
+                }
+                if (after < limit && text[after] == "]") {
+                    after++;
+                }
+            }
+        }
+        i = end;
+    }
+}

@@ -1,0 +1,27 @@
+import stdio;
+
+int value = 100;
+
+int main() {
+    print(value);
+    int value = 1;
+    print(value);
+    {
+        int value = 2;
+        print(value);
+        {
+            int value = 3;
+            print(value);
+        }
+        print(value);
+    }
+    for (int i = 0; i < 1; i++) {
+        int value = 4;
+        print(value);
+    }
+    for (int i = 0; i < 1; i++) {
+        print(i);
+    }
+    print(value);
+    return 0;
+}

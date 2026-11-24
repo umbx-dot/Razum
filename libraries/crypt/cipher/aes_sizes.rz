@@ -1,0 +1,3 @@
+const int AES_BLOCK_SIZE = 16;
+const int AES_GCM_NONCE_SIZE = 12;
+const int AES_GCM_TAG_SIZE = 16;

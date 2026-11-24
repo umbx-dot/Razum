@@ -1,0 +1,17 @@
+void gcm_absorb(ulong hash[], ulong key[], byte *data, long length, bool hardware) {
+    for (long at = 0; at < length; at += 16) {
+        ulong high = 0;
+        ulong low = 0;
+        for (int i = 0; i < 16; i++) {
+            ulong next = at + i < length ? (ulong)data[at + i] : 0;
+            if (i < 8) {
+                high = (high << 8) | next;
+            } else {
+                low = (low << 8) | next;
+            }
+        }
+        hash[0] = hash[0] ^ high;
+        hash[1] = hash[1] ^ low;
+        gcm_multiply(hash, key, hardware);
+    }
+}

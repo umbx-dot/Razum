@@ -1,0 +1,6 @@
+// error: 4:11: the length of an array is fixed and cannot be assigned
+int main() {
+    int values[3];
+    values.length = 5;
+    return 0;
+}

@@ -1,0 +1,84 @@
+{
+    "name": "razum",
+    "displayName": "Razum",
+    "description": "Razum (.rz) language support: highlighting, every error while you type, hover, go to definition, run and show-asm commands.",
+    "version": "0.2.2",
+    "publisher": "idom",
+    "license": "UNLICENSED",
+    "engines": {
+        "vscode": "^1.80.0"
+    },
+    "categories": ["Programming Languages"],
+    "main": "./extension.js",
+    "activationEvents": ["onLanguage:razum"],
+    "contributes": {
+        "languages": [
+            {
+                "id": "razum",
+                "aliases": ["Razum", "razum"],
+                "extensions": [".rz"],
+                "configuration": "./language-configuration.json",
+                "icon": {
+                    "light": "./icons/rz.svg",
+                    "dark": "./icons/rz.svg"
+                }
+            }
+        ],
+        "grammars": [
+            {
+                "language": "razum",
+                "scopeName": "source.razum",
+                "path": "./syntaxes/razum.tmLanguage.json"
+            }
+        ],
+        "snippets": [
+            {
+                "language": "razum",
+                "path": "./snippets/razum.json"
+            }
+        ],
+        "commands": [
+            {
+                "command": "razum.run",
+                "title": "Razum: Run File",
+                "icon": "$(play)"
+            },
+            {
+                "command": "razum.showAsm",
+                "title": "Razum: Show Generated Assembly",
+                "icon": "$(file-code)"
+            }
+        ],
+        "menus": {
+            "editor/title": [
+                {
+                    "command": "razum.run",
+                    "when": "editorLangId == razum",
+                    "group": "navigation"
+                },
+                {
+                    "command": "razum.showAsm",
+                    "when": "editorLangId == razum",
+                    "group": "navigation"
+                }
+            ]
+        },
+        "keybindings": [
+            {
+                "command": "razum.run",
+                "key": "f5",
+                "when": "editorLangId == razum && !inDebugMode"
+            }
+        ],
+        "configuration": {
+            "title": "Razum",
+            "properties": {
+                "razum.compilerPath": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Full path of rzc.exe. Empty uses the rzc.exe bundled with this extension."
+                }
+            }
+        }
+    }
+}

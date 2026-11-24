@@ -1,0 +1,9 @@
+int message_box(string text, string caption, uint type) {
+    ushort wide_text[4096];
+    ushort wide_caption[256];
+    if (MultiByteToWideChar(CP_UTF8, 0, text, -1, wide_text, wide_text.length) <= 0 ||
+        MultiByteToWideChar(CP_UTF8, 0, caption, -1, wide_caption, wide_caption.length) <= 0) {
+        return 0;
+    }
+    return MessageBoxW(0, wide_text, wide_caption, type);
+}

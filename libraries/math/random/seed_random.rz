@@ -1,0 +1,3 @@
+void seed_random(ulong seed) {
+    random_state = seed == 0 ? 11400714819323198485 : seed;
+}

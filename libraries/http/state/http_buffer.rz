@@ -1,0 +1,8 @@
+struct HttpBuffer {
+    char *data;
+    long capacity;
+    long used;
+    bool own;
+}
+
+uint http_last_error;

@@ -1,0 +1,9 @@
+import windows;
+
+void close_directory(Directory directory) {
+    if (directory.handle != INVALID_HANDLE_VALUE) {
+        FindClose(directory.handle);
+    }
+    directory.handle = INVALID_HANDLE_VALUE;
+    directory.pending = false;
+}

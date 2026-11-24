@@ -1,0 +1,12 @@
+import windows;
+
+long aes_key(long algorithm, byte *key, long key_length) {
+    if (key_length != 16 && key_length != 24 && key_length != 32) {
+        return 0;
+    }
+    long handle = 0;
+    if (BCryptGenerateSymmetricKey(algorithm, &handle, null, 0, key, (uint)key_length, 0) != STATUS_SUCCESS) {
+        return 0;
+    }
+    return handle;
+}

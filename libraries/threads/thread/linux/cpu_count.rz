@@ -1,0 +1,13 @@
+import linux;
+
+int cpu_count() {
+    byte mask[128];
+    long size = system_call(SYS_SCHED_GETAFFINITY, 0, mask.length, (long)&mask[0], 0);
+    int count = 0;
+    for (long index = 0; index < size; index++) {
+        for (int bit = 0; bit < 8; bit++) {
+            count += (mask[index] >> bit) & 1;
+        }
+    }
+    return count > 0 ? count : 1;
+}

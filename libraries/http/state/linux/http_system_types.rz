@@ -1,0 +1,86 @@
+import crypt.hash;
+import crypt.certificate;
+
+struct HttpListener {
+    long socket;
+    int family;
+    int port;
+    bool tls;
+    Pfx *certificate;
+}
+
+struct HttpTls {
+    Pfx *certificate;
+    int state;
+    int version;
+    byte client_random[32];
+    byte server_random[32];
+    byte master[48];
+    byte secret_key[32];
+    Hasher transcript;
+    byte client_key[16];
+    byte client_iv[12];
+    byte server_key[16];
+    byte server_iv[12];
+    byte next_client_key[16];
+    byte next_client_iv[12];
+    byte expected_finished[32];
+    long client_sequence;
+    long server_sequence;
+    char *raw;
+    long raw_used;
+    long raw_capacity;
+}
+
+struct HttpWorker {
+    HttpServer *server;
+    long thread;
+    long events;
+    HttpConnection *connections;
+    ulong last_sweep;
+    char *input;
+    long input_capacity;
+    char *head;
+    char *output;
+    long output_used;
+    long output_capacity;
+    char *sealed;
+    long sealed_used;
+    long sealed_capacity;
+    long requests;
+    HttpRequest request;
+    HttpResponse response;
+}
+
+struct HttpServer {
+    HttpRoute routes[64];
+    int route_count;
+    HttpListener listeners[8];
+    int listener_count;
+    int worker_count;
+    HttpWorker *workers;
+    long connection_count;
+    uint idle_timeout;
+    uint request_timeout;
+    long max_body;
+    bool running;
+    bool stopping;
+}
+
+struct HttpConnection {
+    long socket;
+    HttpServer *server;
+    char *pending;
+    long pending_used;
+    long pending_capacity;
+    long needed;
+    char *outgoing;
+    long outgoing_used;
+    long outgoing_sent;
+    ulong last_active;
+    bool close_after_send;
+    bool continue_sent;
+    HttpTls *tls;
+    HttpConnection *previous;
+    HttpConnection *next;
+}

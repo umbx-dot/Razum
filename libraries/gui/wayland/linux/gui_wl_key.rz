@@ -1,0 +1,53 @@
+import gui.state;
+import gui.wire;
+import linux;
+
+void gui_wl_key(int opcode, uint *words, int size) {
+    if (opcode == 0 && gui_desktop.fd_count > 0) {
+        long fd = gui_desktop.fds[0];
+        for (int i = 1; i < gui_desktop.fd_count; i++) {
+            gui_desktop.fds[i - 1] = gui_desktop.fds[i];
+        }
+        gui_desktop.fd_count--;
+        if (size >= 16 && words[2] == 1 && words[3] > 0 && words[3] <= 1048576) {
+            long length = (long)words[3];
+            long info[18];
+            long address = -1;
+            if (system_call(SYS_FSTAT, fd, (long)&info[0], 0, 0) == 0 && info[6] >= length) {
+                address = system_call6(SYS_MMAP, 0, length, PROT_READ, MAP_PRIVATE, fd, 0);
+            }
+            if (address > 0) {
+                gui_xkb_read((char *)address, length);
+                system_call(SYS_MUNMAP, address, length, 0, 0);
+            }
+        }
+        system_call(SYS_CLOSE, fd, 0, 0, 0);
+    } else if (opcode == 2) {
+        gui_desktop.shift = false;
+        gui_desktop.altgr = false;
+        gui_desktop.control = false;
+        gui_desktop.caps = false;
+        gui.focus = -1;
+    } else if (opcode == 4 && size >= 28) {
+        uint modifiers = words[3] | words[4] | words[5];
+        gui_desktop.shift = (modifiers & 1) != 0;
+        gui_desktop.control = (modifiers & 4) != 0;
+        gui_desktop.altgr = (modifiers & 128) != 0;
+        gui_desktop.caps = (words[5] & 2) != 0;
+        gui_desktop.group = words[6] < 4 ? (int)words[6] : 0;
+    } else if (opcode == 3 && size >= 24 && words[5] == 1 && words[4] <= 247 && !gui_desktop.control) {
+        int start = (((int)words[4] + 8) * 4 + gui_desktop.group) * 4;
+        uint plain = gui_desktop.keys[start];
+        if (plain == 0) {
+            start -= gui_desktop.group * 4;
+            plain = gui_desktop.keys[start];
+        }
+        bool shift = gui_desktop.shift;
+        if (gui_desktop.caps && ((plain >= 97 && plain <= 122) || (plain >= 224 && plain <= 254 && plain != 247))) {
+            shift = !shift;
+        }
+        int level = (shift ? 1 : 0) + (gui_desktop.altgr ? 2 : 0);
+        uint symbol = gui_desktop.keys[start + level];
+        gui_input_symbol(symbol != 0 ? symbol : plain);
+    }
+}

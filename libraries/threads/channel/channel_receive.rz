@@ -1,0 +1,5 @@
+import threads.system;
+
+bool channel_receive(Channel *channel, long *value) {
+    return channel_receive_timeout(channel, value, INFINITE) == ChannelResult.RECEIVED;
+}

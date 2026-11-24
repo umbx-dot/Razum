@@ -1,0 +1,41 @@
+import gui.state;
+import gui.theme;
+
+void gui_render() {
+    if (gui.pixels == 0) {
+        return;
+    }
+    gui_fill_pixels((uint *)gui.pixels, gui.buffer_width * gui.buffer_height, gui.theme.background);
+    GuiClip area = {0, 0, gui.buffer_width, gui.buffer_height};
+    gui_clip = area;
+    for (int i = 0; i < gui.command_count; i++) {
+        GuiCommand *cmd = &gui.commands[i];
+        if (cmd.kind == GUI_FILL || cmd.kind == GUI_CIRCLE || cmd.kind == GUI_STROKE) {
+            double radius = cmd.kind == GUI_CIRCLE ? cmd.width / 2 : cmd.radius;
+            double stroke = cmd.kind == GUI_STROKE ? cmd.stroke : 0;
+            gui_shape(cmd.x, cmd.y, cmd.width, cmd.height, radius, stroke, cmd.color);
+        } else if (cmd.kind == GUI_SHADOW) {
+            for (int layer = 1; layer <= 6; layer++) {
+                double spread = cmd.stroke * layer / 6;
+                gui_shape(cmd.x - spread / 2, cmd.y - spread / 2 + cmd.stroke / 4, cmd.width + spread,
+                          cmd.height + spread, cmd.radius + spread / 2, 0, gui_fade(cmd.color, 0.18));
+            }
+        } else if (cmd.kind == GUI_LINE) {
+            gui_draw_segment(cmd);
+        } else if (cmd.kind == GUI_TEXT) {
+            gui_text_layout(cmd.font, cmd.text_start, cmd.text_length, cmd.wrap ? cmd.width : 0,
+                            (int)cmd.x, (int)cmd.y, cmd.color, true);
+        } else if (cmd.kind == GUI_CLIP) {
+            int left = (int)cmd.x;
+            int top = (int)cmd.y;
+            int right = (int)(cmd.x + cmd.width);
+            int bottom = (int)(cmd.y + cmd.height);
+            gui_clip.left = left > 0 ? left : 0;
+            gui_clip.top = top > 0 ? top : 0;
+            gui_clip.right = right < area.right ? right : area.right;
+            gui_clip.bottom = bottom < area.bottom ? bottom : area.bottom;
+        } else if (cmd.kind == GUI_UNCLIP) {
+            gui_clip = area;
+        }
+    }
+}

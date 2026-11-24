@@ -1,0 +1,8 @@
+struct JsonReader {
+    string source;
+    JsonToken *tokens;
+    int size;
+    int position;
+    int capacity;
+    int used;
+}

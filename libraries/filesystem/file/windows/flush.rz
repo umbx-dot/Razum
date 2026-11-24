@@ -1,0 +1,12 @@
+import windows;
+
+bool flush(File file) {
+    if (!file.writing || file.used == 0) {
+        return !file.failed;
+    }
+    uint written[1];
+    bool complete = WriteFile(file.handle, file.buffer, (uint)file.used, written, 0) != 0 && written[0] == file.used;
+    file.used = 0;
+    file.failed = file.failed || !complete;
+    return !file.failed;
+}

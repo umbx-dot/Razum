@@ -1,0 +1,11 @@
+import http.state;
+import linux;
+
+bool http_epoll_set(long events, long operation, long socket, long interest, long data) {
+    byte event[12];
+    uint *flags = (uint *)&event[0];
+    long *value = (long *)&event[4];
+    *flags = (uint)interest;
+    *value = data;
+    return system_call(SYS_EPOLL_CTL, events, operation, socket, (long)&event[0]) == 0;
+}

@@ -1,0 +1,48 @@
+import gui.state;
+import gui.theme;
+import gui.typography;
+import gui.render;
+import gui.input;
+
+import windows;
+
+bool gui_open(string title, int width, int height) {
+    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+    if (!gui_start()) {
+        return false;
+    }
+    long instance = GetModuleHandleA(0);
+    int class_start = gui.text_used;
+    gui_wide("razum.gui", -1);
+    gui.text_used++;
+    int title_start = gui.text_used;
+    gui_wide(title, -1);
+    gui.text_used++;
+    WNDCLASSEXW window_class;
+    window_class.size = 80;
+    window_class.style = CS_HREDRAW | CS_VREDRAW;
+    window_class.procedure = gui_window_procedure;
+    window_class.instance = instance;
+    window_class.cursor = LoadCursorA(0, IDC_ARROW);
+    window_class.class_name = &gui.text[class_start];
+    RegisterClassExW(window_class);
+    double scale = (double)GetDpiForSystem() / 96;
+    RECT frame;
+    frame.right = (int)(width * scale);
+    frame.bottom = (int)(height * scale);
+    AdjustWindowRectEx(frame, WS_OVERLAPPEDWINDOW, 0, 0);
+    gui.window = CreateWindowExW(0, &gui.text[class_start], &gui.text[title_start], WS_OVERLAPPEDWINDOW, CW_USEDEFAULT,
+                                 CW_USEDEFAULT, frame.right - frame.left, frame.bottom - frame.top, 0, 0, instance, 0);
+    gui.text_used = 0;
+    if (gui.window == 0) {
+        return false;
+    }
+    gui.scale = (double)GetDpiForWindow(gui.window) / 96;
+    RECT client;
+    GetClientRect(gui.window, client);
+    gui.width = client.right;
+    gui.height = client.bottom;
+    gui_set_dark(gui.dark);
+    gui.memory_dc = CreateCompatibleDC(0);
+    return gui_resize_buffer() && gui_create_fonts();
+}

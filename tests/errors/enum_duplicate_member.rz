@@ -1,0 +1,6 @@
+// error: 2:26: enum 'Color' has two members named 'RED'
+enum Color { RED, GREEN, RED }
+
+int main() {
+    return 0;
+}

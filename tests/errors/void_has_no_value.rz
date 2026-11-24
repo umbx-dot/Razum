@@ -1,0 +1,8 @@
+// error: 6:13: 'nothing' is void, so it has no value to use
+void nothing() {
+}
+
+int main() {
+    int x = nothing();
+    return x;
+}

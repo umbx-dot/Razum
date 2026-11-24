@@ -1,0 +1,27 @@
+long time_unix_us() {
+    long stamp[2];
+    asm {
+        push rdi
+        push rsi
+        xor edi, edi
+        lea rsi, [rsp + 16 + .stamp]
+        mov eax, 228
+        syscall
+        pop rsi
+        pop rdi
+        test rax, rax
+        jnz .failed
+        mov rax, [rsp + .stamp + 8]
+        xor edx, edx
+        mov ecx, 1000
+        div rcx
+        imul rcx, [rsp + .stamp], 1000000
+        jo .failed
+        add rax, rcx
+        jo .failed
+        jmp .done
+    .failed:
+        mov rax, -1
+    .done:
+    }
+}

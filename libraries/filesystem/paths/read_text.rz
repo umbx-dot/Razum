@@ -1,0 +1,21 @@
+import filesystem.file;
+
+long read_text(string path, char target[]) {
+    File file;
+    target[0] = "\0";
+    if (!open(file, path, "r")) {
+        return -1;
+    }
+    long count = 0;
+    while (count < target.length - 1) {
+        if (file.position == file.used && !file_fill(file)) {
+            break;
+        }
+        target[count] = file.buffer[file.position];
+        file.position++;
+        count++;
+    }
+    target[count] = "\0";
+    close(file);
+    return count;
+}

@@ -1,0 +1,9 @@
+import windows;
+
+void close(File file) {
+    if (file.writing) {
+        flush(file);
+    }
+    CloseHandle(file.handle);
+    file.handle = INVALID_HANDLE_VALUE;
+}

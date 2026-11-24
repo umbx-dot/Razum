@@ -1,0 +1,8 @@
+long ulong_to_text(char target[], ulong value) {
+    asm {
+        mov rcx, qword [rsp + .target]
+        mov rdx, qword [rsp + .target@length]
+        mov r8, qword [rsp + .value]
+        call rz@text_from_uint
+    }
+}

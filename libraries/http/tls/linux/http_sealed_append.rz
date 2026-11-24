@@ -1,0 +1,19 @@
+import http.state;
+import http.memory;
+
+void http_sealed_append(HttpWorker *worker, byte *data, long length) {
+    long needed = worker.sealed_used + length;
+    if (needed > worker.sealed_capacity) {
+        long size = worker.sealed_capacity * 2;
+        while (size < needed) {
+            size *= 2;
+        }
+        char *bigger = new char[size];
+        http_copy(bigger, worker.sealed, worker.sealed_used);
+        free(worker.sealed);
+        worker.sealed = bigger;
+        worker.sealed_capacity = size;
+    }
+    http_copy(&worker.sealed[worker.sealed_used], (char *)data, length);
+    worker.sealed_used = needed;
+}

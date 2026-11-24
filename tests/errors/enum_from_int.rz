@@ -1,0 +1,7 @@
+// error: 5:19: cannot store an int in Color 'color'; convert it with (Color)
+enum Color { RED, GREEN }
+
+int main() {
+    Color color = 1;
+    return 0;
+}

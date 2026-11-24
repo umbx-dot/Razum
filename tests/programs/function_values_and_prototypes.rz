@@ -1,0 +1,52 @@
+import stdio;
+
+int sum_all(int values[]);
+
+struct Step {
+    string name;
+    fn(int) -> int apply;
+}
+
+int twice(int x) {
+    return x * 2;
+}
+
+int plus_one(int x) {
+    return x + 1;
+}
+
+fn(int[]) -> int summer = sum_all;
+fn(int) -> int steps[2] = {twice, plus_one};
+Step named = {"twice", twice};
+
+int sum_all(int values[]) {
+    int total = 0;
+    for (int i = 0; i < values.length; i++) {
+        total += values[i];
+    }
+    return total;
+}
+
+int first_over(int values[], int limit) {
+    int i = 0;
+    for (;;) {
+        if (values[i] > limit) {
+            return values[i];
+        }
+        i++;
+    }
+}
+
+int main() {
+    int numbers[4] = {1, 2, 3, 40};
+    print(summer(numbers));
+    fn(int[]) -> int local = sum_all;
+    print(local(numbers));
+    for (int i = 0; i < steps.length; i++) {
+        print(steps[i](10));
+    }
+    print(named.name);
+    print(named.apply(7));
+    print(first_over(numbers, 2));
+    return 0;
+}

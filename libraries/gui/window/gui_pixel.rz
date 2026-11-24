@@ -1,0 +1,13 @@
+import gui.state;
+import gui.theme;
+import gui.typography;
+import gui.render;
+import gui.input;
+
+uint gui_pixel(int x, int y) {
+    if (gui.pixels == 0 || x < 0 || y < 0 || x >= gui.buffer_width || y >= gui.buffer_height) {
+        return 0;
+    }
+    uint *pixels = (uint *)gui.pixels;
+    return pixels[y * gui.buffer_width + x];
+}

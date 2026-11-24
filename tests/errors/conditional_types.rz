@@ -1,0 +1,6 @@
+// error: 4:22: both sides of ? : must have one type, not a string and an int
+int main() {
+    int x = 1;
+    string s = x > 0 ? "yes" : 0;
+    return 0;
+}

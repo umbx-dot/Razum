@@ -1,0 +1,15 @@
+import stdio;
+import text;
+
+long fib(long n) {
+    if (n < 2) {
+        return n;
+    }
+    return fib(n - 1) + fib(n - 2);
+}
+
+int main(string args[]) {
+    long n = args.length > 1 ? parse_int(args[1]) : 38;
+    print(fib(n));
+    return 0;
+}

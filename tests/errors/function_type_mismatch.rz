@@ -1,0 +1,9 @@
+// error: 7:24: cannot store fn(long) -> long in fn(int) -> int 'f'; convert it with (fn(int) -> int)
+long twice(long x) {
+    return x * 2;
+}
+
+int main() {
+    fn(int) -> int f = twice;
+    return 0;
+}

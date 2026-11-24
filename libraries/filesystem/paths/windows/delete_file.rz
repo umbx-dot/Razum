@@ -1,0 +1,7 @@
+import text;
+import windows;
+
+bool delete_file(string path) {
+    ushort wide[1024];
+    return to_utf16(wide, path) >= 0 && DeleteFileW(wide) != 0;
+}

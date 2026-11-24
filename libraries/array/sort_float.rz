@@ -1,0 +1,26 @@
+import array.integers;
+
+void array_sort_float(float values[]) {
+    long count = values.length;
+    if (count < 2) {
+        return;
+    }
+    uint *keys = (uint *)&values[0];
+    for (long i = 0; i < count; i++) {
+        uint bits = keys[i];
+        if ((bits >> 31) != 0) {
+            keys[i] = ~bits;
+        } else {
+            keys[i] = bits ^ 2147483648;
+        }
+    }
+    array_sort_items_uint(keys, count);
+    for (long i = 0; i < count; i++) {
+        uint key = keys[i];
+        if ((key >> 31) != 0) {
+            keys[i] = key ^ 2147483648;
+        } else {
+            keys[i] = ~key;
+        }
+    }
+}

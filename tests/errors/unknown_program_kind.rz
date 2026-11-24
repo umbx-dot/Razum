@@ -1,0 +1,6 @@
+// error: 2:9: a program is 'gui' (a window, no console) or 'console', as in program gui;
+program window;
+
+int main() {
+    return 0;
+}

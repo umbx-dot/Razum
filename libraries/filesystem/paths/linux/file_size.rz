@@ -1,0 +1,9 @@
+import linux;
+
+long file_size(string path) {
+    long status[18];
+    if (system_call(SYS_STAT, (long)path, (long)&status[0], 0, 0) < 0 || (status[3] & S_IFMT) != S_IFREG) {
+        return -1;
+    }
+    return status[6];
+}

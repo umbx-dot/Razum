@@ -1,0 +1,7 @@
+import text;
+import windows;
+
+bool create_directory(string path) {
+    ushort wide[1024];
+    return (to_utf16(wide, path) >= 0 && CreateDirectoryW(wide, 0) != 0) || is_directory(path);
+}

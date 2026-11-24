@@ -1,0 +1,11 @@
+import stdio;
+import linux;
+
+ulong secure_ulong() {
+    ulong value = 0;
+    if (!secure_bytes((byte *)&value, 8)) {
+        print_error("crypt: the system random number generator failed");
+        system_call(SYS_EXIT_GROUP, 3, 0, 0, 0);
+    }
+    return value;
+}

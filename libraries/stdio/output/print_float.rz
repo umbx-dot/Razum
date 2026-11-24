@@ -1,0 +1,9 @@
+void print_float(float value) {
+    asm {
+        call rz@lock_output
+        movss xmm0, dword [rsp + .value]
+        call rz@write_float
+        call rz@write_newline
+        call rz@unlock_output
+    }
+}

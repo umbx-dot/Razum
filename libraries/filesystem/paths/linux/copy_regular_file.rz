@@ -1,0 +1,50 @@
+import linux;
+
+bool copy_regular_file(string from, string to, bool moving) {
+    long flags = O_RDONLY | O_NONBLOCK | O_CLOEXEC;
+    if (moving) {
+        flags |= O_NOFOLLOW;
+    }
+    long source = system_call(SYS_OPEN, (long)from, flags, 0, 0);
+    if (source < 0) {
+        return false;
+    }
+    long original[18];
+    long existing[18];
+    bool valid = system_call(SYS_FSTAT, source, (long)&original[0], 0, 0) == 0 &&
+                 (original[3] & S_IFMT) == S_IFREG;
+    bool exists = system_call(SYS_LSTAT, (long)to, (long)&existing[0], 0, 0) == 0;
+    long mode = moving ? original[3] & 511 : -1;
+    if (exists) {
+        long kind = existing[3] & S_IFMT;
+        valid = valid && (kind == S_IFREG || kind == S_IFLNK) &&
+                (original[0] != existing[0] || original[1] != existing[1]);
+        if (kind == S_IFLNK && !moving) {
+            long linked[18];
+            if (system_call(SYS_STAT, (long)to, (long)&linked[0], 0, 0) == 0 &&
+                original[0] == linked[0] && original[1] == linked[1]) {
+                valid = false;
+            }
+        }
+        if (kind == S_IFREG && !moving) {
+            mode = existing[3] & 511;
+        }
+    }
+    char temporary[4096];
+    long target = valid ? open_copy_target(to, temporary, mode < 0 ? 420 : 384) : -1;
+    if (target < 0) {
+        system_call(SYS_CLOSE, source, 0, 0, 0);
+        return false;
+    }
+    bool complete = copy_file_contents(source, target);
+    if (complete && mode >= 0) {
+        complete = system_call(SYS_FCHMOD, target, mode, 0, 0) == 0;
+    }
+    system_call(SYS_CLOSE, source, 0, 0, 0);
+    complete = system_call(SYS_CLOSE, target, 0, 0, 0) == 0 && complete;
+    if (complete && system_call(SYS_RENAME, (long)&temporary[0], (long)to, 0, 0) == 0) {
+        return true;
+    }
+    system_call(SYS_UNLINK, (long)&temporary[0], 0, 0, 0);
+    return false;
+}

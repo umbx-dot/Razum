@@ -1,0 +1,28 @@
+import text;
+import filesystem;
+import windows;
+
+bool learn_folder(char folder[], string name, string relative, string checkout) {
+    ushort wide[1024];
+    uint count = GetModuleFileNameW(0, wide, (uint)wide.length);
+    if (count > 0 && count < wide.length && from_utf16(folder, wide) >= 0) {
+        long slash = find_last_char(folder, "\\");
+        if (slash >= 0) {
+            folder[slash + 1] = "\0";
+            if (slash + 1 + length(name) < folder.length) {
+                concat(folder, name);
+                if (is_directory(folder)) {
+                    return true;
+                }
+            }
+            folder[slash + 1] = "\0";
+            if (length(relative) > 0 && slash + 1 + length(relative) < folder.length) {
+                concat(folder, relative);
+                if (full_path(folder, folder) > 0 && is_directory(folder)) {
+                    return true;
+                }
+            }
+        }
+    }
+    return full_path(folder, checkout) > 0 && is_directory(folder);
+}

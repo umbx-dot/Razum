@@ -1,0 +1,17 @@
+import stdio;
+
+extern "textutils" long count_vowels(string text);
+extern "textutils" void shout(char *text);
+extern "fastmath" long fibonacci(int n);
+
+int main() {
+    char title[32] = "razum calls c";
+    shout(title);
+    write_string("razum -> C: ");
+    write_string(title);
+    write_string(" has vowels: ");
+    print(count_vowels(title));
+    write_string("razum -> razum DLL: fibonacci(90) = ");
+    print(fibonacci(90));
+    return 0;
+}

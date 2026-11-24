@@ -1,0 +1,9 @@
+double tan(double value) {
+    asm {
+        fld qword [rsp + .value]
+        fptan
+        fstp st0
+        fstp qword [rsp + .value]
+        movsd xmm0, qword [rsp + .value]
+    }
+}

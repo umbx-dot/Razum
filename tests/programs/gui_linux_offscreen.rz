@@ -1,0 +1,44 @@
+// platform: linux
+import gui;
+import stdio;
+import text;
+
+int main() {
+    if (!gui_open_offscreen(360, 240) || !gui_frame()) {
+        return 1;
+    }
+    gui_set_dark(true);
+    gui_fill(20, 20, 100, 40, 6, 0xFF123456);
+    gui_push(GUI_CLIP, 140, 20, 40, 40, 0);
+    gui_fill(115, 20, 90, 40, 0, 0xFFFF0000);
+    gui_push(GUI_UNCLIP, 0, 0, 0, 0, 0);
+    gui_circle(220, 20, 40, 0xFF00FF00);
+    gui_text("Razum");
+    if (!gui_frame() || gui_pixel(70, 40) != 0xFF123456 ||
+        gui_pixel(130, 40) != gui.theme.background || gui_pixel(160, 40) != 0xFFFF0000 ||
+        gui_pixel(240, 40) != 0xFF00FF00 || gui_pixel(-1, 40) != 0) {
+        return 2;
+    }
+    char field[32] = "razum";
+    gui.caret = 5;
+    gui_type((ushort)0x00E9);
+    gui_push_event(-GUI_KEY_LEFT);
+    gui_type((ushort)88);
+    if (!gui_edit(field) || !equals(field, "razumXé")) {
+        return 3;
+    }
+    string layout = "<AD01> = 24; key <AD01> { symbols[Group1] = [ q, Q ], symbols[Group2] = [ adiaeresis, Adiaeresis, EuroSign ] };";
+    gui_xkb_read((char *)layout, length(layout));
+    if (gui_desktop.keys[24 * 16] != 113 || gui_desktop.keys[24 * 16 + 1] != 81 ||
+        gui_desktop.keys[24 * 16 + 4] != 0xE4 || gui_desktop.keys[24 * 16 + 5] != 0xC4 ||
+        gui_desktop.keys[24 * 16 + 6] != 0x10020AC) {
+        return 5;
+    }
+    gui_close();
+    if (!gui_open_offscreen(80, 80) || !gui_frame()) {
+        return 4;
+    }
+    gui_close();
+    print("Linux GUI pixels, UTF-8 input, and reopen ok");
+    return 0;
+}

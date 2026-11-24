@@ -1,0 +1,31 @@
+import json.types;
+
+bool json_key_matches(string source, JsonToken token, string key) {
+    int position = token.start + 1;
+    int end = token.end - 1;
+    int index = 0;
+    char bytes[4];
+    while (position < end) {
+        char current = source[position];
+        position++;
+        if (current == "\\") {
+            int value = json_read_escape(source, end, &position);
+            if (value <= 0) {
+                return false;
+            }
+            int width = json_encode_codepoint(bytes, value);
+            for (int i = 0; i < width; i++) {
+                if (key[index] != bytes[i]) {
+                    return false;
+                }
+                index++;
+            }
+        } else {
+            if (key[index] != current) {
+                return false;
+            }
+            index++;
+        }
+    }
+    return key[index] == "\0";
+}

@@ -1,0 +1,16 @@
+import http.state;
+import http.tls;
+import winsock;
+
+bool http_listen_tls(HttpServer *server, string host, int port, string certificate_file, string password) {
+    if (!http_open_listener(server, host, port, true)) {
+        return false;
+    }
+    HttpListener *listener = &server.listeners[server.listener_count - 1];
+    if (!http_load_certificate(listener, certificate_file, password)) {
+        closesocket(listener.socket);
+        server.listener_count--;
+        return false;
+    }
+    return true;
+}

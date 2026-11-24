@@ -1,0 +1,3 @@
+int centimeters(int meters) {
+    return meters * 100;
+}

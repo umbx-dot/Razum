@@ -1,0 +1,9 @@
+import linux;
+
+void close_directory(Directory directory) {
+    if (directory.handle >= 0) {
+        system_call(SYS_CLOSE, directory.handle, 0, 0, 0);
+    }
+    directory.handle = -1;
+    directory.entry = -1;
+}

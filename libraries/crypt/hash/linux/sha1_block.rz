@@ -1,0 +1,44 @@
+void sha1_block(Hasher hasher, byte *block) {
+    uint words[80];
+    for (int index = 0; index < 16; index++) {
+        words[index] = ((uint)block[4 * index] << 24) | ((uint)block[4 * index + 1] << 16) | ((uint)block[4 * index + 2] << 8) |
+                       (uint)block[4 * index + 3];
+    }
+    for (int index = 16; index < 80; index++) {
+        uint value = words[index - 3] ^ words[index - 8] ^ words[index - 14] ^ words[index - 16];
+        words[index] = (value << 1) | (value >> 31);
+    }
+    uint a = (uint)hasher.state[0];
+    uint b = (uint)hasher.state[1];
+    uint c = (uint)hasher.state[2];
+    uint d = (uint)hasher.state[3];
+    uint e = (uint)hasher.state[4];
+    for (int round = 0; round < 80; round++) {
+        uint mixed = 0;
+        uint constant = 0;
+        if (round < 20) {
+            mixed = (b & c) | (~b & d);
+            constant = 0x5A827999;
+        } else if (round < 40) {
+            mixed = b ^ c ^ d;
+            constant = 0x6ED9EBA1;
+        } else if (round < 60) {
+            mixed = (b & c) | (b & d) | (c & d);
+            constant = 0x8F1BBCDC;
+        } else {
+            mixed = b ^ c ^ d;
+            constant = 0xCA62C1D6;
+        }
+        uint next = ((a << 5) | (a >> 27)) + mixed + e + constant + words[round];
+        e = d;
+        d = c;
+        c = (b << 30) | (b >> 2);
+        b = a;
+        a = next;
+    }
+    hasher.state[0] = (uint)(hasher.state[0] + a);
+    hasher.state[1] = (uint)(hasher.state[1] + b);
+    hasher.state[2] = (uint)(hasher.state[2] + c);
+    hasher.state[3] = (uint)(hasher.state[3] + d);
+    hasher.state[4] = (uint)(hasher.state[4] + e);
+}

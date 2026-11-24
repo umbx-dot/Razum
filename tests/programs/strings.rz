@@ -1,0 +1,11 @@
+import stdio;
+
+int main() {
+    print("tab:\tend");
+    print("quote: \" backslash: \\");
+    print("");
+    print("backtick: `");
+    print("unicode: ü");
+    print("first\nsecond");
+    return 0;
+}

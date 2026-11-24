@@ -1,0 +1,63 @@
+import gui.state;
+import gui.theme;
+import gui.typography;
+import gui.draw;
+import gui.input;
+import gui.layout;
+import gui.editing;
+
+
+bool gui_slider(double *value, double minimum, double maximum) {
+    int id = gui_next_id();
+    gui_allocate(0, 20);
+    double x = gui.slot_x;
+    double y = gui.slot_y;
+    double width = gui.slot_width;
+    double knob = 16;
+    double track_x = x + knob / 2;
+    double track_width = width - knob;
+    bool hovered = gui_hovered(id, x, y - 4, width, 28);
+    if (hovered) {
+        gui.cursor = GUI_CURSOR_HAND;
+    }
+    gui_clicked(id, hovered);
+    bool changed = false;
+    double range = maximum - minimum;
+    if (gui.active == id && range > 0 && track_width > 0) {
+        double t = (gui.mouse_x - track_x) / track_width;
+        if (t < 0) {
+            t = 0;
+        }
+        if (t > 1) {
+            t = 1;
+        }
+        double next = minimum + t * range;
+        if (next != *value) {
+            *value = next;
+            changed = true;
+        }
+    }
+    double position = range > 0 ? (*value - minimum) / range : 0.0;
+    if (position < 0) {
+        position = 0;
+    }
+    if (position > 1) {
+        position = 1;
+    }
+    double grab = gui_animate(gui.hover, id, hovered || gui.active == id ? 1.0 : 0.0);
+    double center_y = y + 10;
+    double knob_x = track_x + position * track_width;
+    gui_fill(track_x, center_y - 2, track_width, 4, 2, gui.theme.track);
+    if (knob_x - track_x >= 1) {
+        gui_fill(track_x, center_y - 2, knob_x - track_x, 4, 2, gui.theme.accent);
+    }
+    double halo = knob + 10 * grab;
+    if (grab > 0.01) {
+        gui_circle(knob_x - halo / 2, center_y - halo / 2, halo, gui_fade(gui.theme.accent, 0.2 * grab));
+    }
+    gui_circle(knob_x - knob / 2, center_y - knob / 2 + 1, knob, gui_fade(gui.theme.shadow, 0.6));
+    gui_circle(knob_x - knob / 2, center_y - knob / 2, knob, gui.theme.accent);
+    double inner = knob - 6;
+    gui_circle(knob_x - inner / 2, center_y - inner / 2, inner, gui.theme.knob);
+    return changed;
+}

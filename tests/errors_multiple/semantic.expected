@@ -1,0 +1,7 @@
+semantic.rz:7:5: error: unknown type 'Missing'; declare it with struct Missing { ... } or enum Missing { ... }
+semantic.rz:3:19: error: cannot store a string in int 'LIMIT'; convert it with (int)
+semantic.rz:11:24: error: cannot store a double in int 'result'; convert it with (int)
+semantic.rz:12:21: error: 'undefined_name' is not declared
+semantic.rz:16:19: error: '+' needs a number, not a string
+semantic.rz:20:20: error: '==' needs a number, not a string
+semantic.rz:27:17: error: cannot store an int in bool 'flag'; convert it with (bool)

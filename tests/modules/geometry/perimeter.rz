@@ -1,0 +1,10 @@
+int rectangle_perimeter(int width, int height) {
+    return 2 * (width + height);
+}
+
+int triple_fast(int value) {
+    asm {
+        mov rcx, qword [rsp + .value]
+        call rz@triple
+    }
+}

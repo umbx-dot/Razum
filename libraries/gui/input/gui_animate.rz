@@ -1,0 +1,21 @@
+import gui.state;
+
+double gui_animate(double *values, int id, double target) {
+    double current = values[id];
+    double step = gui.dt * 16;
+    if (step > 1) {
+        step = 1;
+    }
+    current += (target - current) * step;
+    double distance = target - current;
+    if (distance < 0) {
+        distance = -distance;
+    }
+    if (distance < 0.002) {
+        current = target;
+    } else {
+        gui.animating = true;
+    }
+    values[id] = current;
+    return current;
+}

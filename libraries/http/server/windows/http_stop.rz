@@ -1,0 +1,16 @@
+import http.state;
+import windows;
+import winsock;
+
+void http_stop(HttpServer *server) {
+    if (server.stopping || !server.running) {
+        return;
+    }
+    server.stopping = true;
+    for (int index = 0; index < server.listener_count; index++) {
+        closesocket(server.listeners[index].socket);
+    }
+    for (int index = 0; index < server.worker_count; index++) {
+        PostQueuedCompletionStatus(server.port, 0, 1, 0);
+    }
+}

@@ -1,0 +1,6 @@
+// error: 4:16: '<<' needs integers, not a double
+int main() {
+    double d = 1.0;
+    double e = d << 2;
+    return 0;
+}

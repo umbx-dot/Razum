@@ -1,0 +1,8 @@
+double sin(double value) {
+    asm {
+        fld qword [rsp + .value]
+        fsin
+        fstp qword [rsp + .value]
+        movsd xmm0, qword [rsp + .value]
+    }
+}

@@ -1,0 +1,4 @@
+byte *as_bytes(string message) {
+    char *characters = message;
+    return (byte *)characters;
+}

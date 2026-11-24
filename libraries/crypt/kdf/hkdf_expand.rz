@@ -1,0 +1,30 @@
+import crypt.hash;
+import crypt.hmac;
+
+long hkdf_expand(Hash kind, byte output[], long length, byte *secret, long secret_length, byte *info, long info_length) {
+    int size = hash_size(kind);
+    if (length < 0 || length > 255 * size || output.length < length) {
+        return -1;
+    }
+    byte block[64];
+    long done = 0;
+    for (int number = 1; done < length; number++) {
+        Hasher hasher;
+        if (!hmac_start(hasher, kind, secret, secret_length)) {
+            return -1;
+        }
+        if (number > 1) {
+            hash_update(hasher, &block[0], size);
+        }
+        hash_update(hasher, info, info_length);
+        byte counter[1];
+        counter[0] = (byte)number;
+        hash_update(hasher, &counter[0], 1);
+        hash_finish(hasher, block);
+        for (int index = 0; index < size && done < length; index++) {
+            output[done] = block[index];
+            done++;
+        }
+    }
+    return length;
+}

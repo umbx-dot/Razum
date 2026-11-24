@@ -1,0 +1,33 @@
+void array_sort_items_T(T *items, long count) {
+    long ascending = 1;
+    while (ascending < count && items[ascending - 1] <= items[ascending]) {
+        ascending++;
+    }
+    if (ascending >= count) {
+        return;
+    }
+    long descending = 1;
+    while (descending < count && items[descending - 1] > items[descending]) {
+        descending++;
+    }
+    if (descending == count) {
+        long low = 0;
+        long high = count - 1;
+        while (low < high) {
+            T kept = items[low];
+            items[low] = items[high];
+            items[high] = kept;
+            low++;
+            high--;
+        }
+        return;
+    }
+    if (count >= T_BITS * 48 && array_radix_sort_T(items, count)) {
+        return;
+    }
+    int depth = 0;
+    for (long size = count; size > 1; size = size >> 1) {
+        depth += 2;
+    }
+    array_quick_sort_T(items, count, depth);
+}

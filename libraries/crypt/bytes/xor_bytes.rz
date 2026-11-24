@@ -1,0 +1,5 @@
+void xor_bytes(byte *target, byte *left, byte *right, long length) {
+    for (long i = 0; i < length; i++) {
+        target[i] = (byte)(left[i] ^ right[i]);
+    }
+}

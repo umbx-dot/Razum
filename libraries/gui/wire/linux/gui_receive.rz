@@ -1,0 +1,43 @@
+import gui.state;
+import linux;
+
+bool gui_receive(long data, long size) {
+    while (size > 0) {
+        long count = 0;
+        if (gui_desktop.backend == GUI_WAYLAND) {
+            long vector[2] = {data, size};
+            long ancillary[10];
+            long message[7] = {0, 0, (long)&vector[0], 1, (long)&ancillary[0], 80, 0};
+            count = system_call(SYS_RECVMSG, gui_desktop.socket, (long)&message[0], MSG_CMSG_CLOEXEC, 0);
+            if (count > 0 && message[5] >= 20 && ancillary[0] >= 20 && ancillary[0] <= message[5] &&
+                ancillary[1] == ((SCM_RIGHTS << 32) | SOL_SOCKET)) {
+                int *fds = (int *)&ancillary[2];
+                int number = (int)(ancillary[0] - 16) / 4;
+                for (int i = 0; i < number; i++) {
+                    if (gui_desktop.fd_count == gui_desktop.fds.length) {
+                        system_call(SYS_CLOSE, fds[i], 0, 0, 0);
+                    } else {
+                        gui_desktop.fds[gui_desktop.fd_count] = fds[i];
+                        gui_desktop.fd_count++;
+                    }
+                }
+            }
+            if ((message[6] & MSG_CTRUNC) != 0) {
+                gui.quit = true;
+                return false;
+            }
+        } else {
+            count = system_call(SYS_READ, gui_desktop.socket, data, size, 0);
+        }
+        if (count == EINTR) {
+            continue;
+        }
+        if (count <= 0) {
+            gui.quit = true;
+            return false;
+        }
+        size -= count;
+        data += count;
+    }
+    return true;
+}

@@ -1,0 +1,29 @@
+import stdio;
+import text;
+import time;
+
+int main(string args[]) {
+    if (args.length != 2) {
+        return 2;
+    }
+    char data[8193];
+    for (int i = 0; i < 8192; i++) {
+        data[i] = "a";
+    }
+    data[7] = "!";
+    data[8191] = "?";
+    bool early = equals(args[1], "early");
+    char needle = early ? "!" : "?";
+    long expected = early ? 7 : 8191;
+    long total = 0;
+    long start = time_monotonic_ns();
+    for (int i = 0; i < 65000; i++) {
+        total += find_char(data, needle);
+    }
+    long elapsed = time_monotonic_ns() - start;
+    if (total != expected * 65000 || start < 0 || elapsed <= 0) {
+        return 1;
+    }
+    print(elapsed);
+    return 0;
+}

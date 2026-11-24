@@ -1,0 +1,36 @@
+import stdio;
+
+struct Point {
+    int x;
+    int y;
+}
+
+extern "mathlib" long add(long a, long b);
+extern "mathlib" int scale(int value, short factor);
+extern "mathlib" long sum(int *values, long count);
+extern "mathlib" void move_point(Point p, int dx, int dy);
+extern "mathlib" void increment(long *value);
+extern "mathlib" double average(double a, double b);
+extern "mathlib" string describe();
+extern "mathlib" bool is_even(long value);
+extern "mathlib" long call_count();
+extern "mathlib" void print_from_dll(string text);
+
+int main() {
+    print(add(40, 2));
+    print(scale(-7, 6));
+    int values[4] = {1, 2, 3, 4};
+    print(sum(values, values.length));
+    Point p = {1, 2};
+    move_point(p, 10, 20);
+    print(p.x + p.y);
+    long counter = 41;
+    increment(&counter);
+    print(counter);
+    print(average(1.0, 2.0));
+    print(describe());
+    print(is_even(10));
+    print(is_even(7));
+    print(call_count());
+    return 0;
+}

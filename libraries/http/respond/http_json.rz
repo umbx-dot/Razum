@@ -1,0 +1,7 @@
+import http.state;
+
+void http_json(HttpResponse *response, string json) {
+    response.content_type = "application/json";
+    response.body_length = 0;
+    http_write(response, json);
+}

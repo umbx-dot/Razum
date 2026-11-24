@@ -1,0 +1,11 @@
+import linux;
+
+void close(File file) {
+    if (file.writing) {
+        flush(file);
+    }
+    if (file.handle >= 0) {
+        system_call(SYS_CLOSE, file.handle, 0, 0, 0);
+    }
+    file.handle = -1;
+}

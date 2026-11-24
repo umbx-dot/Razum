@@ -1,0 +1,11 @@
+bool futex_advance_if_waiting(long *condition) {
+    asm {
+        mov rcx, qword [rsp + .condition]
+        xor eax, eax
+        cmp dword [rcx + 4], 0
+        je .done
+        lock inc dword [rcx]
+        mov eax, 1
+    .done:
+    }
+}

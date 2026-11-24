@@ -1,0 +1,92 @@
+import stdio;
+import text;
+import gui;
+
+bool dark = true;
+bool notifications = true;
+bool autosave = false;
+bool statistics = false;
+double volume = 0.6;
+double brightness = 0.35;
+char name[64];
+int clicks = 0;
+
+void percent_line(char line[], string label, double value) {
+    char number[24];
+    int_to_text(number, (long)(value * 100 + 0.5));
+    copy(line, label);
+    concat(line, number);
+    concat(line, "%");
+}
+
+void profile_panel(double width) {
+    char line[128];
+    char number[24];
+    gui_begin_panel(width);
+    gui_strong("Profile");
+    gui_input(name, "Type your name");
+    copy(line, "Hello, ");
+    if (length(name) > 0) {
+        concat(line, name);
+    } else {
+        concat(line, "stranger");
+    }
+    concat(line, "!");
+    gui_text(line);
+    gui_begin_row();
+    if (gui_button("Count")) {
+        clicks++;
+    }
+    if (gui_button_quiet("Reset")) {
+        clicks = 0;
+    }
+    int_to_text(number, clicks);
+    copy(line, "Clicked ");
+    concat(line, number);
+    concat(line, clicks == 1 ? " time" : " times");
+    gui_muted(line);
+    gui_end();
+    gui_separator();
+    gui_strong("Progress");
+    gui_progress(clicks / 10.0);
+    gui_muted("Every click fills a tenth of the bar. Bars, switches and buttons ease between states instead of jumping.");
+    gui_end();
+}
+
+void preferences_panel(double width) {
+    char line[64];
+    gui_begin_panel(width);
+    gui_strong("Preferences");
+    if (gui_switch("Dark mode", &dark)) {
+        gui_set_dark(dark);
+    }
+    gui_switch("Notifications", &notifications);
+    gui_checkbox("Save automatically", &autosave);
+    gui_checkbox("Send anonymous statistics", &statistics);
+    gui_separator();
+    percent_line(line, "Volume ", volume);
+    gui_text(line);
+    gui_slider(&volume, 0, 1);
+    percent_line(line, "Brightness ", brightness);
+    gui_text(line);
+    gui_slider(&brightness, 0, 1);
+    gui_end();
+}
+
+int main() {
+    if (!gui_open("razum gui", 880, 600)) {
+        print("could not open a window");
+        return 1;
+    }
+    dark = gui.dark;
+    while (gui_frame()) {
+        gui_heading("Welcome back");
+        gui_muted("Everything in this window is drawn by the gui library, which is written in razum.");
+        gui_begin_row();
+        profile_panel(gui_column_width(2));
+        preferences_panel(gui_column_width(1));
+        gui_end();
+    }
+    gui_close();
+    return 0;
+}

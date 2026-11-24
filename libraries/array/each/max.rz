@@ -1,0 +1,12 @@
+T array_max_T(T values[]) {
+    if (values.length == 0) {
+        return (T)0;
+    }
+    T largest = values[0];
+    for (long i = 1; i < values.length; i++) {
+        if (values[i] > largest) {
+            largest = values[i];
+        }
+    }
+    return largest;
+}

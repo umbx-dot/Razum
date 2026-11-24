@@ -1,0 +1,18 @@
+import http.state;
+import text;
+
+bool http_files(HttpServer *server, string prefix, string directory) {
+    if (server.route_count == server.routes.length || server.running) {
+        return false;
+    }
+    HttpRoute *route = &server.routes[server.route_count];
+    long size = length(prefix);
+    route.method = "GET";
+    route.path = prefix;
+    route.prefix = true;
+    route.length = size > 0 && prefix[size - 1] == "*" ? size - 1 : size;
+    route.handler = null;
+    route.directory = directory;
+    server.route_count++;
+    return true;
+}

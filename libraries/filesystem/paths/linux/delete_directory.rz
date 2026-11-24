@@ -1,0 +1,5 @@
+import linux;
+
+bool delete_directory(string path) {
+    return system_call(SYS_RMDIR, (long)path, 0, 0, 0) == 0;
+}

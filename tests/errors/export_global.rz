@@ -1,0 +1,6 @@
+// error: 2:1: only functions can be exported
+export long counter = 0;
+
+int main() {
+    return 0;
+}

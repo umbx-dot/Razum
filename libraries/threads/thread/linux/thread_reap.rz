@@ -1,0 +1,22 @@
+import threads.system;
+
+void thread_reap() {
+    AcquireSRWLockExclusive(&thread_detached_lock);
+    ThreadControl *previous = null;
+    ThreadControl *control = thread_detached;
+    while (control != null) {
+        ThreadControl *next = control.next;
+        if (futex_load(&control.id) == 0) {
+            if (previous == null) {
+                thread_detached = next;
+            } else {
+                previous.next = next;
+            }
+            thread_release(control);
+        } else {
+            previous = control;
+        }
+        control = next;
+    }
+    ReleaseSRWLockExclusive(&thread_detached_lock);
+}

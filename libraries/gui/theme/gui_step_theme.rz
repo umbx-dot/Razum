@@ -1,0 +1,25 @@
+import gui.state;
+
+void gui_step_theme() {
+    if (gui.theme_progress >= 1) {
+        return;
+    }
+    gui.theme_progress += gui.dt * 4;
+    if (gui.theme_progress > 1) {
+        gui.theme_progress = 1;
+    }
+    gui.animating = true;
+    double t = gui.theme_progress;
+    t = t * t * (3 - 2 * t);
+    gui.theme.background = gui_mix(gui.theme_from.background, gui.target.background, t);
+    gui.theme.surface = gui_mix(gui.theme_from.surface, gui.target.surface, t);
+    gui.theme.raised = gui_mix(gui.theme_from.raised, gui.target.raised, t);
+    gui.theme.border = gui_mix(gui.theme_from.border, gui.target.border, t);
+    gui.theme.text = gui_mix(gui.theme_from.text, gui.target.text, t);
+    gui.theme.muted = gui_mix(gui.theme_from.muted, gui.target.muted, t);
+    gui.theme.accent = gui_mix(gui.theme_from.accent, gui.target.accent, t);
+    gui.theme.accent_text = gui_mix(gui.theme_from.accent_text, gui.target.accent_text, t);
+    gui.theme.track = gui_mix(gui.theme_from.track, gui.target.track, t);
+    gui.theme.knob = gui_mix(gui.theme_from.knob, gui.target.knob, t);
+    gui.theme.shadow = gui_mix(gui.theme_from.shadow, gui.target.shadow, t);
+}

@@ -1,0 +1,44 @@
+import gui.state;
+import gui.wire;
+
+bool gui_x11_setup(string display) {
+    byte hello[48];
+    hello[0] = (byte)108;
+    hello[2] = 11;
+    int bytes = gui_x11_authority(display, hello);
+    ushort head[4];
+    if (!gui_send((long)&hello[0], bytes) || !gui_receive((long)&head[0], 8) || (head[0] & 255) != 1) {
+        return false;
+    }
+    int size = (int)head[3] * 4;
+    byte *setup = new byte[size];
+    if (setup == null) {
+        return false;
+    }
+    bool good = false;
+    if (size >= 32 && gui_receive((long)setup, size)) {
+        uint *words = (uint *)setup;
+        int vendor = (int)setup[16] | ((int)setup[17] << 8);
+        int formats = (int)setup[21];
+        int start = 32 + ((vendor + 3) & ~3);
+        int screen = start + formats * 8;
+        if (setup[20] > 0 && setup[22] == 0 && size >= screen + 40) {
+            gui_desktop.x_resource = words[1];
+            gui_desktop.x_mask = words[2];
+            gui_desktop.x_limit = ((int)setup[18] | ((int)setup[19] << 8)) * 4;
+            gui_desktop.x_first_key = (int)setup[26];
+            gui_desktop.x_symbols_per_key = (int)setup[27] - gui_desktop.x_first_key + 1;
+            uint *root = (uint *)&setup[screen];
+            gui_desktop.x_root = root[0];
+            gui_desktop.x_depth = (int)setup[screen + 38];
+            for (int i = 0; i < formats; i++) {
+                int at = start + i * 8;
+                if ((int)setup[at] == gui_desktop.x_depth && setup[at + 1] == 32 && setup[at + 2] == 32) {
+                    good = gui_x11_visual(setup, size, screen, root[8]);
+                }
+            }
+        }
+    }
+    free(setup);
+    return good && gui_desktop.x_limit >= 32768 && (gui_desktop.x_mask & 3) == 3;
+}

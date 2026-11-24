@@ -1,0 +1,8 @@
+import gui.wire;
+
+bool gui_wl_request(uint object, int opcode, uint message[]) {
+    message[0] = object;
+    int size = message.length * 4;
+    message[1] = (uint)((size << 16) | opcode);
+    return gui_send((long)&message[0], size);
+}

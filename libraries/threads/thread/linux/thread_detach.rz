@@ -1,0 +1,9 @@
+import threads.system;
+
+void thread_detach(long thread) {
+    ThreadControl *control = (ThreadControl *)thread;
+    AcquireSRWLockExclusive(&thread_detached_lock);
+    control.next = thread_detached;
+    thread_detached = control;
+    ReleaseSRWLockExclusive(&thread_detached_lock);
+}

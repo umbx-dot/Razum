@@ -1,0 +1,56 @@
+long process_arguments(string command, char storage[], long pointers[]) {
+    long at = 0;
+    long used = 0;
+    long count = 0;
+    while (count < pointers.length - 1) {
+        while (command[at] == " " || command[at] == "\t") {
+            at++;
+        }
+        if (command[at] == "\0") {
+            break;
+        }
+        pointers[count] = (long)&storage[used];
+        count++;
+        bool quoted = false;
+        while (command[at] != "\0" && (quoted || (command[at] != " " && command[at] != "\t"))) {
+            long slashes = 0;
+            while (command[at] == "\\") {
+                slashes++;
+                at++;
+            }
+            if (command[at] == "\"") {
+                for (long index = 0; index < slashes / 2 && used < storage.length - 1; index++) {
+                    storage[used] = "\\";
+                    used++;
+                }
+                if (slashes % 2 == 1) {
+                    if (used < storage.length - 1) {
+                        storage[used] = "\"";
+                        used++;
+                    }
+                } else {
+                    quoted = !quoted;
+                }
+                at++;
+                continue;
+            }
+            for (long index = 0; index < slashes && used < storage.length - 1; index++) {
+                storage[used] = "\\";
+                used++;
+            }
+            if (command[at] != "\0" && (quoted || (command[at] != " " && command[at] != "\t"))) {
+                if (used < storage.length - 1) {
+                    storage[used] = command[at];
+                    used++;
+                }
+                at++;
+            }
+        }
+        if (used < storage.length) {
+            storage[used] = "\0";
+            used++;
+        }
+    }
+    pointers[count] = 0;
+    return count;
+}

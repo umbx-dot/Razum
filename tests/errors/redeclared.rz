@@ -1,0 +1,6 @@
+// error: 4:5: 'a' is already declared in this block
+int main() {
+    int a = 1;
+    int a = 2;
+    return a;
+}

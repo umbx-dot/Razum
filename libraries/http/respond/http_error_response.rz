@@ -1,0 +1,9 @@
+import http.state;
+
+void http_error_response(HttpWorker *worker, int status) {
+    HttpResponse *response = &worker.response;
+    http_reset_response(response, false);
+    response.status = status;
+    http_text(response, http_status_text(status));
+    http_serialize(worker, false);
+}

@@ -1,0 +1,17 @@
+import text;
+
+long hex_decode(byte target[], string digits) {
+    long size = length(digits);
+    if (size % 2 != 0 || size / 2 > target.length) {
+        return -1;
+    }
+    for (long i = 0; i < size / 2; i++) {
+        int high = hex_value(digits[2 * i]);
+        int low = hex_value(digits[2 * i + 1]);
+        if (high < 0 || low < 0) {
+            return -1;
+        }
+        target[i] = (byte)(high * 16 + low);
+    }
+    return size / 2;
+}

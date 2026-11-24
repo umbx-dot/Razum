@@ -1,0 +1,9 @@
+void print_double(double value) {
+    asm {
+        call rz@lock_output
+        movsd xmm0, qword [rsp + .value]
+        call rz@write_double
+        call rz@write_newline
+        call rz@unlock_output
+    }
+}

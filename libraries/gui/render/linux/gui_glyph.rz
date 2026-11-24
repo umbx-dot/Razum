@@ -1,0 +1,21 @@
+void gui_glyph(int x, int y, ushort character, int font, uint color) {
+    int glyph = (int)character;
+    if (glyph >= 256) {
+        glyph = 63;
+    }
+    int scale_x = font == 3 ? 2 : 1;
+    int scale_y = font == 2 ? 1 : 2;
+    for (int i = 0; i < 8; i++) {
+        int mask = (int)gui_font_rows[glyph * 8 + i];
+        for (int j = 0; j < 8; j++) {
+            if ((mask & (1 << j)) != 0) {
+                int left = x + j * scale_x;
+                int right = left + scale_x + (font == 1 ? 1 : 0);
+                int top = y + i * scale_y;
+                for (int row = top; row < top + scale_y; row++) {
+                    gui_span(left, right, row, color);
+                }
+            }
+        }
+    }
+}

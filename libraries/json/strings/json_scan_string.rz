@@ -1,0 +1,28 @@
+int json_scan_string(string source, int size, int position) {
+    position++;
+    while (position < size) {
+        position = json_ascii_end(source, size, position);
+        if (position == size) {
+            break;
+        }
+        char current = source[position];
+        if (current == "\"") {
+            return position + 1;
+        }
+        if (current == "\\") {
+            position++;
+            if (json_read_escape(source, size, &position) < 0) {
+                return -1;
+            }
+        } else if (current >= (char)0x80) {
+            int width = json_utf8_width(source, size, position);
+            if (width == 0) {
+                return -1;
+            }
+            position += width;
+        } else {
+            return -1;
+        }
+    }
+    return -1;
+}

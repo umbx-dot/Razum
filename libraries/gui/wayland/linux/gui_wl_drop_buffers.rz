@@ -1,0 +1,19 @@
+import gui.state;
+import linux;
+
+void gui_wl_drop_buffers() {
+    if (gui_desktop.wl_bytes <= 0) {
+        return;
+    }
+    uint destroy[2];
+    for (int i = 0; i < gui_desktop.wl_buffers.length; i++) {
+        if (!gui.quit && gui_desktop.wl_buffers[i].id != 0) {
+            gui_wl_request(gui_desktop.wl_buffers[i].id, 0, destroy);
+        }
+    }
+    system_call(SYS_MUNMAP, gui_desktop.wl_buffers[0].address, gui_desktop.wl_bytes, 0, 0);
+    gui_desktop.wl_bytes = 0;
+    GuiWaylandBuffer empty;
+    gui_desktop.wl_buffers[0] = empty;
+    gui_desktop.wl_buffers[1] = empty;
+}

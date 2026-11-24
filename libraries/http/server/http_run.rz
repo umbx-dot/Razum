@@ -1,0 +1,9 @@
+import http.state;
+
+bool http_run(HttpServer *server) {
+    if (!http_start(server)) {
+        return false;
+    }
+    http_wait(server);
+    return true;
+}

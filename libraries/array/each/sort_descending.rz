@@ -1,0 +1,8 @@
+import array.integers;
+import array.sort_double;
+import array.sort_float;
+
+void array_sort_descending_T(T values[]) {
+    array_sort_T(values);
+    array_reverse_T(values);
+}

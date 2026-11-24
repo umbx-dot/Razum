@@ -1,0 +1,19 @@
+import http.state;
+import http.memory;
+
+void http_write_bytes(HttpResponse *response, char *data, long length) {
+    long needed = response.body_length + length;
+    if (needed > response.body_capacity) {
+        long size = response.body_capacity * 2;
+        while (size < needed) {
+            size *= 2;
+        }
+        char *bigger = new char[size];
+        http_copy(bigger, response.body, response.body_length);
+        free(response.body);
+        response.body = bigger;
+        response.body_capacity = size;
+    }
+    http_copy(&response.body[response.body_length], data, length);
+    response.body_length = needed;
+}

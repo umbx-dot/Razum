@@ -1,0 +1,9 @@
+import http.state;
+
+long http_request_count(HttpServer *server) {
+    long total = 0;
+    for (int index = 0; index < server.worker_count && server.workers != null; index++) {
+        total += server.workers[index].requests;
+    }
+    return total;
+}

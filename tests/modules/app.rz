@@ -1,0 +1,13 @@
+import stdio;
+import geometry;
+import units;
+import report.describe_square;
+
+int main() {
+    print(square_area(4));
+    print(rectangle_perimeter(2, 3));
+    print(triple_fast(5));
+    print(centimeters(2));
+    describe_square(3);
+    return 0;
+}

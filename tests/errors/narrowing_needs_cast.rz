@@ -1,0 +1,6 @@
+// error: 4:17: cannot store a long in int 'small'; convert it with (int)
+int main() {
+    long big = 5;
+    int small = big;
+    return small;
+}

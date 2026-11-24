@@ -1,0 +1,9 @@
+// platform: windows
+// error: 5:22: the address of extern function 'Sleep' is only known when the program runs; set this global in main
+import windows;
+
+fn(uint) -> void s = Sleep;
+
+int main() {
+    return 0;
+}

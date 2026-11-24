@@ -1,0 +1,11 @@
+import http.state;
+import threads;
+
+void http_untrack(HttpServer *server, HttpConnection *connection) {
+    mutex_lock(server.table_lock);
+    server.slots[connection.slot] = 0;
+    server.free_slots[server.free_count] = connection.slot;
+    server.free_count++;
+    server.connection_count--;
+    mutex_unlock(server.table_lock);
+}

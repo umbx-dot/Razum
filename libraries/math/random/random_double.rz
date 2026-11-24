@@ -1,0 +1,3 @@
+double random_double() {
+    return (double)(random_next() >> 11) / 9007199254740992.0;
+}

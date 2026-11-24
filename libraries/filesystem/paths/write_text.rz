@@ -1,0 +1,12 @@
+import filesystem.file;
+
+bool write_text(string path, string text) {
+    File file;
+    if (!open(file, path, "w")) {
+        return false;
+    }
+    write(file, text);
+    bool written = flush(file);
+    close(file);
+    return written;
+}

@@ -1,0 +1,23 @@
+long time_monotonic_ns() {
+    long stamp[2];
+    asm {
+        push rdi
+        push rsi
+        mov edi, 1
+        lea rsi, [rsp + 16 + .stamp]
+        mov eax, 228
+        syscall
+        pop rsi
+        pop rdi
+        test rax, rax
+        jnz .failed
+        imul rax, [rsp + .stamp], 1000000000
+        jo .failed
+        add rax, [rsp + .stamp + 8]
+        jo .failed
+        jmp .done
+    .failed:
+        mov rax, -1
+    .done:
+    }
+}

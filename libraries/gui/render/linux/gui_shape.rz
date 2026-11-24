@@ -1,0 +1,29 @@
+import gui.state;
+
+void gui_shape(double x, double y, double width, double height, double radius, double stroke, uint color) {
+    if (width <= 0 || height <= 0) {
+        return;
+    }
+    double shortest = width < height ? width : height;
+    radius = radius < shortest / 2 ? radius : shortest / 2;
+    int top = (int)y > gui_clip.top ? (int)y : gui_clip.top;
+    int bottom = (int)(y + height + 0.5);
+    bottom = bottom < gui_clip.bottom ? bottom : gui_clip.bottom;
+    int left = (int)x;
+    int right = (int)(x + width + 0.5);
+    for (int row = top; row < bottom; row++) {
+        double offset = row - y + 0.5;
+        if (offset < 0 || offset >= height) {
+            continue;
+        }
+        int edge = gui_corner(offset, height, radius);
+        if (stroke > 0 && stroke * 2 < shortest && offset >= stroke && offset < height - stroke) {
+            int inner = (int)(stroke + 0.5) + gui_corner(offset - stroke, height - 2 * stroke, radius - stroke);
+            inner = inner > edge ? inner : edge;
+            gui_span(left + edge, left + inner, row, color);
+            gui_span(right - inner, right - edge, row, color);
+        } else {
+            gui_span(left + edge, right - edge, row, color);
+        }
+    }
+}

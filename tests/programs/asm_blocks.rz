@@ -1,0 +1,36 @@
+// platform: windows
+// exit: 9
+import stdio;
+
+int triple(int value) {
+    asm {
+        mov rax, qword [rsp + .value]
+        lea rax, [rax + rax * 2]
+    }
+}
+
+double half(double value) {
+    asm {
+        movsd xmm0, qword [rsp + .value]
+        mov rax, 0x3FE0000000000000
+        movq xmm1, rax
+        mulsd xmm0, xmm1
+    }
+}
+
+int main() {
+    int counter = 5;
+    asm {
+        add qword [rsp + .counter], 10
+    }
+    print(counter);
+    print(triple(7));
+    print(half(9.0));
+    int ticks = 0;
+    asm {
+        call [iat@GetTickCount64]
+        mov qword [rsp + .ticks], rax
+    }
+    print(ticks > 0);
+    return 9;
+}

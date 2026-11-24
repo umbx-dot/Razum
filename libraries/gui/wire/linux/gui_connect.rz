@@ -1,0 +1,23 @@
+import linux;
+import text;
+
+long gui_connect(string path) {
+    long size = length(path);
+    if (size <= 0 || size > 107) {
+        return -1;
+    }
+    char address[110];
+    address[0] = (char)AF_UNIX;
+    for (long i = 0; i < size; i++) {
+        address[i + 2] = path[i];
+    }
+    long socket = system_call(SYS_SOCKET, AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, 0);
+    if (socket < 0) {
+        return -1;
+    }
+    if (system_call(SYS_CONNECT, socket, (long)&address[0], size + 3, 0) < 0) {
+        system_call(SYS_CLOSE, socket, 0, 0, 0);
+        return -1;
+    }
+    return socket;
+}

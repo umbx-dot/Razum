@@ -1,0 +1,24 @@
+// platform: windows
+import stdio;
+
+extern "user32" int GetSystemMetrics(int index);
+extern "SHELL32.dll" int IsUserAnAdmin();
+extern "kernel32" uint GetCurrentProcessId();
+extern "kernel32" uint GetEnvironmentVariableA(string name, char buffer[], uint size);
+
+int screen_width_from_asm() {
+    asm {
+        xor ecx, ecx
+        call [iat@user32@GetSystemMetrics]
+    }
+}
+
+int main() {
+    print(GetSystemMetrics(0) > 0);
+    print(IsUserAnAdmin() >= 0);
+    print(GetCurrentProcessId() > 0);
+    print(screen_width_from_asm() == GetSystemMetrics(0));
+    char value[8];
+    print(GetEnvironmentVariableA("RAZUM_SURELY_UNSET_NAME", value, 8));
+    return 0;
+}

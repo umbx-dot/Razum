@@ -1,0 +1,125 @@
+// platform: windows
+import stdio;
+import text;
+import windows;
+import gui;
+
+bool checked = false;
+bool enabled = true;
+double volume = 0.25;
+char name[32] = "razum";
+bool clicked = false;
+double button_x;
+double button_y;
+double box_x;
+double box_y;
+double slider_x;
+double slider_y;
+double slider_width;
+double input_x;
+double input_y;
+double input_width;
+
+long point(double x, double y) {
+    return ((long)y << 16) | (long)x;
+}
+
+void send(uint message, long wparam, long lparam) {
+    gui_window_procedure(0, message, (ulong)wparam, lparam);
+}
+
+void click(double x, double y) {
+    send(WM_MOUSEMOVE, 0, point(x, y));
+    send(WM_LBUTTONDOWN, 1, point(x, y));
+    send(WM_LBUTTONUP, 0, point(x, y));
+}
+
+void build() {
+    gui_heading("Settings");
+    gui_begin_panel(0);
+    gui_begin_row();
+    clicked = gui_button("Save");
+    button_x = gui.slot_x;
+    button_y = gui.slot_y;
+    gui_button_quiet("Cancel");
+    gui_end();
+    gui_checkbox("Remember me", &checked);
+    box_x = gui.slot_x;
+    box_y = gui.slot_y;
+    gui_switch("Enabled", &enabled);
+    gui_slider(&volume, 0, 1);
+    slider_x = gui.slot_x;
+    slider_y = gui.slot_y;
+    slider_width = gui.slot_width;
+    gui_input(name, "Your name");
+    input_x = gui.slot_x;
+    input_y = gui.slot_y;
+    input_width = gui.slot_width;
+    gui_progress(0.5);
+    gui_separator();
+    gui_muted("A long paragraph that is wider than the panel wraps onto more than one line by itself.");
+    gui_end();
+}
+
+int main() {
+    print(gui_open_offscreen(360, 520));
+    gui_set_dark(true);
+    print_hex(gui_mix(0xFF000000, 0xFFFFFFFF, 0.5));
+    print_hex(gui_fade(0xFF123456, 0.5));
+
+    gui_frame();
+    build();
+    gui_frame();
+    print_hex(gui_pixel(2, 2));
+    print_hex(gui_pixel((int)button_x + 6, (int)button_y + 18));
+    print(gui.line_heights[GUI_BODY] > 14 && gui.line_heights[GUI_HEADING] > gui.line_heights[GUI_BODY]);
+    int lit = 0;
+    for (int x = 24; x < 120; x++) {
+        if (gui_pixel(x, 36) != gui.theme.background) {
+            lit++;
+        }
+    }
+    print(lit > 10);
+
+    click(button_x + 10, button_y + 10);
+    build();
+    print(clicked);
+    gui_frame();
+    click(box_x + 5, box_y + 5);
+    build();
+    print(checked);
+    gui_frame();
+    build();
+    print(clicked);
+
+    gui_frame();
+    send(WM_LBUTTONDOWN, 1, point(slider_x + 8 + 0.75 * (slider_width - 16), slider_y + 10));
+    build();
+    print((int)(volume * 100 + 0.5));
+    gui_frame();
+    send(WM_LBUTTONUP, 0, point(slider_x + 8, slider_y + 10));
+    build();
+
+    gui_frame();
+    click(input_x + input_width - 4, input_y + 18);
+    send(WM_CHAR, 'X', 0);
+    send(WM_KEYDOWN, VK_LEFT, 0);
+    send(WM_CHAR, 0xE9, 0);
+    send(WM_KEYDOWN, VK_END, 0);
+    send(WM_KEYDOWN, VK_BACK, 0);
+    send(WM_KEYDOWN, VK_LEFT, 0);
+    send(WM_KEYDOWN, VK_BACK, 0);
+    build();
+    print(name);
+    print(length(name));
+    print(gui.focus >= 0);
+    gui_frame();
+    click(2, 2);
+    build();
+    gui_frame();
+    print(gui.focus);
+
+    gui_close();
+    print(gui.graphics == 0);
+    return 0;
+}

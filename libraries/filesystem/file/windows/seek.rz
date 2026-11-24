@@ -1,0 +1,14 @@
+import windows;
+
+bool seek(File file, long offset) {
+    if (!flush(file)) {
+        return false;
+    }
+    long reached[1];
+    if (SetFilePointerEx(file.handle, offset, reached, FILE_BEGIN) == 0) {
+        return false;
+    }
+    file.used = 0;
+    file.position = 0;
+    return true;
+}

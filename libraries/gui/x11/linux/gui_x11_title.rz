@@ -1,0 +1,21 @@
+import gui.state;
+import gui.wire;
+import text;
+
+bool gui_x11_title(string title, uint property, uint kind) {
+    uint words[262];
+    int count = (int)length(title);
+    count = count < 1024 ? count : 1024;
+    int padded = (count + 3) & ~3;
+    words[0] = (uint)(18 | ((6 + padded / 4) << 16));
+    words[1] = gui_desktop.x_window;
+    words[2] = property;
+    words[3] = kind;
+    words[4] = 8;
+    words[5] = (uint)count;
+    byte *target = (byte *)&words[6];
+    for (int i = 0; i < count; i++) {
+        target[i] = (byte)title[i];
+    }
+    return gui_send((long)&words[0], 24 + padded);
+}

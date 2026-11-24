@@ -1,0 +1,6 @@
+// error: 4:5: printf takes exactly one argument, not 2
+import stdio;
+int main() {
+    printf("%d", 3);
+    return 0;
+}

@@ -1,0 +1,3 @@
+bool is_letter(char value) {
+    return (value >= "a" && value <= "z") || (value >= "A" && value <= "Z");
+}

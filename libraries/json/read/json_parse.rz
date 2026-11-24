@@ -1,0 +1,23 @@
+import json.types;
+import json.scan;
+
+int json_parse(string source, long size, JsonToken *tokens, int capacity) {
+    if (size <= 0 || size > 2147483647) {
+        return JSON_INVALID;
+    }
+    if (tokens == null || capacity <= 0) {
+        return JSON_CAPACITY;
+    }
+    JsonReader reader;
+    reader.source = source;
+    reader.size = (int)size;
+    reader.tokens = tokens;
+    reader.capacity = capacity;
+    json_skip_space(&reader);
+    int status = json_scan_value(&reader, 0);
+    if (status < 0) {
+        return status;
+    }
+    json_skip_space(&reader);
+    return reader.position == reader.size ? reader.used : JSON_INVALID;
+}

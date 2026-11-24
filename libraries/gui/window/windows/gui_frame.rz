@@ -1,0 +1,18 @@
+import gui.state;
+import gui.theme;
+import gui.typography;
+import gui.render;
+import gui.input;
+
+bool gui_frame() {
+    if (gui.started) {
+        gui_finish_frame();
+    }
+    gui.started = true;
+    gui_wait();
+    if (gui.quit) {
+        return false;
+    }
+    gui_begin_frame();
+    return true;
+}

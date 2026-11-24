@@ -1,0 +1,18 @@
+import gui.state;
+import gui.theme;
+import gui.typography;
+import gui.render;
+import gui.input;
+
+import windows;
+
+bool gui_open_offscreen(int width, int height) {
+    if (!gui_start()) {
+        return false;
+    }
+    gui.offscreen = true;
+    gui.width = width;
+    gui.height = height;
+    gui.memory_dc = CreateCompatibleDC(0);
+    return gui_resize_buffer() && gui_create_fonts();
+}

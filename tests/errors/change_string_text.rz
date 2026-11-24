@@ -1,0 +1,6 @@
+// error: 4:6: the text of a string cannot be changed; copy it into a char array first
+int main() {
+    string s = "abc";
+    s[0] = 120;
+    return 0;
+}

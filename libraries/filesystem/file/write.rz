@@ -1,0 +1,12 @@
+import text;
+
+void write(File file, string text) {
+    long count = length(text);
+    for (long index = 0; index < count; index++) {
+        if (file.used == file.buffer.length) {
+            flush(file);
+        }
+        file.buffer[file.used] = text[index];
+        file.used++;
+    }
+}

@@ -1,0 +1,24 @@
+import threads.system;
+
+bool channel_send(Channel *channel, long value) {
+    AcquireSRWLockExclusive(&channel.lock);
+    while (channel.count == channel.capacity && !channel.closed) {
+        SleepConditionVariableSRW(&channel.writable, &channel.lock, INFINITE, 0);
+    }
+    if (channel.closed) {
+        ReleaseSRWLockExclusive(&channel.lock);
+        return false;
+    }
+    channel_put(channel, value);
+    long ticket = channel.sent;
+    ReleaseSRWLockExclusive(&channel.lock);
+    channel_signal();
+    if (channel.unbuffered) {
+        AcquireSRWLockExclusive(&channel.lock);
+        while (channel.taken < ticket && !channel.closed) {
+            SleepConditionVariableSRW(&channel.writable, &channel.lock, INFINITE, 0);
+        }
+        ReleaseSRWLockExclusive(&channel.lock);
+    }
+    return true;
+}

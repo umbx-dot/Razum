@@ -1,0 +1,42 @@
+// exit: 55
+import stdio;
+
+int calls = 0;
+
+void greet() {
+    print("hello");
+    calls++;
+}
+
+int sum6(int a, int b, int c, int d, int e, int f) {
+    calls++;
+    return a + b * 10 + c * 100 + d * 1000 + e * 10000 + f * 100000;
+}
+
+double mix(int a, double b, int c, double d, int e, double f) {
+    return a + b + c + d + e + f;
+}
+
+int fibonacci(int n) {
+    if (n < 2) return n;
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+int side_effect(int value) {
+    print(value);
+    return value;
+}
+
+int main() {
+    greet();
+    print(sum6(1, 2, 3, 4, 5, 6));
+    print(sum6(sum6(1, 0, 0, 0, 0, 0), 1, 1, 1, 1, 1));
+    print(mix(1, 0.5, 2, 0.25, 3, 0.125));
+    print(fibonacci(20));
+    print(calls);
+    if (side_effect(0) && side_effect(1)) {
+    }
+    if (side_effect(2) || side_effect(3)) {
+    }
+    return fibonacci(10);
+}

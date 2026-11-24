@@ -1,0 +1,13 @@
+import linux;
+
+bool seek(File file, long offset) {
+    if (!flush(file)) {
+        return false;
+    }
+    if (offset < 0 || system_call(SYS_LSEEK, file.handle, offset, SEEK_SET, 0) < 0) {
+        return false;
+    }
+    file.used = 0;
+    file.position = 0;
+    return true;
+}

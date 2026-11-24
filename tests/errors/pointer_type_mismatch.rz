@@ -1,0 +1,6 @@
+// error: 4:14: cannot store long* in int* 'p'; convert it with (int*)
+int main() {
+    long value = 1;
+    int *p = &value;
+    return 0;
+}

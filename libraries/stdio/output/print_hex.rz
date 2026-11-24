@@ -1,0 +1,4 @@
+void print_hex(ulong value) {
+    write_hex(value);
+    print_line();
+}

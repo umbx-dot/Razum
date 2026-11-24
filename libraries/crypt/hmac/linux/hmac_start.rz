@@ -1,0 +1,35 @@
+import crypt.hash;
+
+bool hmac_start(Hasher hasher, Hash kind, byte *key, long key_length) {
+    if (key_length < 0 || !hash_start(hasher, kind)) {
+        hasher.active = false;
+        return false;
+    }
+    long block_size = hash_block_size(kind);
+    byte padded[128];
+    for (int index = 0; index < 128; index++) {
+        padded[index] = 0;
+    }
+    if (key_length > block_size) {
+        Hasher shortened;
+        hash_start(shortened, kind);
+        hash_update(shortened, key, key_length);
+        byte digest[64];
+        long size = hash_finish(shortened, digest);
+        for (long index = 0; index < size; index++) {
+            padded[index] = digest[index];
+        }
+    } else {
+        for (long index = 0; index < key_length; index++) {
+            padded[index] = key[index];
+        }
+    }
+    byte inner[128];
+    for (long index = 0; index < block_size; index++) {
+        inner[index] = (byte)(padded[index] ^ 0x36);
+        hasher.outer[index] = (byte)(padded[index] ^ 0x5C);
+    }
+    hash_update(hasher, &inner[0], block_size);
+    hasher.keyed = true;
+    return true;
+}

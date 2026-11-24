@@ -1,0 +1,5 @@
+import gui.render;
+
+double gui_measure(int font, int start, int length, double max_width) {
+    return gui_text_layout(font, start, length, max_width, 0, 0, 0, false);
+}

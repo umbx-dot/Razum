@@ -1,0 +1,5 @@
+import http.state;
+
+long http_connection_count(HttpServer *server) {
+    return server.connection_count;
+}

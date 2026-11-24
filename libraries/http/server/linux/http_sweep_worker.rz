@@ -1,0 +1,16 @@
+import http.state;
+import http.connection;
+
+void http_sweep_worker(HttpWorker *worker, ulong now) {
+    HttpServer *server = worker.server;
+    HttpConnection *connection = worker.connections;
+    while (connection != null) {
+        HttpConnection *next = connection.next;
+        bool busy = connection.pending != null || connection.outgoing != null;
+        ulong limit = busy ? server.request_timeout : server.idle_timeout;
+        if (now - connection.last_active > limit) {
+            http_close(worker, connection);
+        }
+        connection = next;
+    }
+}

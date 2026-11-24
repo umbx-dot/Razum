@@ -1,0 +1,43 @@
+import gui.state;
+import gui.theme;
+import gui.typography;
+import gui.render;
+import gui.input;
+
+import windows;
+
+void gui_begin_frame() {
+    long counter = 0;
+    QueryPerformanceCounter(&counter);
+    gui.dt = (double)(counter - gui.last_counter) / gui.frequency;
+    if (gui.dt > 0.05) {
+        gui.dt = 1.0 / 60;
+    }
+    gui.last_counter = counter;
+    gui.time = (double)counter / gui.frequency;
+    bool resized = gui.width != gui.buffer_width || gui.height != gui.buffer_height;
+    if (gui.width > 0 && gui.height > 0 && resized) {
+        gui_resize_buffer();
+    }
+    gui.command_count = 0;
+    gui.text_used = 0;
+    gui.next_id = 0;
+    gui.animating = false;
+    gui.focus_claimed = false;
+    gui.cursor = IDC_ARROW;
+    gui_step_theme();
+    double padding = 24;
+    gui.depth = 0;
+    GuiBox *root = &gui.boxes[0];
+    root.row = false;
+    root.x = padding;
+    root.y = padding;
+    root.outer_width = gui.width / gui.scale;
+    root.width = root.outer_width - 2 * padding;
+    root.cursor = 0;
+    root.extent = 0;
+    root.gap = 12;
+    root.padding = padding;
+    root.background = -1;
+    root.count = 0;
+}

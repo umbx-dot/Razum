@@ -1,0 +1,8 @@
+import gui.state;
+
+void gui_push_event(int event) {
+    if (gui.event_count < gui.events.length) {
+        gui.events[gui.event_count] = event;
+        gui.event_count++;
+    }
+}

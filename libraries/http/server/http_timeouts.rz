@@ -1,0 +1,6 @@
+import http.state;
+
+void http_timeouts(HttpServer *server, uint idle_milliseconds, uint request_milliseconds) {
+    server.idle_timeout = idle_milliseconds;
+    server.request_timeout = request_milliseconds;
+}

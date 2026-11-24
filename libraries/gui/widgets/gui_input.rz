@@ -1,0 +1,65 @@
+import gui.state;
+import gui.theme;
+import gui.typography;
+import gui.draw;
+import gui.input;
+import gui.layout;
+import gui.editing;
+
+import text;
+
+bool gui_input(char text[], string placeholder) {
+    int id = gui_next_id();
+    gui_allocate(0, 36);
+    double x = gui.slot_x;
+    double y = gui.slot_y;
+    double width = gui.slot_width;
+    double height = gui.slot_height;
+    double padding = 12;
+    double inner = width - 2 * padding;
+    bool hovered = gui_hovered(id, x, y, width, height);
+    if (hovered) {
+        gui.cursor = GUI_CURSOR_TEXT;
+    }
+    if (gui.focus == id && gui.caret > (int)length(text)) {
+        gui.caret = (int)length(text);
+    }
+    double shift = gui.focus == id ? gui_input_shift(text, inner) : 0.0;
+    if (hovered && gui.pressed) {
+        gui.focus = id;
+        gui.focus_claimed = true;
+        gui.caret = gui_caret_at(text, gui.mouse_x - x - padding + shift);
+        gui.caret_since = gui.time;
+    }
+    bool changed = gui.focus == id && gui_edit(text);
+    bool focused = gui.focus == id;
+    if (focused) {
+        shift = gui_input_shift(text, inner);
+    }
+    double focus = gui_animate(gui.motion, id, focused ? 1.0 : 0.0);
+    double hover = gui_animate(gui.hover, id, hovered ? 1.0 : 0.0);
+    if (focus > 0.01) {
+        gui_stroke(x - 3, y - 3, width + 6, height + 6, 11, 3, gui_fade(gui.theme.accent, 0.3 * focus));
+    }
+    gui_fill(x, y, width, height, 8, gui.theme.surface);
+    uint border = gui_mix(gui_mix(gui.theme.border, gui.theme.muted, 0.5 * hover), gui.theme.accent, focus);
+    gui_stroke(x, y, width, height, 8, 1, border);
+    double line = gui.line_heights[GUI_BODY];
+    double text_y = y + (height - line) / 2;
+    gui_push(GUI_CLIP, x + 1, y, width - 2, height, 0);
+    int start = gui.text_used;
+    int size = gui_wide(text, -1);
+    if (size > 0) {
+        gui_text_at(x + padding - shift, text_y, GUI_BODY, start, size, gui.theme.text);
+    } else {
+        start = gui.text_used;
+        size = gui_wide(placeholder, -1);
+        gui_text_at(x + padding, text_y, GUI_BODY, start, size, gui.theme.muted);
+    }
+    if (focused && (long)((gui.time - gui.caret_since) * 1000) % 1060 < 530) {
+        double caret_x = x + padding - shift + gui_prefix_width(text, gui.caret);
+        gui_fill(caret_x, text_y + 1, 1.5, line - 2, 0, gui.theme.text);
+    }
+    gui_push(GUI_UNCLIP, 0, 0, 0, 0, 0);
+    return changed;
+}

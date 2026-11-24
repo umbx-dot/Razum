@@ -1,0 +1,28 @@
+import time;
+import stdio;
+import text;
+
+int main() {
+    char formatted[28];
+    long first = time_monotonic_ns();
+    long wall = time_unix_us();
+    long second = time_monotonic_ns();
+    if (first < 0 || second < first || wall < 1700000000000000 || !time_format_utc(wall, formatted)) {
+        return 1;
+    }
+    long stamps[] = {0, -1, -62135596800000000, 951782400123456, -2203891200000000, 253402300799999999};
+    string expected[] = {"1970-01-01T00:00:00.000000Z", "1969-12-31T23:59:59.999999Z", "0001-01-01T00:00:00.000000Z",
+                         "2000-02-29T00:00:00.123456Z", "1900-03-01T00:00:00.000000Z", "9999-12-31T23:59:59.999999Z"};
+    for (int i = 0; i < stamps.length; i++) {
+        if (!time_format_utc(stamps[i], formatted) || !equals(formatted, expected[i])) {
+            return 2 + i;
+        }
+    }
+    char short_buffer[27];
+    if (time_format_utc(0, short_buffer) || time_format_utc(-62135596800000001, formatted) ||
+        time_format_utc(253402300800000000, formatted)) {
+        return 9;
+    }
+    print("time ok");
+    return 0;
+}

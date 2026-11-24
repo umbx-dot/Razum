@@ -1,0 +1,7 @@
+import text;
+import windows;
+
+bool change_directory(string path) {
+    ushort wide[1024];
+    return to_utf16(wide, path) >= 0 && SetCurrentDirectoryW(wide) != 0;
+}

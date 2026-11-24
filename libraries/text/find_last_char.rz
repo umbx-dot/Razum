@@ -1,0 +1,8 @@
+long find_last_char(string text, char wanted) {
+    for (long index = length(text) - 1; index >= 0; index--) {
+        if (text[index] == wanted) {
+            return index;
+        }
+    }
+    return -1;
+}

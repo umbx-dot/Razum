@@ -1,0 +1,201 @@
+import crypt.hash;
+import crypt.hmac;
+import crypt.sign;
+import text;
+
+bool pfx_mac_valid(byte *data, long start, long end, byte *safe, long safe_length, byte *wide_password, long wide_length) {
+    long digest_info = 0;
+    long digest_info_length = 0;
+    long algorithm = 0;
+    long algorithm_length = 0;
+    long oid = 0;
+    long oid_length = 0;
+    long digest = 0;
+    long digest_length = 0;
+    long salt = 0;
+    long salt_length = 0;
+    long count = 0;
+    long count_length = 0;
+    long after_info = der_read(data, start, end, 0x30, &digest_info, &digest_info_length);
+    long info_end = digest_info + digest_info_length;
+    long after_algorithm = after_info < 0 ? -1 : der_read(data, digest_info, info_end, 0x30, &algorithm, &algorithm_length);
+    if (after_algorithm < 0 || der_read(data, algorithm, algorithm + algorithm_length, 6, &oid, &oid_length) < 0 ||
+        der_read(data, after_algorithm, info_end, 4, &digest, &digest_length) < 0) {
+        return false;
+    }
+    long after_salt = der_read(data, after_info, end, 4, &salt, &salt_length);
+    if (after_salt < 0) {
+        return false;
+    }
+    long iterations = 1;
+    if (after_salt < end && der_read(data, after_salt, end, 2, &count, &count_length) >= 0) {
+        iterations = der_integer(data, count, count_length);
+    }
+    Hash kind = Hash.SHA1;
+    if (der_is(data, oid, oid_length, "608648016503040201")) {
+        kind = Hash.SHA256;
+    } else if (der_is(data, oid, oid_length, "608648016503040203")) {
+        kind = Hash.SHA512;
+    } else if (!der_is(data, oid, oid_length, "2b0e03021a")) {
+        return false;
+    }
+    int size = hash_size(kind);
+    if (digest_length != size) {
+        return false;
+    }
+    byte key[64];
+    pkcs12_derive(kind, wide_password, wide_length, &data[salt], salt_length, iterations, 3, key, size);
+    byte mac[64];
+    hmac(kind, mac, &key[0], size, safe, safe_length);
+    int difference = 0;
+    for (int index = 0; index < size; index++) {
+        difference = difference | (mac[index] ^ data[digest + index]);
+    }
+    return difference == 0;
+}
+
+bool pfx_parse(Pfx pfx, byte *data, long length, string password) {
+    pfx.has_key = false;
+    pfx.certificate_count = 0;
+    pfx.certificate_used = 0;
+    if (pfx.certificates == null) {
+        pfx.certificates = new byte[65536];
+    }
+    ushort wide[512];
+    long characters = to_utf16(wide, password);
+    if (characters < 0 || characters > 500) {
+        return false;
+    }
+    byte wide_password[1004];
+    for (long index = 0; index < characters; index++) {
+        wide_password[2 * index] = (byte)(wide[index] >> 8);
+        wide_password[2 * index + 1] = (byte)wide[index];
+    }
+    wide_password[2 * characters] = 0;
+    wide_password[2 * characters + 1] = 0;
+    long wide_length = 2 * characters + 2;
+    long outer = 0;
+    long outer_length = 0;
+    if (der_read(data, 0, length, 0x30, &outer, &outer_length) < 0) {
+        return false;
+    }
+    long finish = outer + outer_length;
+    long value = 0;
+    long size = 0;
+    long at = der_read(data, outer, finish, 2, &value, &size);
+    long info = 0;
+    long info_length = 0;
+    long mac_at = at < 0 ? -1 : der_read(data, at, finish, 0x30, &info, &info_length);
+    long type = 0;
+    long type_length = 0;
+    long content_at = mac_at < 0 ? -1 : der_read(data, info, info + info_length, 6, &type, &type_length);
+    long holder = 0;
+    long holder_length = 0;
+    long safe = 0;
+    long safe_length = 0;
+    if (content_at < 0 || !der_is(data, type, type_length, "2a864886f70d010701") ||
+        der_read(data, content_at, info + info_length, 0xA0, &holder, &holder_length) < 0 ||
+        der_read(data, holder, holder + holder_length, 4, &safe, &safe_length) < 0) {
+        return false;
+    }
+    if (mac_at < finish) {
+        long mac = 0;
+        long mac_length = 0;
+        if (der_read(data, mac_at, finish, 0x30, &mac, &mac_length) < 0 ||
+            !pfx_mac_valid(data, mac, mac + mac_length, &data[safe], safe_length, &wide_password[0], wide_length)) {
+            return false;
+        }
+    }
+    long list = 0;
+    long list_length = 0;
+    if (der_read(data, safe, safe + safe_length, 0x30, &list, &list_length) < 0) {
+        return false;
+    }
+    long position = list;
+    while (position < list + list_length) {
+        long item = 0;
+        long item_length = 0;
+        long next = der_read(data, position, list + list_length, 0x30, &item, &item_length);
+        long item_type = 0;
+        long item_type_length = 0;
+        long body_at = next < 0 ? -1 : der_read(data, item, item + item_length, 6, &item_type, &item_type_length);
+        long body = 0;
+        long body_length = 0;
+        if (body_at < 0 || der_read(data, body_at, item + item_length, 0xA0, &body, &body_length) < 0) {
+            return false;
+        }
+        if (der_is(data, item_type, item_type_length, "2a864886f70d010701")) {
+            long octets = 0;
+            long octets_length = 0;
+            if (der_read(data, body, body + body_length, 4, &octets, &octets_length) < 0 ||
+                !pfx_bags(pfx, data, octets, octets + octets_length, password, &wide_password[0], wide_length)) {
+                return false;
+            }
+        } else if (der_is(data, item_type, item_type_length, "2a864886f70d010706")) {
+            long encrypted = 0;
+            long encrypted_length = 0;
+            long version = 0;
+            long version_length = 0;
+            long content = 0;
+            long content_length = 0;
+            long content_type = 0;
+            long content_type_length = 0;
+            if (der_read(data, body, body + body_length, 0x30, &encrypted, &encrypted_length) < 0) {
+                return false;
+            }
+            long after_version = der_read(data, encrypted, encrypted + encrypted_length, 2, &version, &version_length);
+            if (after_version < 0 || der_read(data, after_version, encrypted + encrypted_length, 0x30, &content, &content_length) < 0) {
+                return false;
+            }
+            long content_end = content + content_length;
+            long algorithm_at = der_read(data, content, content_end, 6, &content_type, &content_type_length);
+            long algorithm = 0;
+            long algorithm_length = 0;
+            long cipher_at = algorithm_at < 0 ? -1 : der_read(data, algorithm_at, content_end, 0x30, &algorithm, &algorithm_length);
+            long cipher = 0;
+            long cipher_length = 0;
+            if (cipher_at < 0 || der_read(data, cipher_at, content_end, 0x80, &cipher, &cipher_length) < 0) {
+                return false;
+            }
+            byte buffer[65536];
+            long plain_length = cipher_length <= buffer.length ?
+                pfx_decrypt(data, algorithm_at, cipher_at, &data[cipher], cipher_length, password, &wide_password[0], wide_length, buffer) : -1;
+            if (plain_length < 0 || !pfx_bags(pfx, &buffer[0], 0, plain_length, password, &wide_password[0], wide_length)) {
+                return false;
+            }
+        }
+        position = next;
+    }
+    if (!pfx.has_key || pfx.certificate_count == 0) {
+        return false;
+    }
+    byte public_key[65];
+    if (!p256_public(&public_key[0], &pfx.private_key[0])) {
+        return false;
+    }
+    for (int index = 0; index < pfx.certificate_count; index++) {
+        if (pfx_contains(&pfx.certificates[pfx.certificate_starts[index]], pfx.certificate_lengths[index], &public_key[0], 65)) {
+            long start = pfx.certificate_starts[index];
+            long length_here = pfx.certificate_lengths[index];
+            pfx.certificate_starts[index] = pfx.certificate_starts[0];
+            pfx.certificate_lengths[index] = pfx.certificate_lengths[0];
+            pfx.certificate_starts[0] = start;
+            pfx.certificate_lengths[0] = length_here;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool pfx_contains(byte *data, long length, byte *pattern, long pattern_length) {
+    for (long at = 0; at + pattern_length <= length; at++) {
+        long matched = 0;
+        while (matched < pattern_length && data[at + matched] == pattern[matched]) {
+            matched++;
+        }
+        if (matched == pattern_length) {
+            return true;
+        }
+    }
+    return false;
+}

@@ -1,0 +1,7 @@
+// error: 3:27: const 'LIMIT' needs a value known when compiling: literals, other consts and enum members, combined with operators
+int counter = 3;
+const int LIMIT = counter * 2;
+
+int main() {
+    return 0;
+}

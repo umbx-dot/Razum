@@ -1,0 +1,6 @@
+// error: 2:4: an array parameter in a function type has no size; write int[]
+fn(int[3]) -> int g;
+
+int main() {
+    return 0;
+}

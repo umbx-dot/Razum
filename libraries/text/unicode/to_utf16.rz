@@ -1,0 +1,24 @@
+long to_utf16(ushort target[], string text) {
+    long used = 0;
+    long index = 0;
+    while (text[index] != "\0") {
+        int size = 0;
+        int value = utf8_decode(text, index, &size);
+        int units = value >= 0x10000 ? 2 : 1;
+        if (used + units >= target.length) {
+            target[0] = 0;
+            return -1;
+        }
+        if (units == 2) {
+            value -= 0x10000;
+            target[used] = (ushort)(0xD800 + (value >> 10));
+            target[used + 1] = (ushort)(0xDC00 + (value & 0x3FF));
+        } else {
+            target[used] = (ushort)value;
+        }
+        used += units;
+        index += size;
+    }
+    target[used] = 0;
+    return used;
+}

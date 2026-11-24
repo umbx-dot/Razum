@@ -1,0 +1,46 @@
+import stdio;
+import threads;
+import http;
+
+long visits = 0;
+
+void home(HttpRequest *request, HttpResponse *response) {
+    http_html(response, "<h1>Hello from razum</h1><p>Try <a href=\"/hello?name=Ada\">/hello?name=Ada</a> or /api/time</p>");
+}
+
+void hello(HttpRequest *request, HttpResponse *response) {
+    char name[64];
+    if (!http_query_value(request, "name", name)) {
+        http_status(response, 400);
+        http_text(response, "add ?name=...");
+        return;
+    }
+    http_write(response, "Hello, ");
+    http_write(response, name);
+    http_write(response, "! You are visitor number ");
+    http_write_long(response, atomic_add(&visits, 1));
+}
+
+void echo(HttpRequest *request, HttpResponse *response) {
+    http_content_type(response, http_header(request, "content-type"));
+    http_write_bytes(response, request.body, request.body_length);
+}
+
+int main(string args[]) {
+    string host = args.length > 1 ? args[1] : "127.0.0.1";
+    HttpServer *server = http_new();
+    http_route(server, "GET", "/", home);
+    http_route(server, "GET", "/hello", hello);
+    http_route(server, "POST", "/echo", echo);
+    http_files(server, "/static/", "public");
+    if (!http_listen(server, host, 8080)) {
+        print("could not listen; is port 8080 free?");
+        return 1;
+    }
+    write_string("Serving on http://");
+    write_string(host);
+    print(":8080  (Ctrl+C stops)");
+    http_run(server);
+    print("stopped");
+    return 0;
+}

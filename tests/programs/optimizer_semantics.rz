@@ -1,0 +1,103 @@
+import stdio;
+
+long trace;
+long *remembered;
+int checks;
+
+long record(long value) {
+    trace = trace * 10 + value;
+    return value;
+}
+
+long accumulate(long n) {
+    if (n == 0) {
+        return 0;
+    }
+    return record(n) + accumulate(record(n - 1));
+}
+
+long count_down(long n) {
+    if (n < 1) {
+        return n;
+    }
+    return count_down(n - 1);
+}
+
+long recurrence(long n) {
+    if (n < 3) {
+        return 4;
+    }
+    return 2 * recurrence(n - 3) + recurrence(n - 1);
+}
+
+long keep_frame(long n) {
+    long local = n;
+    if (n == 2) {
+        remembered = &local;
+    }
+    if (n == 0) {
+        return *remembered;
+    }
+    return keep_frame(n - 1);
+}
+
+bool test_step(long n) {
+    checks++;
+    return n < 4;
+}
+
+double polynomial(double a, double b, double c, double d, double e, double f) {
+    return (a - b) * (c + d) - (e - f) * (b - c);
+}
+
+long shift_right(long n, long by) {
+    return n >> by;
+}
+
+ulong shift_unsigned(ulong n, long by) {
+    return n >> by;
+}
+
+long shift_left(long n, long by) {
+    return n << by;
+}
+
+long quotient(long n) {
+    return n / 8;
+}
+
+long parity(long n) {
+    if ((n & 1) == 0) {
+        n = n >> 1;
+    } else {
+        n = n * 3 + 1;
+    }
+    return n;
+}
+
+int main() {
+    print(accumulate(3));
+    print(trace);
+    print(count_down(1000));
+    print(recurrence(-1));
+    print(recurrence(8));
+    print(recurrence(20));
+    print(keep_frame(2));
+    long total = 0;
+    for (long i = 0; test_step(i); i++) {
+        if (i == 1) {
+            continue;
+        }
+        total += i;
+    }
+    print(total);
+    print(checks);
+    print(polynomial(9.0, 2.0, 1.0, 5.0, 8.0, 3.0) == 37.0);
+    print(shift_right(-128, 65));
+    print(shift_unsigned((ulong)-1, 63));
+    print(shift_left(2, 65));
+    print(quotient(-17));
+    print(parity(-18));
+    print(parity(11));
+    return 0;
+}

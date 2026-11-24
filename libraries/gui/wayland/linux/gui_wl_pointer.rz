@@ -1,0 +1,24 @@
+import gui.state;
+
+void gui_wl_pointer(int opcode, uint *words, int size) {
+    if ((opcode == 0 && size >= 24) || (opcode == 2 && size >= 20)) {
+        int offset = opcode == 0 ? 4 : 3;
+        gui_desktop.pointer_x = (double)(int)words[offset] / 256;
+        gui_desktop.pointer_y = (double)(int)words[offset + 1] / 256 - GUI_TITLE_HEIGHT;
+        gui.mouse_x = gui_desktop.pointer_x;
+        gui.mouse_y = gui_desktop.pointer_y;
+        gui.mouse_inside = gui.mouse_y >= 0;
+        if (opcode == 0) {
+            gui_wl_cursor(words[2]);
+        }
+    } else if (opcode == 1) {
+        gui.mouse_inside = false;
+    } else if (opcode == 3 && size >= 24 && words[4] == 272) {
+        if (words[5] == 0 && gui.mouse_down) {
+            gui.mouse_down = false;
+            gui.released = true;
+        } else if (words[5] == 1) {
+            gui_wl_press(words[2]);
+        }
+    }
+}

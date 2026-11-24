@@ -1,0 +1,7 @@
+import windows;
+
+bool hash_start(Hasher hasher, Hash kind) {
+    hasher.kind = kind;
+    hasher.handle = 0;
+    return BCryptCreateHash(hash_algorithm(kind), &hasher.handle, null, 0, null, 0, 0) == STATUS_SUCCESS;
+}

@@ -1,0 +1,16 @@
+long system_call6(long number, long first, long second, long third, long fourth, long fifth, long sixth) {
+    asm {
+        push rsi
+        push rdi
+        mov rax, qword [rsp + 16 + .number]
+        mov rdi, qword [rsp + 16 + .first]
+        mov rsi, qword [rsp + 16 + .second]
+        mov rdx, qword [rsp + 16 + .third]
+        mov r10, qword [rsp + 16 + .fourth]
+        mov r8, qword [rsp + 16 + .fifth]
+        mov r9, qword [rsp + 16 + .sixth]
+        syscall
+        pop rdi
+        pop rsi
+    }
+}

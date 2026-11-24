@@ -1,0 +1,54 @@
+// platform: windows
+import stdio;
+import text;
+import filesystem;
+
+int main(string args[]) {
+    print(args.length);
+    char path[260];
+    copy(path, args[0]);
+    concat(path, ".txt");
+
+    File output;
+    print(open(output, path, "w"));
+    write_line(output, "first line");
+    char number[24];
+    for (int i = 1; i <= 3; i++) {
+        int_to_text(number, i * 100);
+        write(output, number);
+        write(output, " ");
+    }
+    write_line(output, "");
+    for (int i = 0; i < 1000; i++) {
+        write_line(output, "0123456789");
+    }
+    close(output);
+
+    File more;
+    open(more, path, "a");
+    write_line(more, "appended");
+    close(more);
+
+    File input;
+    print(open(input, path, "r"));
+    char line[64];
+    long lines = 0;
+    long total = 0;
+    while (read_line(input, line)) {
+        lines++;
+        if (lines <= 2) {
+            print(line);
+        }
+        total += length(line);
+        if (equals(line, "appended")) {
+            print("found appended");
+        }
+    }
+    close(input);
+    print(lines);
+    print(total);
+
+    File missing;
+    print(open(missing, "this file does not exist.txt", "r"));
+    return 0;
+}

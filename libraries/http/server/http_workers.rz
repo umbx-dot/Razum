@@ -1,0 +1,7 @@
+import http.state;
+
+void http_workers(HttpServer *server, int count) {
+    if (!server.running && count >= 1 && count <= 256) {
+        server.worker_count = count;
+    }
+}

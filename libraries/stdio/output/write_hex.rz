@@ -1,0 +1,7 @@
+import text;
+
+void write_hex(ulong value) {
+    char digits[20];
+    hex_to_text(digits, value);
+    write_string(digits);
+}

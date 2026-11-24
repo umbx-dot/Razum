@@ -1,0 +1,23 @@
+import text;
+import windows;
+
+bool next_entry(Directory directory, char name[]) {
+    while (true) {
+        if (!directory.pending) {
+            if (directory.handle == INVALID_HANDLE_VALUE || FindNextFileW(directory.handle, directory.entry) == 0) {
+                name[0] = "\0";
+                return false;
+            }
+        }
+        directory.pending = false;
+        bool is_dot = directory.entry.name[0] == "." &&
+                      (directory.entry.name[1] == "\0" || (directory.entry.name[1] == "." && directory.entry.name[2] == "\0"));
+        if (!is_dot) {
+            if (from_utf16(name, &directory.entry.name[0]) < 0) {
+                name[0] = "\0";
+            }
+            return true;
+        }
+    }
+    return false;
+}

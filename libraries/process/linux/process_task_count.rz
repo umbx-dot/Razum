@@ -1,0 +1,45 @@
+import linux;
+
+long process_task_count() {
+    long proc = system_call(SYS_OPEN, (long)"/proc", O_RDONLY | O_DIRECTORY | O_CLOEXEC, 0, 0);
+    if (proc < 0) {
+        return -1;
+    }
+    long user = system_call(SYS_GETUID, 0, 0, 0, 0);
+    long tasks = 0;
+    char buffer[8192];
+    long status[18];
+    char task_path[64];
+    while (true) {
+        long got = system_call(SYS_GETDENTS64, proc, (long)&buffer[0], buffer.length, 0);
+        if (got <= 0) {
+            break;
+        }
+        long at = 0;
+        while (at < got) {
+            long size = (long)buffer[at + 16] | ((long)buffer[at + 17] << 8);
+            long name = at + 19;
+            bool numeric = buffer[name] >= "0" && buffer[name] <= "9";
+            if (numeric && system_call(SYS_NEWFSTATAT, proc, (long)&buffer[name], (long)&status[0], 0) == 0 &&
+                (status[3] >> 32) == user) {
+                long length = 0;
+                while (buffer[name + length] != "\0" && length < 50) {
+                    task_path[length] = buffer[name + length];
+                    length++;
+                }
+                task_path[length] = "/";
+                task_path[length + 1] = "t";
+                task_path[length + 2] = "a";
+                task_path[length + 3] = "s";
+                task_path[length + 4] = "k";
+                task_path[length + 5] = "\0";
+                if (system_call(SYS_NEWFSTATAT, proc, (long)&task_path[0], (long)&status[0], 0) == 0) {
+                    tasks += status[2] - 2;
+                }
+            }
+            at += size;
+        }
+    }
+    system_call(SYS_CLOSE, proc, 0, 0, 0);
+    return tasks;
+}

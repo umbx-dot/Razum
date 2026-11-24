@@ -1,0 +1,8 @@
+import threads.system;
+
+int channel_length(Channel *channel) {
+    AcquireSRWLockExclusive(&channel.lock);
+    int count = channel.count;
+    ReleaseSRWLockExclusive(&channel.lock);
+    return count;
+}

@@ -1,0 +1,10 @@
+import linux;
+import text;
+
+long current_directory(char target[]) {
+    if (system_call(SYS_GETCWD, (long)&target[0], target.length, 0, 0) < 0) {
+        target[0] = "\0";
+        return 0;
+    }
+    return length(target);
+}

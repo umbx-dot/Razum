@@ -1,0 +1,3 @@
+void array_sort_T(T values[]) {
+    array_sort_items_T(values, values.length);
+}

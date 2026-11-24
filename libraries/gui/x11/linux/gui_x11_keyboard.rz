@@ -1,0 +1,22 @@
+import gui.state;
+import gui.wire;
+
+bool gui_x11_keyboard() {
+    int count = gui_desktop.x_symbols_per_key;
+    if (count <= 0 || count > 255) {
+        return false;
+    }
+    uint request[2] = {0x00020065, (uint)(gui_desktop.x_first_key | (count << 8))};
+    uint reply[8];
+    if (!gui_send((long)&request[0], 8) || !gui_receive((long)&reply[0], 32) || (reply[0] & 255) != 1) {
+        return false;
+    }
+    int width = (int)((reply[0] >> 8) & 255);
+    if (width <= 0 || reply[1] != (uint)(width * count)) {
+        return false;
+    }
+    gui_desktop.x_keys = new uint[width * count];
+    gui_desktop.x_symbols_per_key = width;
+    gui_desktop.x_key_count = count;
+    return gui_desktop.x_keys != null && gui_receive((long)gui_desktop.x_keys, (long)width * count * 4);
+}

@@ -1,0 +1,14 @@
+long find(string text, string part) {
+    long text_length = length(text);
+    long part_length = length(part);
+    for (long start = 0; start + part_length <= text_length; start++) {
+        long matched = 0;
+        while (matched < part_length && text[start + matched] == part[matched]) {
+            matched++;
+        }
+        if (matched == part_length) {
+            return start;
+        }
+    }
+    return -1;
+}

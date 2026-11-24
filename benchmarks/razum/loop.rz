@@ -1,0 +1,10 @@
+import stdio;
+
+int main() {
+    long total = 0;
+    for (long i = 0; i < 400000000; i++) {
+        total += (i * i) ^ (i >> 3);
+    }
+    print(total);
+    return 0;
+}

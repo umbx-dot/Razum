@@ -1,0 +1,75 @@
+// platform: windows
+import stdio;
+import text;
+import filesystem;
+
+void show_units(ushort units[], long count) {
+    for (long index = 0; index < count; index++) {
+        write_hex(units[index]);
+        write_char(' ');
+    }
+    print_line();
+}
+
+int main() {
+    string greeting = "Grüße, 世界 🌍";
+    print(greeting);
+    print(length(greeting));
+    print(utf8_length(greeting));
+    print(is_utf8(greeting));
+
+    ushort wide[64];
+    long units = to_utf16(wide, greeting);
+    print(units);
+    show_units(wide, units);
+
+    char back[64];
+    print(from_utf16(back, wide));
+    print(equals(back, greeting));
+
+    char broken[8] = "a";
+    broken[1] = (char)0xC3;
+    broken[2] = 'b';
+    print(is_utf8(broken));
+    print(to_utf16(wide, broken));
+    show_units(wide, 3);
+
+    ushort tiny[4];
+    print(to_utf16(tiny, greeting));
+    char small[4];
+    print(from_utf16(small, wide));
+
+    char folder[512];
+    temp_directory(folder);
+    concat(folder, "razum_ünïcødé_测试");
+    create_directory(folder);
+    print(is_directory(folder));
+    char file[600];
+    copy(file, folder);
+    concat(file, "\\данные.txt");
+    print(write_text(file, "Привет"));
+    print(exists(file));
+    print(file_size(file));
+    char content[64];
+    read_text(file, content);
+    print(content);
+
+    Directory listing;
+    char name[256];
+    open_directory(listing, folder);
+    while (next_entry(listing, name)) {
+        print(name);
+    }
+    close_directory(listing);
+
+    char renamed[600];
+    copy(renamed, folder);
+    concat(renamed, "\\Ωmega.txt");
+    print(rename(file, renamed));
+    print(exists(file));
+    print(exists(renamed));
+    print(delete_file(renamed));
+    print(delete_directory(folder));
+    print(exists(folder));
+    return 0;
+}

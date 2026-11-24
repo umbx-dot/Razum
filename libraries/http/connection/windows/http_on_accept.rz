@@ -1,0 +1,45 @@
+import http.state;
+import windows;
+import winsock;
+
+void http_on_accept(HttpWorker *worker, HttpAccept *accept) {
+    HttpServer *server = worker.server;
+    long socket = accept.socket;
+    bool accepted = accept.overlapped.internal == 0;
+    if (server.stopping) {
+        closesocket(socket);
+        free(accept);
+        return;
+    }
+    if (!accepted) {
+        closesocket(socket);
+        if (!http_post_accept(server, accept)) {
+            free(accept);
+        }
+        return;
+    }
+    int listener = accept.listener;
+    if (!http_post_accept(server, accept)) {
+        free(accept);
+    }
+    long listening = server.listeners[listener].socket;
+    setsockopt(socket, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (byte *)&listening, 8);
+    int yes = 1;
+    setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, (byte *)&yes, 4);
+    uint nonblocking = 1;
+    ioctlsocket(socket, FIONBIO, &nonblocking);
+    if (CreateIoCompletionPort(socket, server.port, 0, 0) == 0) {
+        closesocket(socket);
+        return;
+    }
+    HttpConnection *connection = new HttpConnection;
+    connection.kind = HTTP_CONNECTION;
+    connection.socket = socket;
+    connection.server = server;
+    connection.listener = listener;
+    if (server.listeners[listener].tls) {
+        connection.tls = new HttpTls;
+    }
+    http_track(server, connection);
+    http_serve(worker, connection);
+}

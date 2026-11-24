@@ -1,0 +1,6 @@
+long atomic_load(long *target) {
+    asm {
+        mov rcx, qword [rsp + .target]
+        mov rax, qword [rcx]
+    }
+}

@@ -1,0 +1,45 @@
+import gui.state;
+import gui.theme;
+import gui.typography;
+import gui.draw;
+import gui.input;
+import gui.layout;
+import gui.editing;
+
+
+bool gui_checkbox(string label, bool *value) {
+    int id = gui_next_id();
+    int start = gui.text_used;
+    int length = gui_wide(label, -1);
+    double text_width = gui_measure(GUI_BODY, start, length, 0);
+    double line = gui.line_heights[GUI_BODY];
+    double size = 18;
+    double height = line > size ? line : size;
+    double gap = length > 0 ? 10.0 : 0.0;
+    gui_allocate(size + gap + text_width, height);
+    double x = gui.slot_x;
+    double y = gui.slot_y;
+    bool hovered = gui_hovered(id, x, y, gui.slot_width, gui.slot_height);
+    if (hovered) {
+        gui.cursor = GUI_CURSOR_HAND;
+    }
+    bool changed = gui_clicked(id, hovered);
+    if (changed) {
+        *value = !*value;
+    }
+    double hover = gui_animate(gui.hover, id, hovered ? 1.0 : 0.0);
+    double on = gui_animate(gui.motion, id, *value ? 1.0 : 0.0);
+    double top = y + (height - size) / 2;
+    uint border = gui_mix(gui_mix(gui.theme.border, gui.theme.muted, 0.6 * hover), gui.theme.accent, on);
+    gui_fill(x, top, size, size, 5, gui_mix(gui.theme.surface, gui.theme.accent, on));
+    gui_stroke(x, top, size, size, 5, 1, border);
+    if (on > 0.01) {
+        uint mark = gui_fade(gui.theme.accent_text, on);
+        gui_line(x + 4.5, top + 9.5, x + 7.5, top + 12.5, 2, mark);
+        gui_line(x + 7.5, top + 12.5, x + 13.5, top + 6, 2, mark);
+    }
+    if (length > 0) {
+        gui_text_at(x + size + gap, y + (height - line) / 2, GUI_BODY, start, length, gui.theme.text);
+    }
+    return changed;
+}

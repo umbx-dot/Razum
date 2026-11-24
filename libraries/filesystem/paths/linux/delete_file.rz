@@ -1,0 +1,5 @@
+import linux;
+
+bool delete_file(string path) {
+    return system_call(SYS_UNLINK, (long)path, 0, 0, 0) == 0;
+}

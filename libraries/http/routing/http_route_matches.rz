@@ -1,0 +1,17 @@
+import http.state;
+import text;
+
+bool http_route_matches(HttpRoute *route, HttpRequest *request) {
+    bool any = equals(route.method, "*");
+    bool method = any || equals(route.method, request.method) || (request.head && equals(route.method, "GET"));
+    if (!method) {
+        return false;
+    }
+    string path = request.path;
+    for (long index = 0; index < route.length; index++) {
+        if (path[index] != route.path[index]) {
+            return false;
+        }
+    }
+    return route.prefix || path[route.length] == "\0";
+}

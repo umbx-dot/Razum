@@ -1,0 +1,11 @@
+void array_heap_sort_T(T *items, long count) {
+    for (long start = count / 2 - 1; start >= 0; start--) {
+        array_sift_down_T(items, start, count);
+    }
+    for (long end = count - 1; end > 0; end--) {
+        T kept = items[0];
+        items[0] = items[end];
+        items[end] = kept;
+        array_sift_down_T(items, 0, end);
+    }
+}

@@ -1,0 +1,8 @@
+// error: 2:1: asm blocks belong inside a function
+asm {
+    nop
+}
+
+int main() {
+    return 0;
+}

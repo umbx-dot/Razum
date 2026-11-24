@@ -1,0 +1,86 @@
+import stdio;
+import text;
+import math;
+
+int main() {
+    print(find("hello world", "world"));
+    print(find("hello", "xyz"));
+    print(find_char("a,b,c", ','));
+    print(find_last_char("a,b,c", ','));
+    print(contains("razum language", "lang"));
+    print(starts_with("razum", "raz"));
+    print(ends_with("razum", "zum"));
+    print(ends_with("um", "razum"));
+    char part[16];
+    substring(part, "abcdefgh", 2, 3);
+    print(part);
+    trim(part, "   padded \t");
+    print(part);
+    split_part(part, "red,green,blue", ',', 1);
+    print(part);
+    print(split_part(part, "red,green", ',', 5));
+    char shout[16] = "Hello";
+    to_upper(shout);
+    print(shout);
+    to_lower(shout);
+    print(shout);
+    reverse(shout);
+    print(shout);
+    append_char(shout, '!');
+    print(shout);
+    print(equals_ignore_case("RaZuM", "razum"));
+    print(compare_ignore_case("apple", "BANANA"));
+    print(is_digit('7') && !is_digit('x'));
+    print(is_letter('Q') && is_space(' '));
+    char number[32];
+    hex_to_text(number, 48879);
+    print(number);
+    ulong_to_text(number, 18446744073709551615);
+    print(number);
+    double_to_text(number, 2.5);
+    print(number);
+
+    print(sign(-42));
+    print(lcm(4, 6));
+    print(is_prime(97));
+    print(is_prime(91));
+    print(floor(-2.5));
+    print(ceil(-2.5));
+    print(round(2.5));
+    print(round(-2.5));
+    print(trunc(-2.7));
+    print(fmod(10.5, 3.0));
+    print(round(sin(PI / 2) * 1000000) / 1000000);
+    print(round(cos(0.0)));
+    print(round(atan2(1.0, 1.0) * 4 * 1000000) / 1000000);
+    print(round(log10(1000.0)));
+    print(round(log2(1024.0)));
+    print(round(exp(1.0) * 1000000) / 1000000);
+    print(pow(2.0, 10.0));
+    print(pow(-2.0, 3.0));
+    print(pow(9.0, 0.5));
+    print(hypot(3.0, 4.0));
+    seed_random(7);
+    long first = random_int(1, 6);
+    seed_random(7);
+    print(first == random_int(1, 6));
+    bool in_range = true;
+    for (int i = 0; i < 1000; i++) {
+        long roll = random_int(1, 6);
+        double fraction = random_double();
+        in_range = in_range && roll >= 1 && roll <= 6 && fraction >= 0.0 && fraction < 1.0;
+    }
+    print(in_range);
+
+    write_hex(255);
+    print_line();
+    print_hex(4096);
+    char line[32];
+    print(read_input(line));
+    print(line);
+    print(read_input(line));
+    print(read_input(line));
+    write_error("this goes to standard error");
+    flush_output();
+    return 0;
+}

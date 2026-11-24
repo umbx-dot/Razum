@@ -1,0 +1,8 @@
+import gui.state;
+
+int gui_stroke(double x, double y, double width, double height, double radius, double stroke, uint color) {
+    int index = gui_push(GUI_STROKE, x, y, width, height, color);
+    gui.commands[index].radius = radius;
+    gui.commands[index].stroke = stroke;
+    return index;
+}

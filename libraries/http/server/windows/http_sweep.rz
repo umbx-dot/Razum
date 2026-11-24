@@ -1,0 +1,32 @@
+import http.state;
+import windows;
+import winsock;
+import threads;
+
+void http_sweep(long argument) {
+    HttpServer *server = (HttpServer *)argument;
+    int cursor = 0;
+    while (!server.stopping) {
+        Sleep(250);
+        http_update_date();
+        ulong now = GetTickCount64();
+        mutex_lock(server.table_lock);
+        int chunk = server.slot_used / 4 + 1;
+        for (int step = 0; step < chunk && server.slot_used > 0; step++) {
+            if (cursor >= server.slot_used) {
+                cursor = 0;
+            }
+            long address = server.slots[cursor];
+            if (address != 0) {
+                HttpConnection *connection = (HttpConnection *)address;
+                bool busy = connection.pending != null || connection.operation == HTTP_SENDING || (connection.tls != null && !connection.tls.ready);
+                ulong limit = busy ? server.request_timeout : server.idle_timeout;
+                if (now - connection.last_active > limit) {
+                    CancelIoEx(connection.socket, (long)&connection.overlapped);
+                }
+            }
+            cursor++;
+        }
+        mutex_unlock(server.table_lock);
+    }
+}

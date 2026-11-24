@@ -1,0 +1,9 @@
+import linux;
+
+long path_mode(string path) {
+    long status[18];
+    if (system_call(SYS_STAT, (long)path, (long)&status[0], 0, 0) < 0) {
+        return -1;
+    }
+    return status[3] & S_IFMT;
+}

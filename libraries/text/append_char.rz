@@ -1,0 +1,9 @@
+long append_char(char target[], char value) {
+    long count = length(target);
+    if (count < target.length - 1) {
+        target[count] = value;
+        count++;
+        target[count] = "\0";
+    }
+    return count;
+}

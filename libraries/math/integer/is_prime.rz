@@ -1,0 +1,14 @@
+bool is_prime(long value) {
+    if (value < 2) {
+        return false;
+    }
+    if (value % 2 == 0) {
+        return value == 2;
+    }
+    for (long divisor = 3; divisor <= value / divisor; divisor += 2) {
+        if (value % divisor == 0) {
+            return false;
+        }
+    }
+    return true;
+}

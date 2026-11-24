@@ -1,0 +1,9 @@
+void print_long(long value) {
+    asm {
+        call rz@lock_output
+        mov rcx, qword [rsp + .value]
+        call rz@write_int
+        call rz@write_newline
+        call rz@unlock_output
+    }
+}

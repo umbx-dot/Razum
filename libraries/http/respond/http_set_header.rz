@@ -1,0 +1,12 @@
+import http.state;
+
+bool http_set_header(HttpResponse *response, string name, string value) {
+    if (response.header_count == response.headers.length) {
+        return false;
+    }
+    HttpHeader *header = &response.headers[response.header_count];
+    header.name = http_keep(response, name);
+    header.value = http_keep(response, value);
+    response.header_count++;
+    return true;
+}

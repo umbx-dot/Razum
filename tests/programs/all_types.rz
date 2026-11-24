@@ -1,0 +1,82 @@
+import stdio;
+
+char mark = 'x';
+float scale = 2.5;
+ulong mask = 18446744073709551615;
+bool flag = true;
+short offset = -300;
+
+float half(float value) {
+    return value / 2;
+}
+
+char next(char letter) {
+    return (char)(letter + 1);
+}
+
+bool is_even(long number) {
+    return number % 2 == 0;
+}
+
+int main() {
+    bool yes = true;
+    bool no = !yes;
+    print(yes);
+    print(no);
+    print(yes && 3 > 2);
+    print(yes == no);
+
+    char letter = 'A';
+    print(letter);
+    print(letter + 1);
+    print((char)(letter + 2));
+    print((int)'\n');
+
+    byte level = 250;
+    level += 10;
+    print(level);
+    print((sbyte)200);
+    print((short)40000);
+    print((ushort)-1);
+
+    int big = 2147483647;
+    big++;
+    print(big);
+    print(70000 * 70000);
+    uint count = 4000000000;
+    print(count + count);
+    int minus = -1;
+    uint one = 1;
+    print(minus < one);
+    print(minus + one);
+
+    long huge = 9223372036854775807;
+    print(huge);
+    print(huge + 1);
+    ulong top = 18446744073709551615;
+    print(top);
+    print(top / 2);
+    print(top % 10);
+    print(top > 1);
+    double wide = top;
+    print(wide);
+    print((ulong)10000000000000000000.0);
+
+    float tenth = 0.1;
+    print(tenth);
+    double widened = tenth;
+    print(widened);
+    print(tenth * 3);
+    print((float)(1.0 / 3));
+    print((int)-2.7);
+
+    print(mark);
+    print(scale);
+    print(mask);
+    print(flag);
+    print(offset);
+    print(half(5));
+    print(next('y'));
+    print(is_even(10));
+    return 0;
+}

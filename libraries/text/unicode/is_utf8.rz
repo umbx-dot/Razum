@@ -1,0 +1,13 @@
+bool is_utf8(string text) {
+    long index = 0;
+    while (text[index] != "\0") {
+        int size = 0;
+        int value = utf8_decode(text, index, &size);
+        bool replacement_written = text[index] == (char)0xEF && text[index + 1] == (char)0xBF && text[index + 2] == (char)0xBD;
+        if (value == 0xFFFD && !replacement_written) {
+            return false;
+        }
+        index += size;
+    }
+    return true;
+}

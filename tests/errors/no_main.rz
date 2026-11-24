@@ -1,0 +1,4 @@
+// error: 1:1: a program needs an entry point: int main() { ... }
+int f() {
+    return 1;
+}

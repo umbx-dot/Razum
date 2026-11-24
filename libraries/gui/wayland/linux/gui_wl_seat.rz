@@ -1,0 +1,16 @@
+import gui.state;
+
+void gui_wl_seat(uint capabilities) {
+    if ((capabilities & 1) != 0 && gui_desktop.wl_pointer == 0) {
+        gui_desktop.wl_pointer = gui_desktop.wl_next;
+        gui_desktop.wl_next++;
+        uint pointer[3] = {0, 0, gui_desktop.wl_pointer};
+        gui_wl_request(gui_desktop.wl_seat, 0, pointer);
+    }
+    if ((capabilities & 2) != 0 && gui_desktop.wl_keyboard == 0) {
+        gui_desktop.wl_keyboard = gui_desktop.wl_next;
+        gui_desktop.wl_next++;
+        uint keyboard[3] = {0, 0, gui_desktop.wl_keyboard};
+        gui_wl_request(gui_desktop.wl_seat, 1, keyboard);
+    }
+}

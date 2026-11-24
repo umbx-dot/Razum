@@ -1,0 +1,6 @@
+import gui.state;
+
+void gui_line(double x1, double y1, double x2, double y2, double stroke, uint color) {
+    int index = gui_push(GUI_LINE, x1, y1, x2 - x1, y2 - y1, color);
+    gui.commands[index].stroke = stroke;
+}

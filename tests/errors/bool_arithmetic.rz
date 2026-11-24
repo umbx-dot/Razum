@@ -1,0 +1,6 @@
+// error: 4:13: '+' needs a number, not a bool
+int main() {
+    bool b = true;
+    int n = b + 1;
+    return n;
+}

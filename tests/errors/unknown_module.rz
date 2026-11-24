@@ -1,0 +1,6 @@
+// error: 2:1: unknown library or module 'graphics': no graphics.rz file or graphics folder next to this file, the main file or an -I folder, and no built-in library of that name
+import graphics;
+
+int main() {
+    return 0;
+}

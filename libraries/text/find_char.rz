@@ -1,0 +1,22 @@
+long find_char(string text, char wanted) {
+    asm {
+        mov rcx, qword [rsp + .text]
+        mov dl, byte [rsp + .wanted]
+        test rcx, rcx
+        jz .missing
+        test dl, dl
+        jz .missing
+        xor eax, eax
+.scan:
+        mov r8b, byte [rcx + rax]
+        cmp r8b, dl
+        je .done
+        test r8b, r8b
+        jz .missing
+        inc rax
+        jmp .scan
+.missing:
+        mov rax, -1
+.done:
+    }
+}

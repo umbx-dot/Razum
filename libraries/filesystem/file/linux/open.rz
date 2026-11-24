@@ -1,0 +1,25 @@
+import linux;
+
+bool open(File file, string path, string mode) {
+    long flags = O_RDONLY | O_CLOEXEC;
+    if (mode[0] == "w") {
+        flags = O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC;
+    } else if (mode[0] == "a") {
+        flags = O_WRONLY | O_CREAT | O_APPEND | O_CLOEXEC;
+    }
+    file.handle = system_call(SYS_OPEN, (long)path, flags, 420, 0);
+    file.used = 0;
+    file.position = 0;
+    file.writing = mode[0] != "r";
+    file.failed = false;
+    if (file.handle < 0) {
+        file.handle = -1;
+        return false;
+    }
+    if (mode[0] == "a" && system_call(SYS_LSEEK, file.handle, 0, SEEK_END, 0) < 0) {
+        system_call(SYS_CLOSE, file.handle, 0, 0, 0);
+        file.handle = -1;
+        return false;
+    }
+    return true;
+}

@@ -1,0 +1,5 @@
+import linux;
+
+bool create_directory(string path) {
+    return system_call(SYS_MKDIR, (long)path, 511, 0, 0) == 0 || is_directory(path);
+}

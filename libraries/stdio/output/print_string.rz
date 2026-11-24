@@ -1,0 +1,9 @@
+void print_string(string text) {
+    asm {
+        call rz@lock_output
+        mov rcx, qword [rsp + .text]
+        call rz@write_string
+        call rz@write_newline
+        call rz@unlock_output
+    }
+}

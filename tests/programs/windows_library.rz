@@ -1,0 +1,33 @@
+// platform: windows
+import stdio;
+import windows;
+
+int main() {
+    SYSTEMTIME now;
+    GetLocalTime(now);
+    print(now.year >= 2026);
+    print(now.month >= 1 && now.month <= 12);
+
+    long frequency[1];
+    print(QueryPerformanceFrequency(frequency) != 0);
+    print(frequency[0] > 0);
+
+    char folder[260];
+    uint length = GetCurrentDirectoryA(260, folder);
+    print(length > 0);
+    print((GetFileAttributesA(folder) & FILE_ATTRIBUTE_DIRECTORY) != 0);
+    print(GetFileAttributesA("Z:\\no\\such\\path") == INVALID_FILE_ATTRIBUTES);
+    print(GetLastError() == ERROR_PATH_NOT_FOUND || GetLastError() == ERROR_FILE_NOT_FOUND);
+
+    print(RGB(1, 2, 3));
+    print(GetSystemMetrics(SM_CXSCREEN) > 0);
+
+    long key[1];
+    int opened = RegOpenKeyExA(HKEY_CURRENT_USER, "Software", 0, KEY_READ, key);
+    print(opened == 0);
+    RegCloseKey(key[0]);
+
+    POINT cursor;
+    print(GetCursorPos(cursor) != 0 || GetLastError() != 0);
+    return 0;
+}

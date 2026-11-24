@@ -1,0 +1,10 @@
+bool atomic_compare_exchange(long *target, long expected, long desired) {
+    asm {
+        mov rcx, qword [rsp + .target]
+        mov rax, qword [rsp + .expected]
+        mov rdx, qword [rsp + .desired]
+        lock cmpxchg qword [rcx], rdx
+        sete al
+        movzx eax, al
+    }
+}

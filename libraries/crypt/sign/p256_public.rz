@@ -1,0 +1,17 @@
+bool p256_public(byte *public_key, byte *private_key) {
+    p256_prepare();
+    long scalar[16];
+    number_from_bytes(scalar, private_key);
+    if (number_is_zero(scalar) || number_compare(scalar, p256.order.value) >= 0) {
+        return false;
+    }
+    P256Point point;
+    p256_multiply(point, scalar, p256.base);
+    long x[16];
+    long y[16];
+    p256_affine(x, y, point);
+    public_key[0] = 4;
+    number_to_bytes(&public_key[1], x);
+    number_to_bytes(&public_key[33], y);
+    return true;
+}

@@ -1,0 +1,5 @@
+import windows;
+
+long hash_algorithm(Hash kind) {
+    return kind >= Hash.MD5 && kind <= Hash.SHA512 ? BCRYPT_MD5_ALG_HANDLE + 16 * kind : 0;
+}

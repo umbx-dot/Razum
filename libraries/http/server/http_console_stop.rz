@@ -1,0 +1,9 @@
+import http.state;
+
+int http_console_stop(uint type) {
+    if (http_current_server != null) {
+        http_stop(http_current_server);
+        return 1;
+    }
+    return 0;
+}

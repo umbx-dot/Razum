@@ -1,0 +1,5 @@
+// error: 3:5: printf needs 'import stdio;' at the top of the file
+int main() {
+    printf(3);
+    return 0;
+}

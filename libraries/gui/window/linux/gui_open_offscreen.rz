@@ -1,0 +1,15 @@
+import gui.state;
+
+bool gui_open_offscreen(int width, int height) {
+    if (gui.commands != null || width <= 0 || height <= 0 || width > GUI_MAX_EDGE || height > GUI_MAX_EDGE) {
+        return false;
+    }
+    gui.offscreen = true;
+    gui.width = width;
+    gui.height = height;
+    if (!gui_start() || !gui_resize_buffer()) {
+        gui_close();
+        return false;
+    }
+    return true;
+}

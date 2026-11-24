@@ -1,0 +1,29 @@
+import http.state;
+import linux;
+import threads;
+
+void http_wait(HttpServer *server) {
+    if (!server.running) {
+        return;
+    }
+    for (int index = 0; index < server.worker_count; index++) {
+        thread_join(server.workers[index].thread);
+    }
+    for (int index = 0; index < server.listener_count; index++) {
+        system_call(SYS_CLOSE, server.listeners[index].socket, 0, 0, 0);
+    }
+    for (int index = 0; index < server.worker_count; index++) {
+        HttpWorker *worker = &server.workers[index];
+        system_call(SYS_CLOSE, worker.events, 0, 0, 0);
+        free(worker.input);
+        free(worker.head);
+        free(worker.output);
+        free(worker.sealed);
+        free(worker.response.body);
+        free(worker.response.scratch);
+    }
+    if (http_current_server == server) {
+        http_current_server = null;
+    }
+    server.running = false;
+}

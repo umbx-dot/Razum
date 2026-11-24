@@ -1,0 +1,225 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Razum",
+    "scopeName": "source.razum",
+    "patterns": [
+        {
+            "include": "#comments"
+        },
+        {
+            "include": "#asm-block"
+        },
+        {
+            "include": "#import"
+        },
+        {
+            "include": "#struct-definition"
+        },
+        {
+            "include": "#function-definition"
+        },
+        {
+            "include": "#struct-type"
+        },
+        {
+            "include": "#keywords"
+        },
+        {
+            "include": "#types"
+        },
+        {
+            "include": "#constants"
+        },
+        {
+            "include": "#strings"
+        },
+        {
+            "include": "#chars"
+        },
+        {
+            "include": "#numbers"
+        },
+        {
+            "include": "#calls"
+        },
+        {
+            "include": "#operators"
+        }
+    ],
+    "repository": {
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.line.double-slash.razum",
+                    "match": "//.*$"
+                },
+                {
+                    "name": "comment.block.razum",
+                    "begin": "/\\*",
+                    "end": "\\*/"
+                }
+            ]
+        },
+        "asm-block": {
+            "begin": "\\b(asm)\\s*(\\{)",
+            "beginCaptures": {
+                "1": {
+                    "name": "keyword.other.asm.razum"
+                },
+                "2": {
+                    "name": "punctuation.section.block.begin.razum"
+                }
+            },
+            "end": "\\}",
+            "endCaptures": {
+                "0": {
+                    "name": "punctuation.section.block.end.razum"
+                }
+            },
+            "contentName": "meta.embedded.block.asm",
+            "patterns": [
+                {
+                    "name": "comment.line.semicolon.asm",
+                    "match": ";.*$"
+                },
+                {
+                    "name": "entity.name.label.asm",
+                    "match": "^\\s*[A-Za-z_.@$][\\w.@$]*:"
+                },
+                {
+                    "name": "variable.language.register.asm",
+                    "match": "(?i)\\b(r[a-d]x|e[a-d]x|[a-d][lhx]|r[sd]i|e[sd]i|[sd]il?|r[sb]p|e[sb]p|[sb]pl?|r(8|9|1[0-5])[dwb]?|[xyz]mm([0-9]|[12][0-9]|3[01]))\\b"
+                },
+                {
+                    "name": "storage.modifier.size.asm",
+                    "match": "(?i)\\b(byte|word|dword|qword|oword|yword|zword|ptr|rel)\\b"
+                },
+                {
+                    "name": "variable.other.local.asm",
+                    "match": "(?<=[+\\s\\[])\\.[A-Za-z_][\\w@]*"
+                },
+                {
+                    "name": "support.function.import.asm",
+                    "match": "\\b(iat|rz)@[\\w@]+"
+                },
+                {
+                    "name": "string.quoted.asm",
+                    "match": "'[^']*'|\"[^\"]*\"|`[^`]*`"
+                },
+                {
+                    "name": "constant.numeric.asm",
+                    "match": "\\b(0x[0-9A-Fa-f_]+|[0-9][0-9A-Fa-f_]*[hHbBoOqQ]?)\\b"
+                },
+                {
+                    "name": "keyword.instruction.asm",
+                    "match": "^\\s*[A-Za-z][A-Za-z0-9]*\\b"
+                }
+            ]
+        },
+        "import": {
+            "match": "\\b(import)\\s+([A-Za-z_][\\w.]*)",
+            "captures": {
+                "1": {
+                    "name": "keyword.control.import.razum"
+                },
+                "2": {
+                    "name": "entity.name.namespace.razum"
+                }
+            }
+        },
+        "function-definition": {
+            "match": "\\b(void|bool|char|byte|sbyte|short|ushort|int|uint|long|ulong|float|double|string)\\s+([A-Za-z_]\\w*)\\s*(?=\\()",
+            "captures": {
+                "1": {
+                    "name": "storage.type.razum"
+                },
+                "2": {
+                    "name": "entity.name.function.razum"
+                }
+            }
+        },
+        "keywords": {
+            "name": "keyword.control.razum",
+            "match": "\\b(if|else|while|for|do|switch|case|default|return|break|continue|extern|export|new|sizeof|fn|const)\\b"
+        },
+        "types": {
+            "name": "storage.type.razum",
+            "match": "\\b(void|bool|char|byte|sbyte|short|ushort|int|uint|long|ulong|float|double|string)\\b"
+        },
+        "constants": {
+            "name": "constant.language.boolean.razum",
+            "match": "\\b(true|false|null)\\b"
+        },
+        "strings": {
+            "name": "string.quoted.double.razum",
+            "begin": "\"",
+            "end": "\"",
+            "patterns": [
+                {
+                    "name": "constant.character.escape.razum",
+                    "match": "\\\\[ntr0\\\\\"']"
+                },
+                {
+                    "name": "invalid.illegal.escape.razum",
+                    "match": "\\\\."
+                }
+            ]
+        },
+        "chars": {
+            "name": "string.quoted.single.razum",
+            "match": "'(\\\\[ntr0\\\\\"']|[^'\\\\])'",
+            "captures": {
+                "1": {
+                    "name": "constant.character.razum"
+                }
+            }
+        },
+        "numbers": {
+            "patterns": [
+                {
+                    "name": "constant.numeric.hex.razum",
+                    "match": "\\b0[xX][0-9A-Fa-f]+\\b"
+                },
+                {
+                    "name": "constant.numeric.float.razum",
+                    "match": "\\b[0-9]*\\.[0-9]+([eE][+-]?[0-9]+)?\\b|\\b[0-9]+(\\.[0-9]*)?[eE][+-]?[0-9]+\\b|\\b[0-9]+\\.(?![0-9])"
+                },
+                {
+                    "name": "constant.numeric.integer.razum",
+                    "match": "\\b[0-9]+\\b"
+                }
+            ]
+        },
+        "calls": {
+            "patterns": [
+                {
+                    "name": "support.function.builtin.razum",
+                    "match": "\\bprintf?\\b(?=\\s*\\()"
+                },
+                {
+                    "name": "entity.name.function.call.razum",
+                    "match": "\\b[A-Za-z_]\\w*(?=\\s*\\()"
+                }
+            ]
+        },
+        "operators": {
+            "name": "keyword.operator.razum",
+            "match": "<<=|>>=|<<|>>|->|\\+\\+|--|[-+*/%&|^]=?|==|!=|<=|>=|&&|\\|\\||[<>=!~?:]"
+        },
+        "struct-definition": {
+            "match": "\\b(struct|enum|extern)\\s+([A-Za-z_]\\w*)",
+            "captures": {
+                "1": {
+                    "name": "storage.type.struct.razum"
+                },
+                "2": {
+                    "name": "entity.name.type.struct.razum"
+                }
+            }
+        },
+        "struct-type": {
+            "match": "\\b([A-Za-z_]\\w*)(?=\\s+[A-Za-z_]\\w*\\s*(?:[;=\\[,)]))",
+            "name": "entity.name.type.razum"
+        }
+    }
+}

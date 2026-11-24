@@ -1,0 +1,13 @@
+import linux;
+
+int SleepConditionVariableSRW(long *condition, long *lock, uint milliseconds, uint flags) {
+    int sequence = futex_begin_wait(condition);
+    ReleaseSRWLockExclusive(lock);
+    long time[2];
+    time[0] = (long)(milliseconds / 1000);
+    time[1] = (long)(milliseconds % 1000) * 1000000;
+    long result = futex(condition, FUTEX_WAIT_PRIVATE, (long)sequence, milliseconds == INFINITE ? 0 : (long)&time[0]);
+    futex_end_wait(condition);
+    AcquireSRWLockExclusive(lock);
+    return result == ETIMEDOUT ? 0 : 1;
+}

@@ -1,0 +1,102 @@
+import windows;
+import text;
+
+bool process_run(ProcessResult result, string command, string input, string directory, ProcessLimits limits) {
+    result.output = new char[limits.max_output + 1];
+    result.output_length = 0;
+    result.exit_code = -1;
+    result.started = false;
+    result.timed_out = false;
+    result.truncated = false;
+    ushort wide_command[8192];
+    ushort wide_directory[1024];
+    if (to_utf16(wide_command, command) < 0 || to_utf16(wide_directory, directory) < 0) {
+        return false;
+    }
+    SECURITY_ATTRIBUTES inherited;
+    inherited.length = (uint)sizeof(SECURITY_ATTRIBUTES);
+    inherited.inherit = 1;
+    long output_read = 0;
+    long output_write = 0;
+    long input_read = 0;
+    long input_write = 0;
+    if (CreatePipe(&output_read, &output_write, inherited, 65536) == 0) {
+        return false;
+    }
+    if (CreatePipe(&input_read, &input_write, inherited, 65536) == 0) {
+        CloseHandle(output_read);
+        CloseHandle(output_write);
+        return false;
+    }
+    SetHandleInformation(output_read, HANDLE_FLAG_INHERIT, 0);
+    SetHandleInformation(input_write, HANDLE_FLAG_INHERIT, 0);
+    STARTUPINFOA startup;
+    startup.size = (uint)sizeof(STARTUPINFOA);
+    startup.flags = STARTF_USESTDHANDLES;
+    startup.input = input_read;
+    startup.output = output_write;
+    startup.error = output_write;
+    PROCESS_INFORMATION information;
+    long job = process_job(limits);
+    if (job == 0) {
+        CloseHandle(output_read);
+        CloseHandle(output_write);
+        CloseHandle(input_read);
+        CloseHandle(input_write);
+        return false;
+    }
+    ulong started_at = GetTickCount64();
+    bool created = CreateProcessW(0, wide_command, 0, 0, 1, CREATE_SUSPENDED | CREATE_NO_WINDOW, 0,
+                                  length(directory) > 0 ? &wide_directory[0] : null, startup, information) != 0;
+    CloseHandle(output_write);
+    CloseHandle(input_read);
+    if (!created) {
+        CloseHandle(output_read);
+        CloseHandle(input_write);
+        CloseHandle(job);
+        return false;
+    }
+    if (AssignProcessToJobObject(job, information.process) == 0) {
+        TerminateProcess(information.process, 1);
+        CloseHandle(information.thread);
+        CloseHandle(information.process);
+        CloseHandle(output_read);
+        CloseHandle(input_write);
+        CloseHandle(job);
+        return false;
+    }
+    result.started = true;
+    ResumeThread(information.thread);
+    uint written = 0;
+    long input_size = length(input);
+    if (input_size > 0) {
+        WriteFile(input_write, (char *)input, (uint)(input_size < 65536 ? input_size : 65536), &written, 0);
+    }
+    CloseHandle(input_write);
+    while (true) {
+        if (!process_collect(result, output_read, limits.max_output)) {
+            TerminateProcess(information.process, 1);
+            break;
+        }
+        if (WaitForSingleObject(information.process, 5) == WAIT_OBJECT_0) {
+            process_collect(result, output_read, limits.max_output);
+            break;
+        }
+        if (GetTickCount64() - started_at > limits.timeout_milliseconds) {
+            result.timed_out = true;
+            TerminateProcess(information.process, 1);
+            WaitForSingleObject(information.process, 1000);
+            process_collect(result, output_read, limits.max_output);
+            break;
+        }
+    }
+    uint code = 0;
+    GetExitCodeProcess(information.process, &code);
+    result.exit_code = (int)code;
+    result.milliseconds = (long)(GetTickCount64() - started_at);
+    CloseHandle(information.process);
+    CloseHandle(information.thread);
+    CloseHandle(output_read);
+    CloseHandle(job);
+    return true;
+}

@@ -1,0 +1,60 @@
+import stdio;
+import text;
+import http;
+import server;
+
+int main(string args[]) {
+    int port = 8765;
+    string rzc = "rzc";
+    for (int index = 1; index + 1 < args.length; index += 2) {
+        if (equals(args[index], "--port")) {
+            port = (int)parse_int(args[index + 1]);
+        } else if (equals(args[index], "--rzc")) {
+            rzc = args[index + 1];
+        }
+    }
+    if (!learn_find_rzc(rzc)) {
+        write_string("Cannot run ");
+        write_string(rzc);
+        print(": install razum (razum-setup.exe) so rzc is on PATH, or start with --rzc <path to rzc.exe>.");
+        return 1;
+    }
+    char public_folder[1024];
+    if (!learn_folder(public_folder, "public", "", "website\\public")) {
+        print("Cannot find the website's public folder; run from the repository or keep public\\ next to the program.");
+        return 1;
+    }
+    char docs_folder[1024];
+    bool has_docs = learn_folder(docs_folder, "docs", "..\\docs", "docs");
+    string benchmark_file = "\\..\\KNOWLEDGE.md";
+    if (has_docs && length(docs_folder) + length(benchmark_file) < learn_benchmark_source.length) {
+        copy(learn_benchmark_source, docs_folder);
+        concat(learn_benchmark_source, benchmark_file);
+    }
+    learn_allow_port(port);
+    HttpServer *server = http_new();
+    http_timeouts(server, 30000, 30000);
+    http_max_body(server, 262144);
+    http_route(server, "POST", "/api/run", learn_run);
+    http_route(server, "POST", "/api/check", learn_check);
+    http_route(server, "GET", "/api/health", learn_health);
+    http_route(server, "GET", "/api/benchmarks", learn_benchmarks);
+    if (has_docs) {
+        http_files(server, "/docs/", docs_folder);
+    }
+    http_files(server, "/", public_folder);
+    if (!http_listen(server, "127.0.0.1", port)) {
+        write_string("Port ");
+        write_long(port);
+        print(" is in use; start with --port <number>.");
+        return 1;
+    }
+    http_listen(server, "::1", port);
+    write_string("Razum: http://localhost:");
+    write_long(port);
+    print("   (Ctrl+C stops)");
+    write_string("Compiler: ");
+    print(learn_rzc);
+    http_run(server);
+    return 0;
+}

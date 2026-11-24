@@ -1,0 +1,16 @@
+import http.state;
+import windows;
+import winsock;
+
+bool http_post_send(HttpConnection *connection) {
+    http_reset_overlapped(connection.overlapped);
+    connection.operation = HTTP_SENDING;
+    WSABUF buffer;
+    buffer.length = (uint)(connection.outgoing_used - connection.outgoing_sent);
+    buffer.buffer = &connection.outgoing[connection.outgoing_sent];
+    uint sent = 0;
+    if (WSASend(connection.socket, &buffer, 1, &sent, 0, (long)&connection.overlapped, 0) != 0) {
+        return WSAGetLastError() == WSA_IO_PENDING;
+    }
+    return true;
+}

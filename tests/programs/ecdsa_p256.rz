@@ -1,0 +1,31 @@
+import stdio;
+import crypt;
+
+void show(string label, byte *data, long length) {
+    char text[300];
+    hex_encode(text, data, length);
+    write_string(label);
+    write_string(" ");
+    print(text);
+}
+
+void sign_text(byte *private_key, string message) {
+    byte digest[32];
+    hash(Hash.SHA256, digest, as_bytes(message), length(message));
+    byte signature[72];
+    long size = ecdsa_p256_sign(signature, private_key, &digest[0]);
+    write_string(message);
+    write_string(" ");
+    show("signature", &signature[0], size);
+}
+
+int main() {
+    byte private_key[32];
+    hex_decode(private_key, "c9afa9d845ba75166b5c215767b1d6934e50c3db36e89b127b8a622b120f6721");
+    byte public_key[65];
+    print(p256_public(&public_key[0], &private_key[0]));
+    show("public", &public_key[0], 65);
+    sign_text(&private_key[0], "sample");
+    sign_text(&private_key[0], "test");
+    return 0;
+}

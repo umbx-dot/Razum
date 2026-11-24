@@ -1,0 +1,13 @@
+import crypt.hash;
+import crypt.hmac;
+
+long hkdf_extract(Hash kind, byte secret[], byte *salt, long salt_length, byte *input, long input_length) {
+    byte zeros[64];
+    for (int index = 0; index < 64; index++) {
+        zeros[index] = 0;
+    }
+    if (salt_length == 0) {
+        return hmac(kind, secret, &zeros[0], hash_size(kind), input, input_length);
+    }
+    return hmac(kind, secret, salt, salt_length, input, input_length);
+}

@@ -1,0 +1,11 @@
+import crypt.hash;
+
+long hmac(Hash kind, byte mac[], byte *key, long key_length, byte *data, long length) {
+    Hasher hasher;
+    if (!hmac_start(hasher, kind, key, key_length)) {
+        return -1;
+    }
+    bool fed = hash_update(hasher, data, length);
+    long size = hash_finish(hasher, mac);
+    return fed ? size : -1;
+}

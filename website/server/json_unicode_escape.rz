@@ -1,0 +1,14 @@
+int json_unicode_escape(char *data, long length, long position) {
+    if (position + 4 > length) {
+        return -1;
+    }
+    int value = 0;
+    for (long index = position; index < position + 4; index++) {
+        int digit = json_hex(data[index]);
+        if (digit < 0) {
+            return -1;
+        }
+        value = value * 16 + digit;
+    }
+    return value;
+}

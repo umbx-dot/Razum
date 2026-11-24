@@ -1,0 +1,28 @@
+bool hash_start(Hasher hasher, Hash kind) {
+    ulong md5_start[4] = {0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476};
+    ulong sha1_start[5] = {0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0};
+    ulong sha256_start[8] = {0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A, 0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19};
+    ulong sha384_start[8] = {0xCBBB9D5DC1059ED8, 0x629A292A367CD507, 0x9159015A3070DD17, 0x152FECD8F70E5939,
+                             0x67332667FFC00B31, 0x8EB44A8768581511, 0xDB0C2E0D64F98FA7, 0x47B5481DBEFA4FA4};
+    ulong sha512_start[8] = {0x6A09E667F3BCC908, 0xBB67AE8584CAA73B, 0x3C6EF372FE94F82B, 0xA54FF53A5F1D36F1,
+                             0x510E527FADE682D1, 0x9B05688C2B3E6C1F, 0x1F83D9ABFB41BD6B, 0x5BE0CD19137E2179};
+    hasher.kind = kind;
+    hasher.active = kind >= Hash.MD5 && kind <= Hash.SHA512;
+    hasher.keyed = false;
+    hasher.used = 0;
+    hasher.total = 0;
+    for (int index = 0; index < 8; index++) {
+        if (kind == Hash.MD5) {
+            hasher.state[index] = index < 4 ? md5_start[index] : 0;
+        } else if (kind == Hash.SHA1) {
+            hasher.state[index] = index < 5 ? sha1_start[index] : 0;
+        } else if (kind == Hash.SHA256) {
+            hasher.state[index] = sha256_start[index];
+        } else if (kind == Hash.SHA384) {
+            hasher.state[index] = sha384_start[index];
+        } else {
+            hasher.state[index] = sha512_start[index];
+        }
+    }
+    return hasher.active;
+}

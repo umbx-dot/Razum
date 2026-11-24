@@ -1,0 +1,11 @@
+import stdio;
+import windows;
+
+ulong secure_ulong() {
+    ulong value = 0;
+    if (!secure_bytes((byte *)&value, 8)) {
+        print_error("crypt: the system random number generator failed");
+        ExitProcess(3);
+    }
+    return value;
+}

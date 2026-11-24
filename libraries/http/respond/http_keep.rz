@@ -1,0 +1,15 @@
+import http.state;
+import http.memory;
+import text;
+
+string http_keep(HttpResponse *response, string text) {
+    long size = length(text);
+    if (response.scratch_used + size + 1 > HTTP_SCRATCH_SIZE) {
+        return "";
+    }
+    char *place = &response.scratch[response.scratch_used];
+    http_copy(place, (char *)text, size);
+    place[size] = "\0";
+    response.scratch_used += size + 1;
+    return (string)place;
+}

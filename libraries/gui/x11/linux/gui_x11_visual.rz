@@ -1,0 +1,20 @@
+bool gui_x11_visual(byte *setup, int size, int screen, uint wanted) {
+    int depths = (int)setup[screen + 39];
+    int position = screen + 40;
+    for (int depth = 0; depth < depths && size - position >= 8; depth++) {
+        int count = (int)setup[position + 2] | ((int)setup[position + 3] << 8);
+        position += 8;
+        if (count > (size - position) / 24) {
+            return false;
+        }
+        for (int index = 0; index < count; index++) {
+            uint *visual = (uint *)&setup[position];
+            if (visual[0] == wanted) {
+                return setup[position + 4] == 4 && visual[2] == 0xFF0000 &&
+                       visual[3] == 0x00FF00 && visual[4] == 0x0000FF;
+            }
+            position += 24;
+        }
+    }
+    return false;
+}

@@ -1,0 +1,23 @@
+import gui.state;
+import gui.render;
+import gui.typography;
+
+void gui_wl_titlebar(long pixels) {
+    long client = gui.pixels;
+    gui.pixels = pixels;
+    int width = gui.buffer_width;
+    GuiClip clip = {0, 0, width, GUI_TITLE_HEIGHT};
+    gui_clip = clip;
+    gui_fill_pixels((uint *)pixels, width * GUI_TITLE_HEIGHT, gui.theme.raised);
+    for (int y = 7; y < 22; y++) {
+        gui_span(width - 29, width - 7, y, gui.theme.surface);
+    }
+    int start = gui.text_used;
+    int count = gui_wide(gui_desktop.title, -1);
+    gui_clip.right = width - 34;
+    gui_text_layout(GUI_BODY, start, count, 0, 10, 4, gui.theme.text, true);
+    gui.text_used = start;
+    gui_clip.right = width;
+    gui_glyph(width - 22, 6, (ushort)120, GUI_BODY, gui.theme.text);
+    gui.pixels = client;
+}

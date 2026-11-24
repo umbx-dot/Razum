@@ -1,0 +1,10 @@
+import filesystem;
+import text;
+
+int main(string args[]) {
+    if (args.length != 4) {
+        return 2;
+    }
+    bool replaced = equals(args[1], "copy") ? copy_file(args[2], args[3]) : rename(args[2], args[3]);
+    return replaced ? 0 : 1;
+}

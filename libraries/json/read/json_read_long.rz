@@ -1,0 +1,25 @@
+import json.types;
+
+bool json_read_long(string source, JsonToken token, long *value) {
+    if (token.kind != JSON_NUMBER) {
+        return false;
+    }
+    int index = token.start;
+    bool negative = source[index] == "-";
+    if (negative) {
+        index++;
+    }
+    const ulong PREFIX_LIMIT = 922337203685477580;
+    int last_digit = negative ? 8 : 7;
+    ulong number = 0;
+    for (; index < token.end; index++) {
+        int digit = (int)source[index] - 48;
+        if (digit < 0 || digit > 9 || number > PREFIX_LIMIT ||
+            (number == PREFIX_LIMIT && digit > last_digit)) {
+            return false;
+        }
+        number = number * 10 + (ulong)digit;
+    }
+    *value = (long)(negative ? 0 - number : number);
+    return true;
+}

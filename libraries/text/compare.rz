@@ -1,0 +1,7 @@
+int compare(string left, string right) {
+    asm {
+        mov rcx, qword [rsp + .left]
+        mov rdx, qword [rsp + .right]
+        call rz@text_compare
+    }
+}

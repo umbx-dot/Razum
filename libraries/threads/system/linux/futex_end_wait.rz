@@ -1,0 +1,6 @@
+void futex_end_wait(long *condition) {
+    asm {
+        mov rcx, qword [rsp + .condition]
+        lock dec dword [rcx + 4]
+    }
+}

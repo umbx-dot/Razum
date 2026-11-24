@@ -1,0 +1,7 @@
+// error: 5:11: '%' needs integers, not a double
+import stdio;
+
+int main() {
+    print(5.0 % 2);
+    return 0;
+}

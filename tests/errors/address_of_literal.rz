@@ -1,0 +1,5 @@
+// error: 3:14: & needs a variable, element or field to point to
+int main() {
+    int *p = &5;
+    return 0;
+}

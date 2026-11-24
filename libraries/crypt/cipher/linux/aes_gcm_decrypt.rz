@@ -1,0 +1,25 @@
+long aes_gcm_decrypt(byte target[], byte *key, long key_length, byte *nonce, byte *aad, long aad_length,
+                     byte *data, long length) {
+    long size = length - AES_GCM_TAG_SIZE;
+    if (size < 0 || size > 0xFFFFFFFF || aad_length < 0 || aad_length > 0xFFFFFFFF || target.length < size) {
+        return -1;
+    }
+    AesKey expanded;
+    if (!aes_expand(expanded, key, key_length)) {
+        return -1;
+    }
+    byte expected[AES_GCM_TAG_SIZE];
+    gcm_tag(expanded, nonce, aad, aad_length, data, size, &expected[0]);
+    int difference = 0;
+    for (int i = 0; i < AES_GCM_TAG_SIZE; i++) {
+        difference = difference | (expected[i] ^ data[size + i]);
+    }
+    if (difference != 0) {
+        for (long i = 0; i < size; i++) {
+            target[i] = 0;
+        }
+        return -1;
+    }
+    gcm_crypt(expanded, nonce, data, &target[0], size);
+    return size;
+}

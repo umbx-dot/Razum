@@ -1,0 +1,18 @@
+extern "gdi32" uint SetPixel(long dc, int x, int y, uint color);
+extern "gdi32" uint GetPixel(long dc, int x, int y);
+extern "gdi32" int MoveToEx(long dc, int x, int y, long previous);
+extern "gdi32" int LineTo(long dc, int x, int y);
+extern "gdi32" int Rectangle(long dc, int left, int top, int right, int bottom);
+extern "gdi32" int Ellipse(long dc, int left, int top, int right, int bottom);
+extern "gdi32" int TextOutA(long dc, int x, int y, string text, int length);
+extern "gdi32" uint SetTextColor(long dc, uint color);
+extern "gdi32" uint SetBkColor(long dc, uint color);
+extern "gdi32" int SetBkMode(long dc, int mode);
+extern "gdi32" long CreateSolidBrush(uint color);
+extern "gdi32" long CreatePen(int style, int width, uint color);
+extern "gdi32" long SelectObject(long dc, long object);
+extern "gdi32" int DeleteObject(long object);
+extern "gdi32" long CreateCompatibleDC(long dc);
+extern "gdi32" long CreateDIBSection(long dc, BITMAPINFOHEADER info, uint usage, long *bits, long section, uint offset);
+extern "gdi32" int BitBlt(long target, int x, int y, int width, int height, long source, int source_x, int source_y, uint operation);
+extern "gdi32" int DeleteDC(long dc);

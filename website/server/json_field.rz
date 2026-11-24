@@ -1,0 +1,45 @@
+import http;
+import text;
+
+bool json_field(HttpRequest *request, string key, char target[]) {
+    char *data = request.body;
+    long length = request.body_length;
+    char name[32];
+    long position = 0;
+    while (position < length && data[position] != "{") {
+        position++;
+    }
+    position++;
+    while (position < length) {
+        while (position < length && (data[position] == " " || data[position] == "\n" || data[position] == "\r" ||
+                                     data[position] == "\t" || data[position] == ",")) {
+            position++;
+        }
+        if (position >= length || data[position] == "}") {
+            break;
+        }
+        position = json_string(data, length, position, name, true);
+        if (position < 0) {
+            return false;
+        }
+        while (position < length && (data[position] == " " || data[position] == ":")) {
+            position++;
+        }
+        bool wanted = equals(name, key);
+        if (position < length && data[position] == "\"") {
+            position = json_string(data, length, position, target, wanted);
+            if (position < 0) {
+                return false;
+            }
+            if (wanted) {
+                return true;
+            }
+        } else {
+            while (position < length && data[position] != "," && data[position] != "}") {
+                position++;
+            }
+        }
+    }
+    target[0] = "\0";
+    return false;
+}

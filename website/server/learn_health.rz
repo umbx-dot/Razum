@@ -1,0 +1,7 @@
+import http;
+
+void learn_health(HttpRequest *request, HttpResponse *response) {
+    http_json(response, "{\"ok\": true, \"server\": \"razum\", \"rzc\": ");
+    json_write(response, learn_rzc, length(learn_rzc));
+    http_write(response, "}");
+}

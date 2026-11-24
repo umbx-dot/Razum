@@ -1,0 +1,129 @@
+import stdio;
+
+struct Point {
+    int x;
+    int y;
+}
+
+struct Player {
+    char name[16];
+    Point position;
+    byte lives;
+    double score;
+    int scores[3];
+}
+
+int primes[] = {2, 3, 5, 7, 11};
+Point origin = {0, 0};
+Player hero = {"Ada", {5, 7}, 3, 9.5, {10, 20, 30}};
+string words[3] = {"zero", "one"};
+
+long sum(int values[]) {
+    long total = 0;
+    for (int i = 0; i < values.length; i++) {
+        total += values[i];
+    }
+    return total;
+}
+
+long sum_twice(int values[]) {
+    return sum(values) * 2;
+}
+
+void move(Point p, int dx, int dy) {
+    p.x += dx;
+    p.y += dy;
+}
+
+void reset(int values[]) {
+    for (int i = 0; i < values.length; i++) {
+        values[i] = 0;
+    }
+}
+
+int main() {
+    int numbers[5];
+    print(numbers[4]);
+    numbers[0] = 4;
+    numbers[1] = numbers[0] * 2;
+    int k = 2;
+    numbers[k] = 100;
+    numbers[k] += 5;
+    numbers[k]++;
+    numbers[3] -= 1;
+    print(numbers[0] + numbers[1] + numbers[2] + numbers[3]);
+    print(numbers.length);
+    print(sum(numbers));
+    print(sum_twice(primes));
+
+    byte small[2] = {250, 1};
+    small[0] += 10;
+    print(small[0]);
+
+    char text[] = "razum";
+    print(text);
+    print(text.length);
+    text[0] = 'R';
+    print(text);
+    print(text[4]);
+
+    int grid[3][4];
+    for (int row = 0; row < 3; row++) {
+        for (int column = 0; column < 4; column++) {
+            grid[row][column] = row * 10 + column;
+        }
+    }
+    print(grid[2][3]);
+    print(grid[1].length);
+    print(sum(grid[1]));
+
+    Point p = {3, 4};
+    Point q = p;
+    q.x = 30;
+    print(p.x);
+    print(q.x);
+    move(p, 1, -1);
+    print(p.x);
+    print(p.y);
+    p = q;
+    print(p.x);
+
+    Point path[3];
+    for (int i = 0; i < path.length; i++) {
+        path[i].x = i;
+        path[i].y = i * i;
+    }
+    path[2].y *= 10;
+    print(path[2].y);
+    print(path[1].x + path[2].x);
+
+    print(hero.name);
+    print(hero.position.y);
+    print(hero.lives);
+    print(hero.score);
+    print(hero.scores[2]);
+    hero.scores[2] /= 3;
+    print(hero.scores[2]);
+    hero.lives--;
+    print(hero.lives);
+    print(origin.x);
+    print(words[1]);
+    print(words[2]);
+
+    double weights[3] = {0.5, 1.5};
+    weights[2] = weights[0] + weights[1];
+    weights[2] *= 2;
+    print(weights[2]);
+    float halves[2] = {0.25};
+    halves[1] = halves[0] * 3;
+    print(halves[1]);
+
+    long big[1000];
+    big[999] = 7;
+    big[0] = big[999] * 6;
+    print(big[0]);
+
+    reset(numbers);
+    print(sum(numbers));
+    return 0;
+}

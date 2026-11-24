@@ -1,0 +1,13 @@
+import text;
+import filesystem;
+
+void learn_clean(string folder) {
+    string names[3] = {"\\main.exe", "\\main.asm", "\\main.rz"};
+    char path[700];
+    for (int index = 0; index < 3; index++) {
+        copy(path, folder);
+        concat(path, names[index]);
+        delete_file(path);
+    }
+    delete_directory(folder);
+}

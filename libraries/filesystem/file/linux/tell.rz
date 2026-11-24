@@ -1,0 +1,12 @@
+import linux;
+
+long tell(File file) {
+    long current = system_call(SYS_LSEEK, file.handle, 0, SEEK_CUR, 0);
+    if (current < 0) {
+        return -1;
+    }
+    if (file.writing) {
+        return current + file.used;
+    }
+    return current - (file.used - file.position);
+}

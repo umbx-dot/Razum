@@ -1,0 +1,28 @@
+import gui.state;
+
+void gui_span(int left, int right, int y, uint color) {
+    if (y < gui_clip.top || y >= gui_clip.bottom) {
+        return;
+    }
+    left = left > gui_clip.left ? left : gui_clip.left;
+    right = right < gui_clip.right ? right : gui_clip.right;
+    uint alpha = color >> 24;
+    if (right <= left || alpha == 0) {
+        return;
+    }
+    uint *pixels = (uint *)gui.pixels;
+    int start = y * gui.buffer_width + left;
+    if (alpha == 255) {
+        gui_fill_pixels(&pixels[start], right - left, color);
+        return;
+    }
+    uint keep = 255 - alpha;
+    uint rb = (color & 0xFF00FF) * alpha;
+    uint green = (color & 0x00FF00) * alpha;
+    for (int i = start; i < start + right - left; i++) {
+        uint old = pixels[i];
+        uint mixed_rb = (rb + (old & 0xFF00FF) * keep + 0x800080) >> 8;
+        uint mixed_green = (green + (old & 0x00FF00) * keep + 0x008000) >> 8;
+        pixels[i] = 0xFF000000 | (mixed_rb & 0xFF00FF) | (mixed_green & 0x00FF00);
+    }
+}

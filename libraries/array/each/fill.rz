@@ -1,0 +1,5 @@
+void array_fill_T(T values[], T value) {
+    for (long i = 0; i < values.length; i++) {
+        values[i] = value;
+    }
+}

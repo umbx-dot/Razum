@@ -1,0 +1,7 @@
+import windows;
+
+struct Directory {
+    long handle;
+    bool pending;
+    WIN32_FIND_DATAW entry;
+}

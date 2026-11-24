@@ -1,0 +1,33 @@
+long aes_cbc_decrypt(byte target[], byte *key, long key_length, byte *iv, byte *data, long length) {
+    if (length <= 0 || length % AES_BLOCK_SIZE != 0 || length > 0xFFFFFFFF || target.length < length) {
+        return -1;
+    }
+    AesKey expanded;
+    if (!aes_expand(expanded, key, key_length)) {
+        return -1;
+    }
+    byte chain[AES_BLOCK_SIZE];
+    for (int i = 0; i < AES_BLOCK_SIZE; i++) {
+        chain[i] = iv[i];
+    }
+    byte block[AES_BLOCK_SIZE];
+    for (long at = 0; at < length; at += AES_BLOCK_SIZE) {
+        aes_decrypt_block(expanded, &data[at], &block[0]);
+        for (int i = 0; i < AES_BLOCK_SIZE; i++) {
+            target[at + i] = (byte)(block[i] ^ chain[i]);
+            chain[i] = data[at + i];
+        }
+    }
+    int padding = target[length - 1];
+    bool valid = padding >= 1 && padding <= AES_BLOCK_SIZE;
+    for (int i = 1; valid && i <= padding; i++) {
+        valid = target[length - i] == padding;
+    }
+    if (!valid) {
+        for (long i = 0; i < length; i++) {
+            target[i] = 0;
+        }
+        return -1;
+    }
+    return length - padding;
+}

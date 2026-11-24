@@ -1,0 +1,4 @@
+struct Hasher {
+    long handle;
+    Hash kind;
+}

@@ -1,0 +1,12 @@
+bool starts_with(string text, string prefix) {
+    long count = length(prefix);
+    if (count > length(text)) {
+        return false;
+    }
+    for (long index = 0; index < count; index++) {
+        if (text[index] != prefix[index]) {
+            return false;
+        }
+    }
+    return true;
+}

@@ -1,0 +1,20 @@
+import windows;
+
+bool process_collect(ProcessResult result, long pipe, long limit) {
+    uint available = 0;
+    while (PeekNamedPipe(pipe, 0, 0, null, &available, null) != 0 && available > 0) {
+        long room = limit - result.output_length;
+        if (room <= 0) {
+            result.truncated = true;
+            return false;
+        }
+        uint wanted = available < room ? available : (uint)room;
+        uint read = 0;
+        if (ReadFile(pipe, &result.output[result.output_length], wanted, &read, 0) == 0 || read == 0) {
+            return true;
+        }
+        result.output_length += read;
+        result.output[result.output_length] = "\0";
+    }
+    return true;
+}

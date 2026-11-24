@@ -1,0 +1,11 @@
+const int GUI_KEY_BACKSPACE = 8;
+const int GUI_KEY_ENTER = 13;
+const int GUI_KEY_ESCAPE = 27;
+const int GUI_KEY_END = 35;
+const int GUI_KEY_HOME = 36;
+const int GUI_KEY_LEFT = 37;
+const int GUI_KEY_RIGHT = 39;
+const int GUI_KEY_DELETE = 46;
+const long GUI_CURSOR_ARROW = 32512;
+const long GUI_CURSOR_TEXT = 32513;
+const long GUI_CURSOR_HAND = 32649;

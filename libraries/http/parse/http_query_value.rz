@@ -1,0 +1,31 @@
+import http.state;
+import text;
+
+bool http_query_value(HttpRequest *request, string key, char target[]) {
+    string query = request.query;
+    long size = length(query);
+    long key_size = length(key);
+    long start = 0;
+    while (start <= size) {
+        long end = start;
+        while (end < size && query[end] != "&") {
+            end++;
+        }
+        long equals_at = start;
+        while (equals_at < end && query[equals_at] != "=") {
+            equals_at++;
+        }
+        bool same = equals_at - start == key_size;
+        for (long index = 0; same && index < key_size; index++) {
+            same = query[start + index] == key[index];
+        }
+        if (same) {
+            long value_start = equals_at < end ? equals_at + 1 : end;
+            http_decode(target, query, value_start, end);
+            return true;
+        }
+        start = end + 1;
+    }
+    target[0] = "\0";
+    return false;
+}

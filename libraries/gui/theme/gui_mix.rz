@@ -1,0 +1,12 @@
+import gui.state;
+
+uint gui_mix(uint from, uint to, double amount) {
+    uint result = 0;
+    for (int shift = 0; shift < 32; shift += 8) {
+        double start = (double)((from >> shift) & 255);
+        double end = (double)((to >> shift) & 255);
+        uint channel = (uint)(start + (end - start) * amount + 0.5);
+        result |= channel << shift;
+    }
+    return result;
+}

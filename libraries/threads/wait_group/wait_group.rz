@@ -1,0 +1,5 @@
+struct WaitGroup {
+    long lock;
+    long finished;
+    long count;
+}

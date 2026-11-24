@@ -1,0 +1,37 @@
+void aes_decrypt_block(AesKey key, byte *input, byte *output) {
+    byte state[16];
+    for (int index = 0; index < 16; index++) {
+        state[index] = (byte)(input[index] ^ key.rounds_keys[16 * key.rounds + index]);
+    }
+    for (int round = key.rounds - 1; round >= 0; round--) {
+        byte moved[16];
+        for (int column = 0; column < 4; column++) {
+            for (int row = 0; row < 4; row++) {
+                moved[4 * ((column + row) % 4) + row] = aes_inverse[state[4 * column + row]];
+            }
+        }
+        for (int index = 0; index < 16; index++) {
+            moved[index] = (byte)(moved[index] ^ key.rounds_keys[16 * round + index]);
+        }
+        for (int column = 0; column < 4; column++) {
+            int a = moved[4 * column];
+            int b = moved[4 * column + 1];
+            int c = moved[4 * column + 2];
+            int d = moved[4 * column + 3];
+            if (round > 0) {
+                state[4 * column] = (byte)(aes_multiply(a, 14) ^ aes_multiply(b, 11) ^ aes_multiply(c, 13) ^ aes_multiply(d, 9));
+                state[4 * column + 1] = (byte)(aes_multiply(a, 9) ^ aes_multiply(b, 14) ^ aes_multiply(c, 11) ^ aes_multiply(d, 13));
+                state[4 * column + 2] = (byte)(aes_multiply(a, 13) ^ aes_multiply(b, 9) ^ aes_multiply(c, 14) ^ aes_multiply(d, 11));
+                state[4 * column + 3] = (byte)(aes_multiply(a, 11) ^ aes_multiply(b, 13) ^ aes_multiply(c, 9) ^ aes_multiply(d, 14));
+            } else {
+                state[4 * column] = (byte)a;
+                state[4 * column + 1] = (byte)b;
+                state[4 * column + 2] = (byte)c;
+                state[4 * column + 3] = (byte)d;
+            }
+        }
+    }
+    for (int index = 0; index < 16; index++) {
+        output[index] = state[index];
+    }
+}

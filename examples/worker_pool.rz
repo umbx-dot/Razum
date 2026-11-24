@@ -1,0 +1,68 @@
+import stdio;
+import threads;
+
+const long LIMIT = 2000000;
+const long CHUNK = 50000;
+
+Channel *jobs;
+Channel *results;
+WaitGroup workers;
+
+bool is_prime(long n) {
+    if (n < 2) {
+        return false;
+    }
+    for (long divisor = 2; divisor * divisor <= n; divisor++) {
+        if (n % divisor == 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void work(long unused) {
+    long start = 0;
+    while (channel_receive(jobs, &start)) {
+        long found = 0;
+        for (long n = start; n < start + CHUNK; n++) {
+            if (is_prime(n)) {
+                found++;
+            }
+        }
+        channel_send(results, found);
+    }
+    wait_group_done(workers);
+}
+
+void close_results(long unused) {
+    wait_group_wait(workers);
+    channel_close(results);
+}
+
+int main() {
+    int count = cpu_count();
+    jobs = channel_new(64);
+    results = channel_new(64);
+    wait_group_add(workers, count);
+    for (int i = 0; i < count; i++) {
+        thread_detach(thread_start(work, 0));
+    }
+    thread_detach(thread_start(close_results, 0));
+
+    for (long start = 0; start < LIMIT; start += CHUNK) {
+        channel_send(jobs, start);
+    }
+    channel_close(jobs);
+
+    long total = 0;
+    long found = 0;
+    while (channel_receive(results, &found)) {
+        total += found;
+    }
+    write_long(count);
+    write_string(" threads found ");
+    write_long(total);
+    write_string(" primes below ");
+    print(LIMIT);
+    return 0;
+}

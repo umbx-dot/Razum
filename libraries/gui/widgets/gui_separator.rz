@@ -1,0 +1,12 @@
+import gui.state;
+import gui.theme;
+import gui.typography;
+import gui.draw;
+import gui.input;
+import gui.layout;
+import gui.editing;
+
+void gui_separator() {
+    gui_allocate(0, 1);
+    gui_fill(gui.slot_x, gui.slot_y, gui.slot_width, 1, 0, gui.theme.border);
+}

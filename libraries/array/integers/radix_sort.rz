@@ -1,0 +1,48 @@
+bool array_radix_sort_T(T *items, long count) {
+    int passes = T_BITS / 8;
+    T *other = new T[count];
+    long *counts = new long[T_BITS / 8 * 256];
+    if (other == null || counts == null) {
+        free(other);
+        free(counts);
+        return false;
+    }
+    for (long i = 0; i < count; i++) {
+        ulong key = (ulong)items[i] ^ T_FLIP;
+        for (int pass = 0; pass < passes; pass++) {
+            counts[pass * 256 + (int)((key >> (8 * pass)) & 255)]++;
+        }
+    }
+    T *source = items;
+    T *target = other;
+    for (int pass = 0; pass < passes; pass++) {
+        long *bucket = &counts[pass * 256];
+        int shift = 8 * pass;
+        if (bucket[(int)((((ulong)source[0] ^ T_FLIP) >> shift) & 255)] == count) {
+            continue;
+        }
+        long total = 0;
+        for (int digit = 0; digit < 256; digit++) {
+            long here = bucket[digit];
+            bucket[digit] = total;
+            total += here;
+        }
+        for (long i = 0; i < count; i++) {
+            T value = source[i];
+            int digit = (int)((((ulong)value ^ T_FLIP) >> shift) & 255);
+            target[bucket[digit]] = value;
+            bucket[digit]++;
+        }
+        T *swap = source;
+        source = target;
+        target = swap;
+    }
+    if (source != items) {
+        for (long i = 0; i < count; i++) {
+            items[i] = source[i];
+        }
+    }
+    free(other);
+    free(counts);
+    return true;
+}

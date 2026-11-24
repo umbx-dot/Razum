@@ -1,0 +1,11 @@
+double parse_double(string text) {
+    asm {
+        mov rcx, qword [rsp + .text]
+        xorpd xmm0, xmm0
+        test rcx, rcx
+        jz .done
+        fninit
+        call rz@parse_double
+    .done:
+    }
+}

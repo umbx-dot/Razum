@@ -1,0 +1,12 @@
+import windows;
+
+long tell(File file) {
+    long current[1];
+    if (SetFilePointerEx(file.handle, 0, current, FILE_CURRENT) == 0) {
+        return -1;
+    }
+    if (file.writing) {
+        return current[0] + file.used;
+    }
+    return current[0] - (file.used - file.position);
+}

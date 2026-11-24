@@ -1,0 +1,14 @@
+import threads.system;
+
+long channel_take(Channel *channel) {
+    long value = channel.items[channel.head];
+    channel.head = (channel.head + 1) % channel.capacity;
+    channel.count--;
+    channel.taken++;
+    if (channel.unbuffered) {
+        WakeAllConditionVariable(&channel.writable);
+    } else {
+        WakeConditionVariable(&channel.writable);
+    }
+    return value;
+}

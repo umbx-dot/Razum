@@ -1,0 +1,13 @@
+exit 0: hello|to stderr|
+exit 0: apple|fig|pear|
+exit 7: 
+exit 0: /usr|
+exit 0: has PATH|
+exit 1 timed out: 
+true
+true
+0123456789
+false
+false
+exit 0: two words|"quoted"
+true

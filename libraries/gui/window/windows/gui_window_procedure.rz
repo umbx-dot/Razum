@@ -1,0 +1,87 @@
+import gui.state;
+import gui.theme;
+import gui.typography;
+import gui.render;
+import gui.input;
+
+import windows;
+
+long gui_window_procedure(long window, uint message, ulong wparam, long lparam) {
+    if (message == WM_MOUSEMOVE || message == WM_LBUTTONDOWN || message == WM_LBUTTONUP) {
+        gui.mouse_x = (double)(short)lparam / gui.scale;
+        gui.mouse_y = (double)(short)(lparam >> 16) / gui.scale;
+        gui.mouse_inside = true;
+    }
+    if (message == WM_MOUSEMOVE) {
+        if (!gui.tracking && window != 0) {
+            TRACKMOUSEEVENT track;
+            track.size = 24;
+            track.flags = TME_LEAVE;
+            track.window = window;
+            TrackMouseEvent(track);
+            gui.tracking = true;
+        }
+        return 0;
+    }
+    if (message == WM_MOUSELEAVE) {
+        gui.mouse_inside = false;
+        gui.tracking = false;
+        return 0;
+    }
+    if (message == WM_LBUTTONDOWN) {
+        gui.mouse_down = true;
+        gui.pressed = true;
+        if (window != 0) {
+            SetCapture(window);
+        }
+        return 0;
+    }
+    if (message == WM_LBUTTONUP) {
+        gui.mouse_down = false;
+        gui.released = true;
+        if (window != 0) {
+            ReleaseCapture();
+        }
+        return 0;
+    }
+    if (message == WM_CHAR) {
+        gui_type((ushort)wparam);
+        return 0;
+    }
+    if (message == WM_KEYDOWN) {
+        gui_push_event(-(int)wparam);
+        return 0;
+    }
+    if (message == WM_SETCURSOR && (lparam & 0xFFFF) == HTCLIENT) {
+        SetCursor(LoadCursorA(0, gui.cursor));
+        return 1;
+    }
+    if (message == WM_SIZE) {
+        gui.width = (int)(lparam & 0xFFFF);
+        gui.height = (int)((lparam >> 16) & 0xFFFF);
+        return 0;
+    }
+    if (message == WM_PAINT) {
+        PAINTSTRUCT paint;
+        long dc = BeginPaint(window, paint);
+        BitBlt(dc, 0, 0, gui.buffer_width, gui.buffer_height, gui.memory_dc, 0, 0, SRCCOPY);
+        EndPaint(window, paint);
+        return 0;
+    }
+    if (message == WM_ERASEBKGND) {
+        return 1;
+    }
+    if (message == WM_DPICHANGED) {
+        gui.scale = (double)(wparam & 0xFFFF) / 96;
+        gui.buffer_width = 0;
+        RECT *area = (RECT *)lparam;
+        SetWindowPos(window, 0, area.left, area.top, area.right - area.left, area.bottom - area.top,
+                     SWP_NOZORDER | SWP_NOACTIVATE);
+        return 0;
+    }
+    if (message == WM_CLOSE) {
+        gui.quit = true;
+        return 0;
+    }
+    return DefWindowProcW(window, message, wparam, lparam);
+}

@@ -1,0 +1,9 @@
+long hash(Hash kind, byte digest[], byte *data, long length) {
+    Hasher hasher;
+    if (!hash_start(hasher, kind)) {
+        return -1;
+    }
+    bool fed = hash_update(hasher, data, length);
+    long size = hash_finish(hasher, digest);
+    return fed ? size : -1;
+}

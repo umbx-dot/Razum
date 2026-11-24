@@ -1,0 +1,2 @@
+extern "shell32" long ShellExecuteA(long window, string operation, string file, long parameters, long directory, int show);
+extern "shell32" int IsUserAnAdmin();

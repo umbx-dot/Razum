@@ -1,0 +1,44 @@
+// platform: windows
+import stdio;
+import text;
+import filesystem;
+
+int main(string args[]) {
+    char path[300];
+    copy(path, args[0]);
+    concat(path, ".buffers.txt");
+    write_text(path, "first\nsecond\n");
+
+    File reader;
+    open(reader, path, "r");
+    char line[64];
+    read_line(reader, line);
+    print(tell(reader));
+    print(seek(reader, -1));
+    print(tell(reader));
+    read_line(reader, line);
+    print(line);
+    close(reader);
+
+    File appender;
+    open(appender, path, "a");
+    write(appender, "abc");
+    print(tell(appender));
+    print(flush(appender));
+    print(tell(appender));
+    close(appender);
+
+    File broken;
+    open(broken, path, "w");
+    long handle = broken.handle;
+    broken.handle = -1;
+    for (int i = 0; i < 5000; i++) {
+        write(broken, "x");
+    }
+    broken.handle = handle;
+    print(flush(broken));
+    close(broken);
+
+    delete_file(path);
+    return 0;
+}

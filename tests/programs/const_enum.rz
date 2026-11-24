@@ -1,0 +1,110 @@
+import stdio;
+
+const int SIZE = 4;
+const int CELLS = SIZE * SIZE;
+const long BIG = (long)1 << 40;
+const double TAU = PI2 * 2;
+const double PI2 = 3.141592653589793;
+const string NAME = "razum";
+const bool DEBUG = SIZE > 3 && !false;
+const char SEPARATOR = ',';
+const uint MASK = 4294967295;
+const int INVERTED = ~SIZE;
+const byte SMALL = SIZE * 50;
+const float THIRD = 1.0 / 3;
+
+enum Color {
+    RED,
+    GREEN,
+    BLUE,
+    WHITE,
+}
+
+enum Direction { NORTH = -1, SOUTH = 1, EAST = 10, WEST }
+
+struct Pixel {
+    Color color;
+    char label[SIZE + 1];
+}
+
+int grid[CELLS];
+Color favourite = Color.BLUE;
+int scaled = CELLS * 2;
+
+string color_name(Color color) {
+    switch (color) {
+        case Color.RED:
+            return "red";
+        case Color.GREEN:
+            return "green";
+        case Color.BLUE:
+            return "blue";
+        default:
+            return "white";
+    }
+}
+
+Color next(Color color) {
+    return color == Color.WHITE ? Color.RED : (Color)(color + 1);
+}
+
+int main() {
+    print(SIZE);
+    print(CELLS);
+    print(BIG);
+    print(TAU);
+    print(NAME);
+    print(DEBUG);
+    print(SEPARATOR);
+    print(SMALL);
+    print(MASK);
+    print(INVERTED);
+    print(THIRD);
+    print(grid.length);
+    print(scaled);
+
+    const int LOCAL = CELLS - 1;
+    int values[LOCAL];
+    print(values.length);
+
+    switch (7) {
+        case SIZE + 3:
+            print("seven");
+        default:
+            print("other");
+    }
+
+    print(Color.RED);
+    print(Color.WHITE);
+    print(Direction.NORTH);
+    print(Direction.WEST);
+    print(color_name(favourite));
+    Color color = Color.GREEN;
+    print(color_name(color));
+    color = next(color);
+    print(color_name(color));
+    print(color_name(next(Color.WHITE)));
+    print(color == Color.BLUE);
+    int number = color;
+    print(number);
+    Color from_number = (Color)3;
+    print(color_name(from_number));
+
+    Pixel pixel;
+    pixel.color = Color.GREEN;
+    print(color_name(pixel.color));
+    print(sizeof(Pixel));
+    print(pixel.label.length);
+
+    Color palette[3] = {Color.RED, Color.GREEN, Color.BLUE};
+    for (int i = 0; i < palette.length; i++) {
+        write_string(color_name(palette[i]));
+        write_char(SEPARATOR);
+    }
+    print_line();
+    Color *pointer = &palette[2];
+    print(color_name(*pointer));
+    Color chosen = DEBUG ? Color.WHITE : Color.RED;
+    print(color_name(chosen));
+    return 0;
+}

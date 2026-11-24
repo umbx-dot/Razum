@@ -1,0 +1,5 @@
+// error: 3:14: a char literal holds exactly one character and ends with ', as in 'a'
+int main() {
+    char c = 'ab';
+    return 0;
+}

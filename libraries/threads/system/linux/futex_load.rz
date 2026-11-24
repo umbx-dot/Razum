@@ -1,0 +1,7 @@
+int futex_load(long *word) {
+    asm {
+        mov rcx, qword [rsp + .word]
+        mov eax, dword [rcx]
+        movsxd rax, eax
+    }
+}

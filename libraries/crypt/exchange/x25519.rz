@@ -1,0 +1,56 @@
+void x25519(byte *shared, byte *scalar, byte *point) {
+    byte clamped[32];
+    for (int index = 0; index < 32; index++) {
+        clamped[index] = scalar[index];
+    }
+    clamped[31] = (byte)((clamped[31] & 127) | 64);
+    clamped[0] = (byte)(clamped[0] & 248);
+    long x[16];
+    long a[16];
+    long b[16];
+    long c[16];
+    long d[16];
+    long e[16];
+    long f[16];
+    long constant[16];
+    field_unpack(x, point);
+    for (int index = 0; index < 16; index++) {
+        b[index] = x[index];
+        a[index] = 0;
+        c[index] = 0;
+        d[index] = 0;
+        constant[index] = 0;
+    }
+    a[0] = 1;
+    d[0] = 1;
+    constant[0] = 0xDB41;
+    constant[1] = 1;
+    for (int bit = 254; bit >= 0; bit--) {
+        long chosen = ((long)clamped[bit >> 3] >> (bit & 7)) & 1;
+        field_select(a, b, chosen);
+        field_select(c, d, chosen);
+        field_add(e, a, c);
+        field_subtract(a, a, c);
+        field_add(c, b, d);
+        field_subtract(b, b, d);
+        field_multiply(d, e, e);
+        field_multiply(f, a, a);
+        field_multiply(a, c, a);
+        field_multiply(c, b, e);
+        field_add(e, a, c);
+        field_subtract(a, a, c);
+        field_multiply(b, a, a);
+        field_subtract(c, d, f);
+        field_multiply(a, c, constant);
+        field_add(a, a, d);
+        field_multiply(c, c, a);
+        field_multiply(a, d, f);
+        field_multiply(d, b, x);
+        field_multiply(b, e, e);
+        field_select(a, b, chosen);
+        field_select(c, d, chosen);
+    }
+    field_invert(c, c);
+    field_multiply(a, a, c);
+    field_pack(shared, a);
+}

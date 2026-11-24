@@ -1,0 +1,8 @@
+// asm: rz@unlock_output:
+// absent: SwitchToThread
+import stdio;
+
+int main() {
+    print("one thread");
+    return 0;
+}

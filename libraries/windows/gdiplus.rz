@@ -1,0 +1,60 @@
+struct GdiplusStartupInput {
+    uint version;
+    long debug_callback;
+    int suppress_background_thread;
+    int suppress_external_codecs;
+}
+
+struct RectF {
+    float x;
+    float y;
+    float width;
+    float height;
+}
+
+extern "gdiplus" int GdiplusStartup(long *token, GdiplusStartupInput input, long output);
+extern "gdiplus" void GdiplusShutdown(long token);
+extern "gdiplus" int GdipCreateFromHDC(long dc, long *graphics);
+extern "gdiplus" int GdipDeleteGraphics(long graphics);
+extern "gdiplus" int GdipSetSmoothingMode(long graphics, int mode);
+extern "gdiplus" int GdipSetPixelOffsetMode(long graphics, int mode);
+extern "gdiplus" int GdipSetTextRenderingHint(long graphics, int mode);
+extern "gdiplus" int GdipGraphicsClear(long graphics, uint color);
+extern "gdiplus" int GdipSetClipRect(long graphics, float x, float y, float width, float height, int combine);
+extern "gdiplus" int GdipResetClip(long graphics);
+extern "gdiplus" int GdipCreateSolidFill(uint color, long *brush);
+extern "gdiplus" int GdipSetSolidFillColor(long brush, uint color);
+extern "gdiplus" int GdipDeleteBrush(long brush);
+extern "gdiplus" int GdipCreatePen1(uint color, float width, int unit, long *pen);
+extern "gdiplus" int GdipSetPenColor(long pen, uint color);
+extern "gdiplus" int GdipSetPenWidth(long pen, float width);
+extern "gdiplus" int GdipDeletePen(long pen);
+extern "gdiplus" int GdipFillRectangle(long graphics, long brush, float x, float y, float width, float height);
+extern "gdiplus" int GdipFillEllipse(long graphics, long brush, float x, float y, float width, float height);
+extern "gdiplus" int GdipDrawEllipse(long graphics, long pen, float x, float y, float width, float height);
+extern "gdiplus" int GdipDrawLine(long graphics, long pen, float x1, float y1, float x2, float y2);
+extern "gdiplus" int GdipCreatePath(int fill_mode, long *path);
+extern "gdiplus" int GdipResetPath(long path);
+extern "gdiplus" int GdipAddPathArc(long path, float x, float y, float width, float height, float start, float sweep);
+extern "gdiplus" int GdipClosePathFigure(long path);
+extern "gdiplus" int GdipFillPath(long graphics, long brush, long path);
+extern "gdiplus" int GdipDrawPath(long graphics, long pen, long path);
+extern "gdiplus" int GdipDeletePath(long path);
+extern "gdiplus" int GdipCreateFontFamilyFromName(ushort *name, long collection, long *family);
+extern "gdiplus" int GdipCreateFont(long family, float size, int style, int unit, long *font);
+extern "gdiplus" int GdipDeleteFont(long font);
+extern "gdiplus" int GdipStringFormatGetGenericTypographic(long *format);
+extern "gdiplus" int GdipCloneStringFormat(long format, int language, long *clone);
+extern "gdiplus" int GdipSetStringFormatFlags(long format, int flags);
+extern "gdiplus" int GdipDrawString(long graphics, ushort *text, int length, long font, RectF layout, long format, long brush);
+extern "gdiplus" int GdipMeasureString(long graphics, ushort *text, int length, long font, RectF layout, long format,
+                                       RectF bounds, int *characters, int *lines);
+extern "gdiplus" int GdipCreateBitmapFromScan0(int width, int height, int stride, int format, long scan, long *bitmap);
+extern "gdiplus" int GdipGetImageGraphicsContext(long image, long *graphics);
+extern "gdiplus" int GdipBitmapGetPixel(long bitmap, int x, int y, uint *color);
+extern "gdiplus" int GdipDisposeImage(long image);
+extern "gdiplus" int GdipScaleWorldTransform(long graphics, float x, float y, int order);
+extern "gdiplus" int GdipFlush(long graphics, int intention);
+extern "gdiplus" int GdipDeleteFontFamily(long family);
+extern "gdiplus" int GdipDeleteStringFormat(long format);
+extern "gdiplus" int GdipSetPenLineCap197819(long pen, int start, int end, int dash);

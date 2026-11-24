@@ -1,0 +1,18 @@
+import stdio;
+import math;
+
+int main() {
+    print(abs(-7));
+    print(min(3, 9));
+    print(max(3, 9));
+    print(clamp(15, 0, 10));
+    print(power(2, 10));
+    print(gcd(-12, 18));
+    print(sqrt(2.0));
+    print(fabs(-1.5));
+    print(fmin(1.5, 2.5));
+    print(fmax(1.5, 2.5));
+    print(floor(2.7));
+    print(floor(-2.3));
+    return 0;
+}

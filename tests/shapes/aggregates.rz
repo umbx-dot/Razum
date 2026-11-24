@@ -1,0 +1,24 @@
+// asm: mov dword [rsp + .numbers + 4], 7
+// asm: add dword [rsp + .numbers + 4], 3
+// asm: inc byte [rsp + .p + 8]
+// asm: movsxd rax, dword [rsp + .p + 4]
+// asm: lea rax, [rax + rcx*4]
+// asm: jnz .@probe
+struct Pair {
+    int first;
+    int second;
+    byte flag;
+}
+
+int main() {
+    int numbers[4];
+    numbers[1] = 7;
+    numbers[1] += 3;
+    Pair p;
+    p.flag++;
+    int i = 2;
+    numbers[i] = p.second;
+    long big[600];
+    big[0] = 1;
+    return numbers[1];
+}

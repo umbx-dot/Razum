@@ -1,0 +1,11 @@
+import http.state;
+import text;
+
+string http_header(HttpRequest *request, string name) {
+    for (int index = 0; index < request.header_count; index++) {
+        if (equals_ignore_case(request.headers[index].name, name)) {
+            return request.headers[index].value;
+        }
+    }
+    return "";
+}

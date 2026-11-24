@@ -1,0 +1,30 @@
+bool hash_update(Hasher hasher, byte *data, long length) {
+    if (!hasher.active || length < 0) {
+        return false;
+    }
+    long size = hash_block_size(hasher.kind);
+    long at = 0;
+    hasher.total += length;
+    if (hasher.used > 0) {
+        while (at < length && hasher.used < size) {
+            hasher.block[hasher.used] = data[at];
+            hasher.used++;
+            at++;
+        }
+        if (hasher.used < size) {
+            return true;
+        }
+        hash_compress(hasher, &hasher.block[0]);
+        hasher.used = 0;
+    }
+    while (length - at >= size) {
+        hash_compress(hasher, &data[at]);
+        at += size;
+    }
+    while (at < length) {
+        hasher.block[hasher.used] = data[at];
+        hasher.used++;
+        at++;
+    }
+    return true;
+}

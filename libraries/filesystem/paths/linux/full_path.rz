@@ -1,0 +1,66 @@
+import text;
+
+long full_path(char target[], string path) {
+    char joined[4096];
+    long size = length(path);
+    if (size > 0 && path[0] == "/") {
+        if (size >= joined.length) {
+            target[0] = "\0";
+            return 0;
+        }
+        copy(joined, path);
+    } else {
+        long base = current_directory(joined);
+        if (base == 0 || base + 1 + size >= joined.length) {
+            target[0] = "\0";
+            return 0;
+        }
+        concat(joined, "/");
+        concat(joined, path);
+    }
+    long used = 0;
+    long at = 0;
+    while (joined[at] != "\0") {
+        while (joined[at] == "/") {
+            at++;
+        }
+        long start = at;
+        while (joined[at] != "\0" && joined[at] != "/") {
+            at++;
+        }
+        long part = at - start;
+        if (part == 0 || (part == 1 && joined[start] == ".")) {
+            continue;
+        }
+        if (part == 2 && joined[start] == "." && joined[start + 1] == ".") {
+            while (used > 0 && target[used - 1] != "/") {
+                used--;
+            }
+            if (used > 0) {
+                used--;
+            }
+            continue;
+        }
+        if (used + 1 + part >= target.length) {
+            target[0] = "\0";
+            return 0;
+        }
+        target[used] = "/";
+        used++;
+        for (long index = 0; index < part; index++) {
+            target[used + index] = joined[start + index];
+        }
+        used += part;
+    }
+    if (used == 0) {
+        target[0] = "/";
+        used = 1;
+    }
+    bool trailing = size > 0 && path[size - 1] == "/" && used > 1;
+    if (trailing && used + 1 < target.length) {
+        target[used] = "/";
+        used++;
+    }
+    target[used] = "\0";
+    return used;
+}

@@ -1,0 +1,84 @@
+// platform: linux
+
+import stdio;
+import threads;
+import time;
+
+const int WAITERS = 4;
+Channel *queue;
+long completed;
+long outcomes[WAITERS];
+
+bool await_count(long *word, int shift, ulong expected) {
+    long deadline = time_monotonic_ns() + 5000000000;
+    while (((ulong)atomic_load(word) >> shift) != expected) {
+        if (time_monotonic_ns() >= deadline) {
+            return false;
+        }
+        thread_yield();
+    }
+    return true;
+}
+
+void await_value(long slot) {
+    long value = 0;
+    outcomes[slot] = channel_receive(queue, &value) ? value : 0;
+    atomic_add(&completed, 1);
+}
+
+void send_value(long slot) {
+    outcomes[slot] = channel_send(queue, slot + 10) ? 1 : 0;
+    atomic_add(&completed, 1);
+}
+
+bool check_waiters(fn(long slot) work, bool sending) {
+    queue = channel_new(1);
+    completed = 0;
+    long value = 0;
+    if (sending && !channel_send(queue, 7)) {
+        return false;
+    }
+    long workers[WAITERS];
+    for (int i = 0; i < WAITERS; i++) {
+        workers[i] = thread_start(work, i);
+        if (workers[i] == 0) {
+            return false;
+        }
+    }
+    long *condition = sending ? &queue.writable : &queue.readable;
+    if (!await_count(condition, 32, WAITERS)) {
+        return false;
+    }
+    bool first = sending ? channel_receive(queue, &value) && value == 7 : channel_send(queue, 7);
+    if (!first || !await_count(&completed, 0, 1)) {
+        return false;
+    }
+    channel_close(queue);
+    if (!await_count(&completed, 0, WAITERS)) {
+        return false;
+    }
+    long total = 0;
+    for (int i = 0; i < WAITERS; i++) {
+        thread_join(workers[i]);
+        total += outcomes[i];
+    }
+    bool drained = ((ulong)atomic_load(condition) >> 32) == 0;
+    channel_free(queue);
+    return drained && total == (sending ? 1 : 7);
+}
+
+int main() {
+    if (!check_waiters(await_value, false) || !check_waiters(send_value, true)) {
+        return 1;
+    }
+    queue = channel_new(1);
+    long value = 0;
+    bool timed_out = channel_receive_timeout(queue, &value, 10) == ChannelResult.TIMED_OUT;
+    bool drained = ((ulong)atomic_load(&queue.readable) >> 32) == 0;
+    channel_free(queue);
+    if (!timed_out || !drained) {
+        return 2;
+    }
+    print("channel waiters wake and drain");
+    return 0;
+}

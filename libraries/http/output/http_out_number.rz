@@ -1,0 +1,16 @@
+import http.state;
+
+void http_out_number(HttpWorker *worker, long value) {
+    char digits[24];
+    int index = 24;
+    if (value == 0) {
+        index--;
+        digits[index] = "0";
+    }
+    while (value > 0) {
+        index--;
+        digits[index] = (char)("0" + value % 10);
+        value /= 10;
+    }
+    http_out(worker, &digits[index], 24 - index);
+}

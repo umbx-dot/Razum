@@ -1,0 +1,30 @@
+import gui.state;
+
+import windows;
+
+void gui_type(ushort unit) {
+    if (unit < 32 || unit == 127) {
+        return;
+    }
+    if (unit >= 0xD800 && unit < 0xDC00) {
+        gui.surrogate = unit;
+        return;
+    }
+    ushort pair[2];
+    int count = 1;
+    pair[0] = unit;
+    if (unit >= 0xDC00 && unit < 0xE000) {
+        if (gui.surrogate == 0) {
+            return;
+        }
+        pair[0] = gui.surrogate;
+        pair[1] = unit;
+        count = 2;
+        gui.surrogate = 0;
+    }
+    char bytes[8];
+    int length = WideCharToMultiByte(CP_UTF8, 0, pair, count, bytes, bytes.length, 0, 0);
+    for (int i = 0; i < length; i++) {
+        gui_push_event((int)bytes[i]);
+    }
+}

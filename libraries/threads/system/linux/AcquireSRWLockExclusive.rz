@@ -1,0 +1,15 @@
+import linux;
+
+void AcquireSRWLockExclusive(long *lock) {
+    int state = futex_compare_exchange(lock, 0, 1);
+    if (state == 0) {
+        return;
+    }
+    if (state != 2) {
+        state = futex_exchange(lock, 2);
+    }
+    while (state != 0) {
+        futex(lock, FUTEX_WAIT_PRIVATE, 2, 0);
+        state = futex_exchange(lock, 2);
+    }
+}

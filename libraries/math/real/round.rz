@@ -1,0 +1,11 @@
+double round(double value) {
+    double whole = trunc(value);
+    double rest = value - whole;
+    if (rest >= 0.5) {
+        return whole + 1;
+    }
+    if (rest <= -0.5) {
+        return whole - 1;
+    }
+    return whole;
+}

@@ -1,0 +1,39 @@
+import http.state;
+import http.connection;
+import windows;
+import winsock;
+
+void http_worker_loop(long argument) {
+    HttpWorker *worker = (HttpWorker *)argument;
+    HttpServer *server = worker.server;
+    OVERLAPPED_ENTRY entries[128];
+    uint removed = 0;
+    while (true) {
+        if (GetQueuedCompletionStatusEx(server.port, entries, (uint)entries.length, &removed, INFINITE, 0) == 0) {
+            if (server.stopping) {
+                return;
+            }
+            continue;
+        }
+        int stops = 0;
+        for (uint index = 0; index < removed; index++) {
+            long address = entries[index].overlapped;
+            if (address == 0) {
+                stops++;
+            } else {
+                HttpAccept *probe = (HttpAccept *)address;
+                if (probe.kind == HTTP_ACCEPT) {
+                    http_on_accept(worker, probe);
+                } else {
+                    http_on_completion(worker, (HttpConnection *)address, entries[index].bytes);
+                }
+            }
+        }
+        if (stops > 0) {
+            for (int extra = 1; extra < stops; extra++) {
+                PostQueuedCompletionStatus(server.port, 0, 1, 0);
+            }
+            return;
+        }
+    }
+}

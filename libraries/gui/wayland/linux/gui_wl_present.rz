@@ -1,0 +1,32 @@
+import gui.state;
+
+void gui_wl_present() {
+    int width = gui.buffer_width;
+    int height = gui.buffer_height + GUI_TITLE_HEIGHT;
+    if (!gui_desktop.wl_ready) {
+        return;
+    }
+    if (width != gui_desktop.wl_width || height != gui_desktop.wl_height) {
+        if (!gui_wl_buffers()) {
+            gui.quit = true;
+            return;
+        }
+    }
+    for (int i = 0; i < gui_desktop.wl_buffers.length; i++) {
+        GuiWaylandBuffer *buffer = &gui_desktop.wl_buffers[i];
+        if (buffer.busy) {
+            continue;
+        }
+        gui_wl_titlebar(buffer.address);
+        gui_wl_copy_pixels(buffer.address + width * GUI_TITLE_HEIGHT * 4, gui.pixels, width * gui.buffer_height);
+        uint attach[5] = {0, 0, buffer.id, 0, 0};
+        uint damage[6] = {0, 0, 0, 0, (uint)width, (uint)height};
+        uint commit[2];
+        if (!gui_wl_request(gui_desktop.wl_surface, 1, attach) || !gui_wl_request(gui_desktop.wl_surface, 2, damage) ||
+            !gui_wl_request(gui_desktop.wl_surface, 6, commit)) {
+            gui.quit = true;
+        }
+        buffer.busy = true;
+        return;
+    }
+}

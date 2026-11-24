@@ -1,0 +1,7 @@
+// error: 5:24: enum 'Color' has no member 'PURPLE'
+enum Color { RED, GREEN }
+
+int main() {
+    Color color = Color.PURPLE;
+    return 0;
+}

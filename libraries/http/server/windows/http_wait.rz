@@ -1,0 +1,34 @@
+import http.state;
+import http.connection;
+import windows;
+import winsock;
+import threads;
+
+void http_wait(HttpServer *server) {
+    if (!server.running) {
+        return;
+    }
+    for (int index = 0; index < server.worker_count; index++) {
+        thread_join(server.workers[index].thread);
+    }
+    thread_join(server.sweeper);
+    for (int slot = 0; slot < server.slot_used; slot++) {
+        long address = server.slots[slot];
+        if (address != 0) {
+            http_close((HttpConnection *)address);
+        }
+    }
+    for (int index = 0; index < server.worker_count; index++) {
+        HttpWorker *worker = &server.workers[index];
+        free(worker.input);
+        free(worker.head);
+        free(worker.output);
+        free(worker.sealed);
+        free(worker.response.body);
+        free(worker.response.scratch);
+    }
+    if (http_current_server == server) {
+        http_current_server = null;
+    }
+    server.running = false;
+}

@@ -1,0 +1,54 @@
+struct HttpHeader {
+    string name;
+    string value;
+}
+
+struct HttpRequest {
+    string method;
+    string path;
+    string query;
+    string rest;
+    int header_count;
+    HttpHeader headers[32];
+    char *body;
+    long body_length;
+    bool keep_alive;
+    bool head;
+    bool expects_continue;
+}
+
+struct HttpResponse {
+    int status;
+    string content_type;
+    int header_count;
+    HttpHeader headers[16];
+    char *body;
+    long body_length;
+    long body_capacity;
+    char *scratch;
+    long scratch_used;
+    bool close;
+}
+
+struct HttpRoute {
+    string method;
+    string path;
+    long length;
+    bool prefix;
+    fn(HttpRequest *request, HttpResponse *response) handler;
+    string directory;
+}
+
+const int HTTP_CONNECTION = 1;
+const int HTTP_ACCEPT = 2;
+const int HTTP_WAITING = 1;
+const int HTTP_SENDING = 2;
+const long HTTP_INPUT_SIZE = 65536;
+const long HTTP_MAX_HEADER = 16384;
+const long HTTP_SCRATCH_SIZE = 8192;
+const int HTTP_DATE_LENGTH = 29;
+const long HTTP_TLS_RAW_SIZE = 33280;
+
+char http_dates[2][32];
+long http_date_index;
+HttpServer *http_current_server;

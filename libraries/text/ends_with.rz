@@ -1,0 +1,13 @@
+bool ends_with(string text, string suffix) {
+    long text_length = length(text);
+    long count = length(suffix);
+    if (count > text_length) {
+        return false;
+    }
+    for (long index = 0; index < count; index++) {
+        if (text[text_length - count + index] != suffix[index]) {
+            return false;
+        }
+    }
+    return true;
+}

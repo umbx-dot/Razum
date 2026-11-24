@@ -1,0 +1,13 @@
+import text.characters;
+
+long trim(char target[], string text) {
+    long first = 0;
+    long last = length(text);
+    while (first < last && is_space(text[first])) {
+        first++;
+    }
+    while (last > first && is_space(text[last - 1])) {
+        last--;
+    }
+    return substring(target, text, first, last - first);
+}

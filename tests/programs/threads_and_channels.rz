@@ -1,0 +1,131 @@
+import stdio;
+import threads;
+
+const int WORKERS = 8;
+const int ROUNDS = 100000;
+const int PRODUCERS = 4;
+const int ITEMS = 10000;
+
+long atomic_counter = 0;
+long locked_counter = 0;
+Mutex counter_lock;
+WaitGroup group;
+Channel *numbers;
+Channel *pings;
+Channel *pongs;
+
+void count_atomically(long unused) {
+    for (int i = 0; i < ROUNDS; i++) {
+        atomic_add(&atomic_counter, 1);
+    }
+}
+
+void count_with_lock(long unused) {
+    for (int i = 0; i < ROUNDS; i++) {
+        mutex_lock(counter_lock);
+        locked_counter++;
+        mutex_unlock(counter_lock);
+    }
+}
+
+void produce(long first) {
+    for (long value = first; value < first + ITEMS; value++) {
+        channel_send(numbers, value);
+    }
+    wait_group_done(group);
+}
+
+void close_when_done(long unused) {
+    wait_group_wait(group);
+    channel_close(numbers);
+}
+
+void answer(long rounds) {
+    long value = 0;
+    while (channel_receive(pings, &value)) {
+        channel_send(pongs, value + 1);
+    }
+}
+
+void run_all(fn(long argument) work, long argument) {
+    long started[WORKERS];
+    for (int i = 0; i < WORKERS; i++) {
+        started[i] = thread_start(work, argument);
+    }
+    for (int i = 0; i < WORKERS; i++) {
+        thread_join(started[i]);
+    }
+}
+
+int main() {
+    print(cpu_count() >= 1);
+
+    run_all(count_atomically, 0);
+    print(atomic_counter);
+    run_all(count_with_lock, 0);
+    print(locked_counter);
+
+    long value = 5;
+    print(atomic_compare_exchange(&value, 5, 9));
+    print(atomic_compare_exchange(&value, 5, 1));
+    print(atomic_exchange(&value, 3));
+    print(atomic_load(&value));
+
+    numbers = channel_new(64);
+    wait_group_add(group, PRODUCERS);
+    long producers[PRODUCERS];
+    for (int i = 0; i < PRODUCERS; i++) {
+        producers[i] = thread_start(produce, (long)i * ITEMS + 1);
+    }
+    thread_detach(thread_start(close_when_done, 0));
+    long sum = 0;
+    long received = 0;
+    long item = 0;
+    while (channel_receive(numbers, &item)) {
+        sum += item;
+        received++;
+    }
+    for (int i = 0; i < PRODUCERS; i++) {
+        thread_join(producers[i]);
+    }
+    print(received);
+    print(sum);
+    print(channel_send(numbers, 1));
+    channel_free(numbers);
+
+    pings = channel_new(0);
+    pongs = channel_new(0);
+    long responder = thread_start(answer, 0);
+    long ball = 0;
+    for (int i = 0; i < 1000; i++) {
+        channel_send(pings, ball);
+        channel_receive(pongs, &ball);
+    }
+    channel_close(pings);
+    thread_join(responder);
+    print(ball);
+
+    Channel *small = channel_new(1);
+    print(channel_try_send(small, 7));
+    print(channel_try_send(small, 8));
+    print(channel_length(small));
+    print(channel_try_receive(small, &item));
+    print(item);
+    print(channel_try_receive(small, &item));
+    print(channel_receive_timeout(small, &item, 20) == ChannelResult.TIMED_OUT);
+
+    Channel *first = channel_new(4);
+    Channel *second = channel_new(4);
+    Channel *both[2] = {first, second};
+    channel_send(second, 42);
+    print(channel_select(both, &item, INFINITE));
+    print(item);
+    print(channel_select(both, &item, 10));
+    channel_send(first, 7);
+    channel_close(first);
+    channel_close(second);
+    print(channel_select(both, &item, INFINITE));
+    print(item);
+    print(channel_select(both, &item, INFINITE));
+    return 0;
+}

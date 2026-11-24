@@ -1,0 +1,28 @@
+import gui.state;
+import gui.theme;
+
+import windows;
+
+void gui_rounded_path(double x, double y, double width, double height, double radius) {
+    double r = radius;
+    if (r > width / 2) {
+        r = width / 2;
+    }
+    if (r > height / 2) {
+        r = height / 2;
+    }
+    if (r < 0.5) {
+        r = 0.5;
+    }
+    float d = (float)(r * 2);
+    float left = (float)x;
+    float top = (float)y;
+    float right = (float)(x + width - r * 2);
+    float bottom = (float)(y + height - r * 2);
+    GdipResetPath(gui.path);
+    GdipAddPathArc(gui.path, left, top, d, d, 180.0, 90.0);
+    GdipAddPathArc(gui.path, right, top, d, d, 270.0, 90.0);
+    GdipAddPathArc(gui.path, right, bottom, d, d, 0.0, 90.0);
+    GdipAddPathArc(gui.path, left, bottom, d, d, 90.0, 90.0);
+    GdipClosePathFigure(gui.path);
+}

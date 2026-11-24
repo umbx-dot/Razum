@@ -1,0 +1,9 @@
+// error: 4:5: struct 'Huge' is larger than 2 GiB
+struct Huge {
+    char a[1073741824];
+    char b[1073741824];
+}
+
+int main() {
+    return 0;
+}

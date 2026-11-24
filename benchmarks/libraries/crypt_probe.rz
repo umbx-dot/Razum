@@ -1,0 +1,32 @@
+import crypt;
+import text;
+
+int main(string args[]) {
+    if (args.length != 2) {
+        return 3;
+    }
+    byte data[16384];
+    byte digest[32];
+    byte sealed[16400];
+    byte key[32];
+    byte nonce[12];
+    for (int i = 0; i < data.length; i++) {
+        data[i] = (byte)i;
+    }
+    if (equals(args[1], "sha256")) {
+        for (int i = 0; i < 1500; i++) {
+            if (sha256(digest, data, data.length) != 32) {
+                return 1;
+            }
+        }
+    } else {
+        for (int i = 0; i < 512; i++) {
+            nonce[0] = (byte)i;
+            nonce[1] = (byte)(i >> 8);
+            if (aes_gcm_encrypt(sealed, key, key.length, nonce, null, 0, data, data.length) != sealed.length) {
+                return 2;
+            }
+        }
+    }
+    return 0;
+}

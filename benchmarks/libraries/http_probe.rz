@@ -1,0 +1,25 @@
+import http;
+import stdio;
+
+void answer(HttpRequest *request, HttpResponse *response) {
+    http_text(response, "probe");
+}
+
+int main() {
+    HttpServer *server = http_new();
+    if (server == null) {
+        return 1;
+    }
+    http_workers(server, 1);
+    if (!http_route(server, "GET", "/", answer) ||
+        !http_listen(server, "127.0.0.1", 0) || !http_start(server)) {
+        return 2;
+    }
+    print(http_port(server, 0));
+    flush_output();
+    char line[8];
+    read_input(line);
+    http_stop(server);
+    http_wait(server);
+    return 0;
+}

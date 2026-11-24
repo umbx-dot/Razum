@@ -1,0 +1,65 @@
+import http.state;
+import http.memory;
+import windows;
+
+bool http_tls_handshake(HttpWorker *worker, HttpConnection *connection) {
+    HttpTls *tls = connection.tls;
+    HttpListener *listener = &connection.server.listeners[connection.listener];
+    uint request = ASC_REQ_SEQUENCE_DETECT | ASC_REQ_REPLAY_DETECT | ASC_REQ_CONFIDENTIALITY | ASC_REQ_EXTENDED_ERROR |
+                   ASC_REQ_ALLOCATE_MEMORY | ASC_REQ_STREAM;
+    while (tls.raw_used > 0 && !tls.ready) {
+        SecBuffer input[2];
+        input[0].size = (uint)tls.raw_used;
+        input[0].type = SECBUFFER_TOKEN;
+        input[0].buffer = tls.raw;
+        input[1].size = 0;
+        input[1].type = SECBUFFER_EMPTY;
+        input[1].buffer = null;
+        SecBuffer output[1];
+        output[0].size = 0;
+        output[0].type = SECBUFFER_TOKEN;
+        output[0].buffer = null;
+        SecBufferDesc input_description;
+        input_description.version = 0;
+        input_description.count = 2;
+        input_description.buffers = &input[0];
+        SecBufferDesc output_description;
+        output_description.version = 0;
+        output_description.count = 1;
+        output_description.buffers = &output[0];
+        uint attributes = 0;
+        long expiry = 0;
+        uint status = AcceptSecurityContext(&listener.credential, tls.started ? &tls.context : null, &input_description, request, 0,
+                                            &tls.context, &output_description, &attributes, &expiry);
+        if (output[0].buffer != null) {
+            if (output[0].size > 0) {
+                http_sealed_append(worker, output[0].buffer, output[0].size);
+            }
+            FreeContextBuffer((long)output[0].buffer);
+        }
+        if (status == SEC_E_INCOMPLETE_MESSAGE) {
+            return true;
+        }
+        if (status != SEC_E_OK && status != SEC_I_CONTINUE_NEEDED) {
+            http_last_error = status;
+            return false;
+        }
+        tls.started = true;
+        long extra = input[1].type == SECBUFFER_EXTRA ? input[1].size : 0;
+        if (extra > 0) {
+            http_copy(tls.raw, &tls.raw[tls.raw_used - extra], extra);
+        }
+        tls.raw_used = extra;
+        if (status == SEC_E_OK) {
+            SecPkgContext_StreamSizes sizes;
+            if (QueryContextAttributesW(&tls.context, SECPKG_ATTR_STREAM_SIZES, (byte *)&sizes) != SEC_E_OK) {
+                return false;
+            }
+            tls.header = sizes.header;
+            tls.trailer = sizes.trailer;
+            tls.maximum_message = sizes.maximum_message;
+            tls.ready = true;
+        }
+    }
+    return true;
+}

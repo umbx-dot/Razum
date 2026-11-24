@@ -1,0 +1,14 @@
+long aes_gcm_encrypt(byte target[], byte *key, long key_length, byte *nonce, byte *aad, long aad_length,
+                     byte *data, long length) {
+    if (length < 0 || length > 0xFFFFFFFF || aad_length < 0 || aad_length > 0xFFFFFFFF
+        || target.length < length + AES_GCM_TAG_SIZE) {
+        return -1;
+    }
+    AesKey expanded;
+    if (!aes_expand(expanded, key, key_length)) {
+        return -1;
+    }
+    gcm_crypt(expanded, nonce, data, &target[0], length);
+    gcm_tag(expanded, nonce, aad, aad_length, &target[0], length, &target[length]);
+    return length + AES_GCM_TAG_SIZE;
+}

@@ -1,0 +1,5 @@
+// error: 3:14: 300 does not fit in byte, which holds 0 to 255
+int main() {
+    byte b = 300;
+    return b;
+}

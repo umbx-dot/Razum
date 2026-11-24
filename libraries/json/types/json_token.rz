@@ -1,0 +1,6 @@
+struct JsonToken {
+    int kind;
+    int start;
+    int end;
+    int next;
+}

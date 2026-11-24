@@ -1,0 +1,15 @@
+import linux;
+
+bool file_fill(File file) {
+    file.position = 0;
+    file.used = 0;
+    long got = EINTR;
+    while (got == EINTR) {
+        got = system_call(SYS_READ, file.handle, (long)&file.buffer[0], file.buffer.length, 0);
+    }
+    if (got <= 0) {
+        return false;
+    }
+    file.used = got;
+    return true;
+}

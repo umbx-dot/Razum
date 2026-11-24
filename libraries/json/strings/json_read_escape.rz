@@ -1,0 +1,34 @@
+int json_read_escape(string source, int size, int *position) {
+    if (*position >= size) {
+        return -1;
+    }
+    char current = source[*position];
+    *position += 1;
+    switch (current) {
+        case "\"", "\\", "/": return (int)current;
+        case "b": return 8;
+        case "f": return 12;
+        case "n": return 10;
+        case "r": return 13;
+        case "t": return 9;
+        case "u":
+            int value = json_hex_quad(source, size, *position);
+            if (value < 0 || (value >= 0xDC00 && value <= 0xDFFF)) {
+                return -1;
+            }
+            *position += 4;
+            if (value < 0xD800 || value > 0xDBFF) {
+                return value;
+            }
+            if (size - *position < 6 || source[*position] != "\\" || source[*position + 1] != "u") {
+                return -1;
+            }
+            int low = json_hex_quad(source, size, *position + 2);
+            if (low < 0xDC00 || low > 0xDFFF) {
+                return -1;
+            }
+            *position += 6;
+            return 0x10000 + ((value - 0xD800) << 10) + low - 0xDC00;
+        default: return -1;
+    }
+}

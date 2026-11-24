@@ -1,0 +1,49 @@
+bool time_format_utc(long microseconds, char target[]) {
+    if (target.length < 28) {
+        return false;
+    }
+    target[0] = "\0";
+    long local_us = microseconds % 86400000000;
+    long days = microseconds / 86400000000 + 719162;
+    if (local_us < 0) {
+        local_us += 86400000000;
+        days--;
+    }
+    if (days < 0 || days >= 3652059) {
+        return false;
+    }
+    int day = (int)days;
+    int year = day / 146097 * 400 + day % 146097 / 365 + 1;
+    int year_start = time_year_days(year);
+    if (year_start > day) {
+        year--;
+        year_start = time_year_days(year);
+    }
+    day -= year_start;
+    int month_days[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    if (time_year_days(year + 1) - year_start == 366) {
+        month_days[1]++;
+    }
+    int month = 0;
+    while (day >= month_days[month]) {
+        day -= month_days[month];
+        month++;
+    }
+    int seconds = (int)(local_us / 1000000);
+    time_put_decimal(target, 4, year);
+    target[4] = "-";
+    time_put_decimal(&target[5], 2, month + 1);
+    target[7] = "-";
+    time_put_decimal(&target[8], 2, day + 1);
+    target[10] = "T";
+    time_put_decimal(&target[11], 2, seconds / 3600);
+    target[13] = ":";
+    time_put_decimal(&target[14], 2, seconds / 60 % 60);
+    target[16] = ":";
+    time_put_decimal(&target[17], 2, seconds % 60);
+    target[19] = ".";
+    time_put_decimal(&target[20], 6, (int)(local_us % 1000000));
+    target[26] = "Z";
+    target[27] = "\0";
+    return true;
+}

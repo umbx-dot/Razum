@@ -1,0 +1,13 @@
+import json.types;
+
+int json_copy_raw(string source, JsonToken token, char target[]) {
+    int count = token.end - token.start;
+    if (count >= target.length) {
+        return JSON_CAPACITY;
+    }
+    for (int i = 0; i < count; i++) {
+        target[i] = source[token.start + i];
+    }
+    target[count] = "\0";
+    return count;
+}

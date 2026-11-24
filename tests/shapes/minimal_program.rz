@@ -1,0 +1,7 @@
+// asm: call $main
+// asm: xor eax, eax
+// absent: rz@write
+// absent: fninit
+int main() {
+    return 0;
+}

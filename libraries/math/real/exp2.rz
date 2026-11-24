@@ -1,0 +1,22 @@
+double exp2(double value) {
+    if (value > 1.7976931348623157e308) {
+        return value;
+    }
+    if (value < -1.7976931348623157e308) {
+        return 0.0;
+    }
+    asm {
+        fld qword [rsp + .value]
+        fld st0
+        frndint
+        fsub st1, st0
+        fxch st1
+        f2xm1
+        fld1
+        faddp st1, st0
+        fscale
+        fstp st1
+        fstp qword [rsp + .value]
+        movsd xmm0, qword [rsp + .value]
+    }
+}

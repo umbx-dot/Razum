@@ -1,0 +1,14 @@
+import threads.system;
+
+bool channel_try_send(Channel *channel, long value) {
+    AcquireSRWLockExclusive(&channel.lock);
+    bool sent = !channel.closed && channel.count < channel.capacity && (!channel.unbuffered || channel.count == 0);
+    if (sent) {
+        channel_put(channel, value);
+    }
+    ReleaseSRWLockExclusive(&channel.lock);
+    if (sent) {
+        channel_signal();
+    }
+    return sent;
+}

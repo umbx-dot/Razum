@@ -1,0 +1,9 @@
+import http.state;
+import linux;
+
+void http_stop(HttpServer *server) {
+    if (server.stopping || !server.running) {
+        return;
+    }
+    server.stopping = true;
+}

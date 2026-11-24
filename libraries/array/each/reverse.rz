@@ -1,0 +1,11 @@
+void array_reverse_T(T values[]) {
+    long low = 0;
+    long high = values.length - 1;
+    while (low < high) {
+        T kept = values[low];
+        values[low] = values[high];
+        values[high] = kept;
+        low++;
+        high--;
+    }
+}

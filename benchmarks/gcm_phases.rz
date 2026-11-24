@@ -1,0 +1,38 @@
+import crypt.cipher;
+import stdio;
+import time;
+
+byte input[8388608];
+byte output[8388608];
+
+int main() {
+    byte key[32];
+    byte nonce[12];
+    byte tag[16];
+    for (int i = 0; i < key.length; i++) {
+        key[i] = (byte)i;
+    }
+    for (int i = 0; i < nonce.length; i++) {
+        nonce[i] = 0;
+    }
+    for (long i = 0; i < input.length; i++) {
+        input[i] = (byte)(i ^ (i >> 13));
+    }
+    AesKey expanded;
+    if (!aes_expand(expanded, key, 32)) {
+        return 1;
+    }
+    for (int pass = 0; pass < 9; pass++) {
+        long start = time_monotonic_ns();
+        gcm_crypt(expanded, nonce, &input[0], &output[0], input.length);
+        long encrypted = time_monotonic_ns();
+        gcm_tag(expanded, nonce, null, 0, &output[0], output.length, &tag[0]);
+        long authenticated = time_monotonic_ns();
+        write_long(encrypted - start);
+        write_string(" ");
+        write_long(authenticated - encrypted);
+        write_string(" ");
+        print(tag[0]);
+    }
+    return 0;
+}

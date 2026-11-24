@@ -1,0 +1,14 @@
+import text.characters;
+
+int compare_ignore_case(string left, string right) {
+    long left_length = length(left);
+    long right_length = length(right);
+    for (long index = 0; index < left_length || index < right_length; index++) {
+        char a = index < left_length ? lower_char(left[index]) : "\0";
+        char b = index < right_length ? lower_char(right[index]) : "\0";
+        if (a != b) {
+            return a < b ? -1 : 1;
+        }
+    }
+    return 0;
+}

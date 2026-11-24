@@ -1,0 +1,23 @@
+long read_bytes(File file, byte data[]) {
+    if (data.length == 1) {
+        if (file.position >= file.used && !file_fill(file)) {
+            return 0;
+        }
+        data[0] = (byte)file.buffer[file.position];
+        file.position++;
+        return 1;
+    }
+    long count = 0;
+    while (count < data.length) {
+        if (file.position >= file.used && !file_fill(file)) {
+            return count;
+        }
+        long available = file.used - file.position;
+        long remaining = data.length - count;
+        long chunk = available < remaining ? available : remaining;
+        file_copy_bytes((char *)&data[count], &file.buffer[file.position], chunk);
+        file.position += chunk;
+        count += chunk;
+    }
+    return count;
+}

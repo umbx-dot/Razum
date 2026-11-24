@@ -1,0 +1,3 @@
+long sha256(byte digest[], byte *data, long length) {
+    return hash(Hash.SHA256, digest, data, length);
+}

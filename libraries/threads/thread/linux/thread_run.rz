@@ -1,0 +1,5 @@
+void thread_run(long parameter) {
+    ThreadControl *control = (ThreadControl *)parameter;
+    fn(long argument) work = control.work;
+    work(control.argument);
+}

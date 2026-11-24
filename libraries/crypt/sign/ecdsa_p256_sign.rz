@@ -1,0 +1,81 @@
+import crypt.hash;
+import crypt.hmac;
+
+void ecdsa_mac(byte key[], byte *first, long first_length, byte second, byte *third, long third_length, byte *fourth, byte output[]) {
+    Hasher hasher;
+    hmac_start(hasher, Hash.SHA256, &key[0], 32);
+    hash_update(hasher, first, first_length);
+    if (second != 255) {
+        byte separator[1];
+        separator[0] = second;
+        hash_update(hasher, &separator[0], 1);
+    }
+    hash_update(hasher, third, third_length);
+    hash_update(hasher, fourth, fourth == null ? 0 : 32);
+    hash_finish(hasher, output);
+}
+
+long ecdsa_p256_sign(byte signature[], byte *private_key, byte *digest) {
+    p256_prepare();
+    Modulus order = p256.order;
+    long private_number[16];
+    number_from_bytes(private_number, private_key);
+    if (number_is_zero(private_number) || number_compare(private_number, order.value) >= 0) {
+        return -1;
+    }
+    long message[16];
+    number_from_bytes(message, digest);
+    if (number_compare(message, order.value) >= 0) {
+        number_subtract(message, message, order.value);
+    }
+    byte reduced[32];
+    number_to_bytes(&reduced[0], message);
+    byte v[32];
+    byte k[32];
+    for (int index = 0; index < 32; index++) {
+        v[index] = 1;
+        k[index] = 0;
+    }
+    ecdsa_mac(k, &v[0], 32, 0, private_key, 32, &reduced[0], k);
+    ecdsa_mac(k, &v[0], 32, 255, null, 0, null, v);
+    ecdsa_mac(k, &v[0], 32, 1, private_key, 32, &reduced[0], k);
+    ecdsa_mac(k, &v[0], 32, 255, null, 0, null, v);
+    long r[16];
+    long s[16];
+    while (true) {
+        ecdsa_mac(k, &v[0], 32, 255, null, 0, null, v);
+        long nonce[16];
+        number_from_bytes(nonce, &v[0]);
+        if (!number_is_zero(nonce) && number_compare(nonce, order.value) < 0) {
+            P256Point point;
+            p256_multiply(point, nonce, p256.base);
+            long y[16];
+            p256_affine(r, y, point);
+            if (number_compare(r, order.value) >= 0) {
+                number_subtract(r, r, order.value);
+            }
+            long nonce_inverse[16];
+            long work[16];
+            long other[16];
+            modular_enter(work, nonce, order);
+            modular_invert(nonce_inverse, work, order);
+            modular_enter(work, r, order);
+            modular_enter(other, private_number, order);
+            modular_multiply(work, work, other, order);
+            modular_enter(other, message, order);
+            modular_add(work, work, other, order);
+            modular_multiply(work, work, nonce_inverse, order);
+            modular_leave(s, work, order);
+            if (!number_is_zero(r) && !number_is_zero(s)) {
+                break;
+            }
+        }
+        ecdsa_mac(k, &v[0], 32, 0, null, 0, null, k);
+        ecdsa_mac(k, &v[0], 32, 255, null, 0, null, v);
+    }
+    byte r_bytes[32];
+    byte s_bytes[32];
+    number_to_bytes(&r_bytes[0], r);
+    number_to_bytes(&s_bytes[0], s);
+    return ecdsa_der(signature, r_bytes, s_bytes);
+}

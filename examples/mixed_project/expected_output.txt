@@ -1,0 +1,5 @@
+C++ -> razum: fibonacci(50) = 12586269025
+C++ -> razum: min 4, max 42, average 18.00
+C++ -> C: MIXED LANGUAGES has 6 vowels
+razum -> C: RAZUM CALLS C has vowels: 3
+razum -> razum DLL: fibonacci(90) = 2880067194370816120

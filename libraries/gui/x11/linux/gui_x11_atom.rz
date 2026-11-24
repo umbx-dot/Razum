@@ -1,0 +1,19 @@
+import gui.wire;
+import text;
+
+uint gui_x11_atom(string name) {
+    uint words[18];
+    int size = (int)length(name);
+    int bytes = (size + 3) & ~3;
+    words[0] = (uint)(16 | ((2 + bytes / 4) << 16));
+    words[1] = (uint)size;
+    byte *text = (byte *)&words[2];
+    for (int i = 0; i < size; i++) {
+        text[i] = (byte)name[i];
+    }
+    uint reply[8];
+    if (!gui_send((long)&words[0], 8 + bytes) || !gui_receive((long)&reply[0], 32) || (reply[0] & 255) != 1) {
+        return 0;
+    }
+    return reply[2];
+}

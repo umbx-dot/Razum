@@ -1,0 +1,9 @@
+// error: 2:1: struct 'Large' is larger than 2 GiB
+struct Large {
+    long header;
+    char tail[2147483639];
+}
+
+int main() {
+    return sizeof(Large);
+}

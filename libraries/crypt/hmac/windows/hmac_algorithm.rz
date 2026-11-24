@@ -1,0 +1,6 @@
+import windows;
+import crypt.hash;
+
+long hmac_algorithm(Hash kind) {
+    return kind >= Hash.MD5 && kind <= Hash.SHA512 ? BCRYPT_HMAC_MD5_ALG_HANDLE + 16 * kind : 0;
+}

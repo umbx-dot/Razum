@@ -1,0 +1,47 @@
+import threads.system;
+import threads.atomic;
+
+int channel_select(Channel *channels[], long *value, uint milliseconds) {
+    int count = channels.length;
+    ulong deadline = GetTickCount64() + milliseconds;
+    int start = (int)(atomic_add(&channel_signals.turn, 1) % count);
+    atomic_add(&channel_signals.waiters, 1);
+    int chosen = -2;
+    while (chosen == -2) {
+        AcquireSRWLockExclusive(&channel_signals.lock);
+        long seen = channel_signals.sequence;
+        ReleaseSRWLockExclusive(&channel_signals.lock);
+        bool open = false;
+        for (int step = 0; step < count && chosen == -2; step++) {
+            int index = (start + step) % count;
+            ChannelResult result = channel_receive_timeout(channels[index], value, 0);
+            if (result == ChannelResult.RECEIVED) {
+                chosen = index;
+            } else if (result != ChannelResult.CLOSED) {
+                open = true;
+            }
+        }
+        if (chosen != -2) {
+            break;
+        }
+        if (!open) {
+            chosen = -1;
+            break;
+        }
+        uint wait = INFINITE;
+        if (milliseconds != INFINITE) {
+            ulong now = GetTickCount64();
+            if (now >= deadline) {
+                break;
+            }
+            wait = (uint)(deadline - now);
+        }
+        AcquireSRWLockExclusive(&channel_signals.lock);
+        if (channel_signals.sequence == seen) {
+            SleepConditionVariableSRW(&channel_signals.changed, &channel_signals.lock, wait, 0);
+        }
+        ReleaseSRWLockExclusive(&channel_signals.lock);
+    }
+    atomic_add(&channel_signals.waiters, -1);
+    return chosen;
+}

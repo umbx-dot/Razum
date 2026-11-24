@@ -1,0 +1,12 @@
+import linux;
+
+bool rename(string from, string to) {
+    long result = system_call(SYS_RENAME, (long)from, (long)to, 0, 0);
+    if (result == EXDEV) {
+        if (!copy_regular_file(from, to, true)) {
+            return false;
+        }
+        return delete_file(from);
+    }
+    return result == 0;
+}

@@ -1,0 +1,8 @@
+extern "advapi32" int GetUserNameA(char *buffer, uint *size);
+extern "advapi32" int RegOpenKeyExA(long key, string subkey, uint options, uint access, long *result);
+extern "advapi32" int RegCreateKeyExA(long key, string subkey, uint reserved, long class_name, uint options, uint access,
+                                      long security, long *result, uint *disposition);
+extern "advapi32" int RegQueryValueExA(long key, string name, long reserved, uint *type, char *data, uint *size);
+extern "advapi32" int RegSetValueExA(long key, string name, uint reserved, uint type, string data, uint size);
+extern "advapi32" int RegDeleteValueA(long key, string name);
+extern "advapi32" int RegCloseKey(long key);

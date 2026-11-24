@@ -1,0 +1,2 @@
+extern "dwmapi" int DwmFlush();
+extern "dwmapi" int DwmSetWindowAttribute(long window, uint attribute, int *value, uint size);

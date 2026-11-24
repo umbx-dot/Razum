@@ -1,0 +1,6 @@
+import text;
+import crypt.bytes;
+
+long hash_text(Hash kind, byte digest[], string message) {
+    return hash(kind, digest, as_bytes(message), length(message));
+}

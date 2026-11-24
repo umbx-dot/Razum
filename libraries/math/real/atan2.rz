@@ -1,0 +1,9 @@
+double atan2(double y, double x) {
+    asm {
+        fld qword [rsp + .y]
+        fld qword [rsp + .x]
+        fpatan
+        fstp qword [rsp + .y]
+        movsd xmm0, qword [rsp + .y]
+    }
+}

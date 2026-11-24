@@ -1,0 +1,165 @@
+struct Modulus {
+    long value[16];
+    long inverse;
+    long squared[16];
+}
+
+void number_from_bytes(long target[], byte *bytes) {
+    for (int index = 0; index < 16; index++) {
+        target[index] = (long)bytes[31 - 2 * index] | ((long)bytes[30 - 2 * index] << 8);
+    }
+}
+
+void number_to_bytes(byte *bytes, long value[]) {
+    for (int index = 0; index < 16; index++) {
+        bytes[31 - 2 * index] = (byte)value[index];
+        bytes[30 - 2 * index] = (byte)(value[index] >> 8);
+    }
+}
+
+void number_set(long target[], long small) {
+    for (int index = 0; index < 16; index++) {
+        target[index] = 0;
+    }
+    target[0] = small;
+}
+
+void number_copy(long target[], long value[]) {
+    for (int index = 0; index < 16; index++) {
+        target[index] = value[index];
+    }
+}
+
+bool number_is_zero(long value[]) {
+    long any = 0;
+    for (int index = 0; index < 16; index++) {
+        any = any | value[index];
+    }
+    return any == 0;
+}
+
+int number_compare(long left[], long right[]) {
+    for (int index = 15; index >= 0; index--) {
+        if (left[index] != right[index]) {
+            return left[index] < right[index] ? -1 : 1;
+        }
+    }
+    return 0;
+}
+
+long number_subtract(long target[], long left[], long right[]) {
+    long borrow = 0;
+    for (int index = 0; index < 16; index++) {
+        long difference = left[index] - right[index] - borrow;
+        borrow = difference < 0 ? 1 : 0;
+        target[index] = difference & 0xFFFF;
+    }
+    return borrow;
+}
+
+void modular_add(long target[], long left[], long right[], Modulus modulus) {
+    long carry = 0;
+    for (int index = 0; index < 16; index++) {
+        long sum = left[index] + right[index] + carry;
+        target[index] = sum & 0xFFFF;
+        carry = sum >> 16;
+    }
+    if (carry != 0 || number_compare(target, modulus.value) >= 0) {
+        number_subtract(target, target, modulus.value);
+    }
+}
+
+void modular_subtract(long target[], long left[], long right[], Modulus modulus) {
+    if (number_subtract(target, left, right) != 0) {
+        long carry = 0;
+        for (int index = 0; index < 16; index++) {
+            long sum = target[index] + modulus.value[index] + carry;
+            target[index] = sum & 0xFFFF;
+            carry = sum >> 16;
+        }
+    }
+}
+
+void modular_multiply(long target[], long left[], long right[], Modulus modulus) {
+    long work[18];
+    for (int index = 0; index < 18; index++) {
+        work[index] = 0;
+    }
+    for (int i = 0; i < 16; i++) {
+        long carry = 0;
+        for (int j = 0; j < 16; j++) {
+            long sum = work[j] + left[j] * right[i] + carry;
+            work[j] = sum & 0xFFFF;
+            carry = sum >> 16;
+        }
+        long top = work[16] + carry;
+        work[16] = top & 0xFFFF;
+        work[17] = top >> 16;
+        long factor = (work[0] * modulus.inverse) & 0xFFFF;
+        long sum = work[0] + factor * modulus.value[0];
+        carry = sum >> 16;
+        for (int j = 1; j < 16; j++) {
+            sum = work[j] + factor * modulus.value[j] + carry;
+            work[j - 1] = sum & 0xFFFF;
+            carry = sum >> 16;
+        }
+        sum = work[16] + carry;
+        work[15] = sum & 0xFFFF;
+        work[16] = work[17] + (sum >> 16);
+    }
+    long result[16];
+    for (int index = 0; index < 16; index++) {
+        result[index] = work[index];
+    }
+    if (work[16] != 0 || number_compare(result, modulus.value) >= 0) {
+        number_subtract(result, result, modulus.value);
+    }
+    number_copy(target, result);
+}
+
+void modulus_prepare(Modulus modulus, string hex) {
+    byte bytes[32];
+    hex_decode(bytes, hex);
+    number_from_bytes(modulus.value, &bytes[0]);
+    long inverse = 1;
+    for (int round = 0; round < 5; round++) {
+        inverse = (inverse * (2 - modulus.value[0] * inverse)) & 0xFFFF;
+    }
+    modulus.inverse = (65536 - inverse) & 0xFFFF;
+    number_set(modulus.squared, 1);
+    for (int round = 0; round < 512; round++) {
+        modular_add(modulus.squared, modulus.squared, modulus.squared, modulus);
+    }
+}
+
+void modular_enter(long target[], long value[], Modulus modulus) {
+    modular_multiply(target, value, modulus.squared, modulus);
+}
+
+void modular_leave(long target[], long value[], Modulus modulus) {
+    long one[16];
+    number_set(one, 1);
+    modular_multiply(target, value, one, modulus);
+}
+
+void modular_power(long target[], long base[], long exponent[], Modulus modulus) {
+    long result[16];
+    long one[16];
+    number_set(one, 1);
+    modular_enter(result, one, modulus);
+    for (int bit = 255; bit >= 0; bit--) {
+        modular_multiply(result, result, result, modulus);
+        if (((exponent[bit / 16] >> (bit % 16)) & 1) != 0) {
+            modular_multiply(result, result, base, modulus);
+        }
+    }
+    number_copy(target, result);
+}
+
+void modular_invert(long target[], long value[], Modulus modulus) {
+    long exponent[16];
+    long two[16];
+    number_set(two, 2);
+    number_subtract(exponent, modulus.value, two);
+    modular_power(target, value, exponent, modulus);
+}

@@ -1,0 +1,40 @@
+long http_find(char *data, long length, char wanted) {
+    asm {
+        mov rcx, qword [rsp + .data]
+        mov rdx, qword [rsp + .length]
+        movzx r8d, byte [rsp + .wanted]
+        movd xmm1, r8d
+        punpcklbw xmm1, xmm1
+        punpcklwd xmm1, xmm1
+        pshufd xmm1, xmm1, 0
+        xor r9, r9
+    .vector:
+        lea r10, [r9 + 16]
+        cmp r10, rdx
+        ja .tail
+        movdqu xmm0, [rcx + r9]
+        pcmpeqb xmm0, xmm1
+        pmovmskb eax, xmm0
+        test eax, eax
+        jnz .hit
+        add r9, 16
+        jmp .vector
+    .hit:
+        bsf eax, eax
+        add rax, r9
+        jmp .finish
+    .tail:
+        cmp r9, rdx
+        jae .missing
+        cmp byte [rcx + r9], r8b
+        je .tail_hit
+        inc r9
+        jmp .tail
+    .tail_hit:
+        mov rax, r9
+        jmp .finish
+    .missing:
+        mov rax, -1
+    .finish:
+    }
+}

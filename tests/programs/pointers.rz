@@ -1,0 +1,171 @@
+// platform: windows
+import stdio;
+import windows;
+
+struct Node {
+    int value;
+    Node *next;
+}
+
+struct Tree {
+    long key;
+    Tree *left;
+    Tree *right;
+}
+
+struct Point {
+    int x;
+    int y;
+}
+
+void swap(int *a, int *b) {
+    int kept = *a;
+    *a = *b;
+    *b = kept;
+}
+
+Node *push(Node *head, int value) {
+    Node *node = new Node;
+    node.value = value;
+    node->next = head;
+    return node;
+}
+
+Tree *insert(Tree *root, long key) {
+    if (root == null) {
+        Tree *leaf = new Tree;
+        leaf.key = key;
+        return leaf;
+    }
+    if (key < root.key) {
+        root.left = insert(root.left, key);
+    } else {
+        root.right = insert(root.right, key);
+    }
+    return root;
+}
+
+long sum_in_order(Tree *root, long depth) {
+    if (root == null) {
+        return 0;
+    }
+    return sum_in_order(root.left, depth + 1) + root.key * depth + sum_in_order(root.right, depth + 1);
+}
+
+void free_tree(Tree *root) {
+    if (root) {
+        free_tree(root.left);
+        free_tree(root.right);
+        free(root);
+    }
+}
+
+void fill_squares(long *values, int count) {
+    for (int i = 0; i < count; i++) {
+        values[i] = (long)i * i;
+    }
+}
+
+int main() {
+    int x = -7;
+    int y = 3;
+    swap(&x, &y);
+    print(x);
+    print(y);
+    print(y / 2);
+    y += 1;
+    print(y);
+
+    byte level = 250;
+    byte *pointer_to_level = &level;
+    *pointer_to_level += 10;
+    print(level);
+
+    Node *list = null;
+    for (int i = 1; i <= 5; i++) {
+        list = push(list, i * 10);
+    }
+    int total = 0;
+    int count = 0;
+    for (Node *node = list; node != null; node = node.next) {
+        total += node.value;
+        count++;
+    }
+    print(total);
+    print(count);
+    Node **link = &list;
+    while (*link != null && (*link).value != 30) {
+        link = &(*link).next;
+    }
+    Node *removed = *link;
+    *link = removed.next;
+    free(removed);
+    total = 0;
+    for (Node *node = list; node; node = node->next) {
+        total += node->value;
+    }
+    print(total);
+    while (list != null) {
+        Node *next = list.next;
+        free(list);
+        list = next;
+    }
+
+    Tree *root = null;
+    long keys[7] = {50, 30, 70, 20, 40, 60, 80};
+    for (int i = 0; i < keys.length; i++) {
+        root = insert(root, keys[i]);
+    }
+    print(sum_in_order(root, 1));
+    print(root.left.right.key);
+    free_tree(root);
+
+    int n = 6;
+    long *squares = new long[n];
+    fill_squares(squares, n);
+    print(squares[5]);
+    print(squares[0] + squares[1] + squares[2]);
+    free(squares);
+
+    Point corner = {3, 4};
+    int *corner_y = &corner.y;
+    *corner_y = 9;
+    print(corner.y);
+    Point *heap_point = new Point;
+    *heap_point = corner;
+    heap_point.x *= 10;
+    print(heap_point.x + heap_point->y);
+    free(heap_point);
+
+    int numbers[4] = {1, 2, 3, 4};
+    int *first = numbers;
+    first[3] = 40;
+    print(numbers[3]);
+    print(*first);
+
+    char *letters = "razum";
+    print(letters[2]);
+    string again = letters;
+    print(again);
+
+    print(sizeof(Point));
+    print(sizeof(Node));
+    print(sizeof(long[10]));
+    print(sizeof(Tree *));
+
+    Node *nothing = null;
+    print(nothing == null);
+    print((ulong)nothing);
+    print((Node *)0 == null);
+    free(nothing);
+    print(nothing ? 1 : 2);
+
+    long frequency = 0;
+    QueryPerformanceFrequency(&frequency);
+    print(frequency > 0);
+    SYSTEMTIME *now = new SYSTEMTIME;
+    GetLocalTime(now);
+    print(now.year >= 2026);
+    free(now);
+    return 0;
+}

@@ -1,0 +1,14 @@
+import gui.state;
+import gui.wayland;
+import gui.x11;
+
+void gui_present() {
+    if (gui.offscreen || gui.quit) {
+        return;
+    }
+    if (gui_desktop.backend == GUI_WAYLAND) {
+        gui_wl_present();
+    } else {
+        gui_x11_present();
+    }
+}

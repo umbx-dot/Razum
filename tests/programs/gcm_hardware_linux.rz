@@ -1,0 +1,59 @@
+// platform: linux
+
+import crypt.cipher;
+import stdio;
+
+int main() {
+    byte key_bytes[32];
+    byte nonce[12];
+    byte aad[33];
+    byte plain[33];
+    byte scalar[33];
+    byte accelerated[33];
+    byte scalar_tag[16];
+    byte accelerated_tag[16];
+    long sizes[8] = {0, 1, 15, 16, 17, 31, 32, 33};
+    for (int i = 0; i < key_bytes.length; i++) {
+        key_bytes[i] = (byte)(83 * i + 21);
+    }
+    for (int i = 0; i < nonce.length; i++) {
+        nonce[i] = (byte)(i * 7 + 5);
+    }
+    for (int i = 0; i < plain.length; i++) {
+        plain[i] = (byte)(53 * i + 89);
+        aad[i] = (byte)(29 * i + 61);
+    }
+    for (long key_length = 16; key_length <= 32; key_length += 8) {
+        AesKey key;
+        if (!aes_expand(key, key_bytes, key_length)) {
+            return 1;
+        }
+        uint features = key.features;
+        for (int m = 0; m < sizes.length; m++) {
+            long length = sizes[m];
+            key.features = 0;
+            gcm_crypt(key, nonce, plain, scalar, length);
+            key.features = features;
+            gcm_crypt(key, nonce, plain, accelerated, length);
+            for (long j = 0; j < length; j++) {
+                if (scalar[j] != accelerated[j]) {
+                    return 2;
+                }
+            }
+            for (int n = 0; n < sizes.length; n++) {
+                long aad_length = sizes[n];
+                key.features = 0;
+                gcm_tag(key, nonce, aad, aad_length, scalar, length, scalar_tag);
+                key.features = features;
+                gcm_tag(key, nonce, aad, aad_length, accelerated, length, accelerated_tag);
+                for (int j = 0; j < scalar_tag.length; j++) {
+                    if (scalar_tag[j] != accelerated_tag[j]) {
+                        return 3;
+                    }
+                }
+            }
+        }
+    }
+    print("GCM paths agree");
+    return 0;
+}

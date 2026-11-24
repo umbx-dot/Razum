@@ -1,0 +1,17 @@
+int base85_value(char digit) {
+    if (digit >= "0" && digit <= "9") {
+        return digit - "0";
+    }
+    if (digit >= "A" && digit <= "Z") {
+        return digit - "A" + 10;
+    }
+    if (digit >= "a" && digit <= "z") {
+        return digit - "a" + 36;
+    }
+    for (int i = 62; i < 85; i++) {
+        if (BASE85_DIGITS[i] == digit) {
+            return i;
+        }
+    }
+    return -1;
+}

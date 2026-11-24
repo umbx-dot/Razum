@@ -1,0 +1,23 @@
+long base64_decode_with(byte target[], string encoded, bool url_safe) {
+    long size = unpadded_length(encoded, 4, 2);
+    if (size < 0 || size % 4 == 1 || size / 4 * 3 + (size % 4 == 0 ? 0 : size % 4 - 1) > target.length) {
+        return -1;
+    }
+    int bits = 0;
+    int count = 0;
+    long out = 0;
+    for (long i = 0; i < size; i++) {
+        int value = base64_value(encoded[i], url_safe);
+        if (value < 0) {
+            return -1;
+        }
+        bits = (bits << 6) | value;
+        count += 6;
+        if (count >= 8) {
+            count -= 8;
+            target[out] = (byte)(bits >> count);
+            out++;
+        }
+    }
+    return out;
+}

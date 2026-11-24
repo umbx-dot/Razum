@@ -1,0 +1,15 @@
+import http.state;
+import windows;
+import winsock;
+
+bool http_post_wait(HttpConnection *connection) {
+    http_reset_overlapped(connection.overlapped);
+    connection.operation = HTTP_WAITING;
+    WSABUF buffer;
+    uint received = 0;
+    uint flags = 0;
+    if (WSARecv(connection.socket, &buffer, 1, &received, &flags, (long)&connection.overlapped, 0) != 0) {
+        return WSAGetLastError() == WSA_IO_PENDING;
+    }
+    return true;
+}

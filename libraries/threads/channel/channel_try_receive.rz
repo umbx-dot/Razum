@@ -1,0 +1,3 @@
+bool channel_try_receive(Channel *channel, long *value) {
+    return channel_receive_timeout(channel, value, 0) == ChannelResult.RECEIVED;
+}

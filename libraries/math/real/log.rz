@@ -1,0 +1,9 @@
+double log(double value) {
+    asm {
+        fldln2
+        fld qword [rsp + .value]
+        fyl2x
+        fstp qword [rsp + .value]
+        movsd xmm0, qword [rsp + .value]
+    }
+}

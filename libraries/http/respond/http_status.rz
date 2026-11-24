@@ -1,0 +1,7 @@
+import http.state;
+
+void http_status(HttpResponse *response, int status) {
+    if (status >= 100 && status <= 999) {
+        response.status = status;
+    }
+}

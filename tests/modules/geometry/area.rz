@@ -1,0 +1,3 @@
+int square_area(int side) {
+    return side * side;
+}

@@ -1,0 +1,12 @@
+void gui_wl_copy_pixels(long target, long source, int count) {
+    asm {
+        push rsi
+        push rdi
+        mov rdi, [rsp + 16 + .target]
+        mov rsi, [rsp + 16 + .source]
+        mov ecx, dword [rsp + 16 + .count]
+        rep movsd
+        pop rdi
+        pop rsi
+    }
+}

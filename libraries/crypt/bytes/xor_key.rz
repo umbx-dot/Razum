@@ -1,0 +1,14 @@
+bool xor_key(byte *target, byte *data, long length, byte *key, long key_length) {
+    if (key_length <= 0) {
+        return false;
+    }
+    long k = 0;
+    for (long i = 0; i < length; i++) {
+        target[i] = (byte)(data[i] ^ key[k]);
+        k++;
+        if (k == key_length) {
+            k = 0;
+        }
+    }
+    return true;
+}

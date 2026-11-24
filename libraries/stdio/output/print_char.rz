@@ -1,0 +1,10 @@
+void print_char(char value) {
+    asm {
+        call rz@lock_output
+        lea rcx, [rsp + .value]
+        mov edx, 1
+        call rz@write
+        call rz@write_newline
+        call rz@unlock_output
+    }
+}

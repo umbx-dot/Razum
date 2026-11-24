@@ -1,0 +1,99 @@
+import http.state;
+import http.memory;
+import text;
+
+int http_parse(HttpWorker *worker, char *data, long size) {
+    char *head = worker.head;
+    http_copy(head, data, size);
+    head[size] = "\0";
+    HttpRequest *request = &worker.request;
+    request.header_count = 0;
+    request.body_length = 0;
+    request.keep_alive = true;
+    request.expects_continue = false;
+    request.rest = "";
+    long at = 0;
+    long space = http_find(head, size, " ");
+    if (space <= 0) {
+        return 400;
+    }
+    head[space] = "\0";
+    request.method = (string)head;
+    at = space + 1;
+    space = http_find(&head[at], size - at, " ");
+    if (space <= 0 || head[at] != "/") {
+        return 400;
+    }
+    head[at + space] = "\0";
+    request.path = (string)&head[at];
+    long question = http_find(&head[at], space, "?");
+    request.query = "";
+    if (question >= 0) {
+        head[at + question] = "\0";
+        request.query = (string)&head[at + question + 1];
+    }
+    at += space + 1;
+    long line_end = http_find(&head[at], size - at, "\r");
+    if (line_end != 8 || head[at] != "H" || head[at + 4] != "/" || head[at + 5] != "1" || head[at + 6] != ".") {
+        return 400;
+    }
+    bool old_version = head[at + 7] == "0";
+    bool keep_alive_header = false;
+    at += line_end + 2;
+    while (at < size && head[at] != "\r") {
+        line_end = http_find(&head[at], size - at, "\r");
+        if (line_end < 0) {
+            return 400;
+        }
+        long colon = http_find(&head[at], line_end, ":");
+        if (colon <= 0) {
+            return 400;
+        }
+        if (request.header_count == request.headers.length) {
+            return 431;
+        }
+        head[at + colon] = "\0";
+        long value = at + colon + 1;
+        long end = at + line_end;
+        while (value < end && (head[value] == " " || head[value] == "\t")) {
+            value++;
+        }
+        while (end > value && (head[end - 1] == " " || head[end - 1] == "\t")) {
+            end--;
+        }
+        head[end] = "\0";
+        HttpHeader *header = &request.headers[request.header_count];
+        header.name = (string)&head[at];
+        header.value = (string)&head[value];
+        request.header_count++;
+        if (equals_ignore_case(header.name, "content-length")) {
+            long length_value = 0;
+            if (value == end) {
+                return 400;
+            }
+            for (long digit = value; digit < end; digit++) {
+                if (head[digit] < "0" || head[digit] > "9" || length_value > 100000000000) {
+                    return 400;
+                }
+                length_value = length_value * 10 + (head[digit] - "0");
+            }
+            request.body_length = length_value;
+        } else if (equals_ignore_case(header.name, "connection")) {
+            if (equals_ignore_case(header.value, "close")) {
+                request.keep_alive = false;
+            } else if (equals_ignore_case(header.value, "keep-alive")) {
+                keep_alive_header = true;
+            }
+        } else if (equals_ignore_case(header.name, "transfer-encoding")) {
+            return 501;
+        } else if (equals_ignore_case(header.name, "expect")) {
+            request.expects_continue = equals_ignore_case(header.value, "100-continue");
+        }
+        at += line_end + 2;
+    }
+    if (old_version && !keep_alive_header) {
+        request.keep_alive = false;
+    }
+    request.head = equals(request.method, "HEAD");
+    return 0;
+}

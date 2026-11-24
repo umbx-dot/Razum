@@ -1,0 +1,15 @@
+long secure_int(long low, long high) {
+    if (high <= low) {
+        return low;
+    }
+    ulong span = (ulong)high - (ulong)low + 1;
+    ulong value = secure_ulong();
+    if (span == 0) {
+        return (long)value;
+    }
+    ulong threshold = (0 - span) % span;
+    while (value < threshold) {
+        value = secure_ulong();
+    }
+    return (long)((ulong)low + value % span);
+}

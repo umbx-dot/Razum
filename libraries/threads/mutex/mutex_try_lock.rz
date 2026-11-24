@@ -1,0 +1,5 @@
+import threads.system;
+
+bool mutex_try_lock(Mutex mutex) {
+    return TryAcquireSRWLockExclusive(&mutex.lock) != 0;
+}

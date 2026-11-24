@@ -1,0 +1,8 @@
+import gui.state;
+
+double gui_column_width(int count) {
+    GuiBox *box = &gui.boxes[gui.depth];
+    double gap = box.count > 0 ? box.gap : 0.0;
+    double available = box.width - box.cursor - gap;
+    return count > 1 ? (available - box.gap * (count - 1)) / count : available;
+}

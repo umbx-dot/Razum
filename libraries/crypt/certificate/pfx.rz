@@ -1,0 +1,9 @@
+struct Pfx {
+    byte private_key[32];
+    bool has_key;
+    byte *certificates;
+    long certificate_used;
+    long certificate_starts[8];
+    long certificate_lengths[8];
+    int certificate_count;
+}

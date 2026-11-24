@@ -1,0 +1,12 @@
+import json.types;
+
+void json_writer_init(JsonOutput *output, char *target, long capacity) {
+    output.data = target;
+    output.capacity = target == null || capacity < 0 ? 0 : capacity;
+    output.used = 0;
+    output.depth = 0;
+    output.root = false;
+    if (output.capacity > 0) {
+        output.data[0] = "\0";
+    }
+}

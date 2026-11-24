@@ -1,0 +1,16 @@
+import http;
+import process;
+
+void learn_answer(HttpResponse *response, string name, ProcessResult result, bool last) {
+    http_write(response, "\"");
+    http_write(response, name);
+    http_write(response, "\": {\"output\": ");
+    json_write(response, result.output, result.output_length);
+    http_write(response, ", \"exit_code\": ");
+    http_write_long(response, result.exit_code);
+    http_write(response, ", \"milliseconds\": ");
+    http_write_long(response, result.milliseconds);
+    http_write(response, result.timed_out ? ", \"timed_out\": true" : ", \"timed_out\": false");
+    http_write(response, result.truncated ? ", \"truncated\": true}" : ", \"truncated\": false}");
+    http_write(response, last ? "}" : ", ");
+}

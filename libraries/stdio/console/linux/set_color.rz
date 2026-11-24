@@ -1,0 +1,9 @@
+import stdio.output;
+
+void set_color(int color) {
+    int code = ((color & 4) != 0 ? 1 : 0) + ((color & 2) != 0 ? 2 : 0) + ((color & 1) != 0 ? 4 : 0);
+    write_char((char)27);
+    write_string("[");
+    write_long((color & 8) != 0 ? 90 + code : 30 + code);
+    write_string("m");
+}

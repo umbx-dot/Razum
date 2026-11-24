@@ -1,0 +1,18 @@
+import gui.state;
+
+import windows;
+
+double gui_measure(int font, int start, int length, double max_width) {
+    RectF layout = {0.0, 0.0, 100000.0, 100000.0};
+    long format = gui.format;
+    if (max_width > 0) {
+        layout.width = (float)max_width;
+        format = gui.wrap_format;
+    }
+    RectF bounds;
+    int characters = 0;
+    int lines = 0;
+    GdipMeasureString(gui.graphics, &gui.text[start], length, gui.fonts[font], layout, format, bounds, &characters, &lines);
+    gui.measured_height = bounds.height;
+    return bounds.width;
+}

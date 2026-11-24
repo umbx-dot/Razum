@@ -1,0 +1,52 @@
+import stdio;
+
+int calls = 0;
+double rate = 1.5;
+
+int square(int value) {
+    calls++;
+    return value * value;
+}
+
+double average(int total, int count) {
+    return (double)total / count;
+}
+
+void show_odds(int limit) {
+    for (int i = 0; i < limit; i++) {
+        if (i % 2 == 0) continue;
+        print(i);
+    }
+}
+
+int main() {
+    print("razum tour");
+
+    int a;
+    int b = 10;
+    a = b * 2 + 1;
+    a++;
+    print(a);
+
+    print(square(7));
+    print(average(7, 2));
+    print(rate * 2);
+
+    int n = 0;
+    while (n < 3 && calls < 100) {
+        n += 1;
+    }
+    print(n);
+
+    show_odds(6);
+
+    if (a > 20) {
+        print("a is big");
+    } else {
+        print("a is small");
+    }
+
+    print((int)3.99);
+    print(calls);
+    return 0;
+}

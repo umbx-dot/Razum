@@ -1,0 +1,6 @@
+import text;
+import crypt.bytes;
+
+long hash_text_hex(Hash kind, char target[], string message) {
+    return hash_hex(kind, target, as_bytes(message), length(message));
+}

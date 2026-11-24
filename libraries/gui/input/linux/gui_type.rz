@@ -1,0 +1,29 @@
+import gui.state;
+import text.unicode;
+
+void gui_type(ushort unit) {
+    if (unit < 32 || unit == 127) {
+        return;
+    }
+    if (unit >= 0xD800 && unit < 0xDC00) {
+        gui.surrogate = unit;
+        return;
+    }
+    ushort pair[3];
+    pair[0] = unit;
+    if (unit >= 0xDC00 && unit < 0xE000) {
+        if (gui.surrogate == 0) {
+            return;
+        }
+        pair[0] = gui.surrogate;
+        pair[1] = unit;
+    }
+    gui.surrogate = 0;
+    char bytes[5];
+    int size = (int)from_utf16(bytes, pair);
+    if (size <= gui.events.length - gui.event_count) {
+        for (int i = 0; i < size; i++) {
+            gui_push_event((int)bytes[i]);
+        }
+    }
+}

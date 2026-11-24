@@ -1,0 +1,41 @@
+import stdio;
+import math.real;
+
+const ulong BIG = (ulong)10000000000000000000.0;
+const float EXACT = (float)16777216 + 1 - 16777216;
+const bool SKIPPED = false && (1 / 0 == 0);
+const bool TAKEN = true || (1 / 0 == 0);
+const long SMALLEST = -9223372036854775807 - 1;
+
+long divide(long a, long b) {
+    return a / b;
+}
+
+long remainder(long a, long b) {
+    return a % b;
+}
+
+int main() {
+    double huge = 10000000000000000000.0;
+    print(BIG);
+    print((ulong)huge);
+    print(EXACT);
+    float x = (float)16777216;
+    print(x + 1 - x);
+    print(SKIPPED);
+    print(TAKEN);
+    print(SMALLEST / -1);
+    print(divide(SMALLEST, -1));
+    print(remainder(SMALLEST, -1));
+    print(divide(-7, 2));
+    print(remainder(-7, 3));
+    long quotient = SMALLEST;
+    quotient /= -1;
+    print(quotient);
+    double infinity = 1.7976931348623157e308 * 10.0;
+    print(exp2(infinity) == infinity);
+    print(exp2(-infinity) == 0.0);
+    print(exp(-infinity) == 0.0);
+    print(exp2(10.0));
+    return 0;
+}

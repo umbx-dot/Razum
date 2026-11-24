@@ -1,0 +1,38 @@
+import http.state;
+import http.connection;
+import linux;
+import threads;
+
+void http_accept_all(HttpWorker *worker, int listener) {
+    long listening = worker.server.listeners[listener].socket;
+    HttpServer *server = worker.server;
+    while (true) {
+        long socket = system_call(SYS_ACCEPT4, listening, 0, 0, SOCK_NONBLOCK | SOCK_CLOEXEC);
+        if (socket < 0) {
+            return;
+        }
+        int yes = 1;
+        system_call6(SYS_SETSOCKOPT, socket, IPPROTO_TCP, TCP_NODELAY, (long)&yes, 4, 0);
+        HttpConnection *connection = new HttpConnection;
+        connection.socket = socket;
+        connection.server = server;
+        connection.last_active = GetTickCount64();
+        if (server.listeners[listener].tls) {
+            connection.tls = new HttpTls;
+            connection.tls.certificate = server.listeners[listener].certificate;
+            connection.tls.raw_capacity = 16384;
+            connection.tls.raw = new char[16384];
+        }
+        if (!http_epoll_set(worker.events, EPOLL_CTL_ADD, socket, EPOLLIN | EPOLLRDHUP, (long)connection)) {
+            system_call(SYS_CLOSE, socket, 0, 0, 0);
+            free(connection);
+            continue;
+        }
+        connection.next = worker.connections;
+        if (worker.connections != null) {
+            worker.connections.previous = connection;
+        }
+        worker.connections = connection;
+        atomic_add(&server.connection_count, 1);
+    }
+}

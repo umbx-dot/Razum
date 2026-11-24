@@ -1,0 +1,19 @@
+import stdio;
+
+int first() {
+    return 1
+}
+
+int second() {
+    int x = ;
+    return x;
+}
+
+int third() {
+    return 3;
+}
+
+int main() {
+    print(first() + second() + third());
+    return 0;
+}

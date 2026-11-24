@@ -1,0 +1,100 @@
+import stdio;
+
+long count_bits(ulong value) {
+    asm {
+        popcnt rax, qword [rsp + .value]
+    }
+}
+
+ulong swap_bytes(ulong value) {
+    asm {
+        mov rax, qword [rsp + .value]
+        bswap rax
+    }
+}
+
+int highest_bit(ulong value) {
+    if (value == 0) {
+        return -1;
+    }
+    asm {
+        bsr rax, qword [rsp + .value]
+    }
+}
+
+long sum_to(long limit) {
+    long total = 0;
+    asm {
+        mov rcx, qword [rsp + .limit]
+        xor eax, eax
+    .again:
+        add rax, rcx
+        dec rcx
+        jg .again
+        mov qword [rsp + .total], rax
+    }
+    return total;
+}
+
+ulong cycles() {
+    asm {
+        rdtsc
+        shl rdx, 32
+        or rax, rdx
+    }
+}
+
+ulong milliseconds_since_boot() {
+    asm {
+        call [iat@GetTickCount64]
+    }
+}
+
+void print_cpu_vendor() {
+    asm {
+        push rbx
+        sub rsp, 56
+        xor eax, eax
+        cpuid
+        mov dword [rsp + 32], ebx
+        mov dword [rsp + 36], edx
+        mov dword [rsp + 40], ecx
+        mov byte [rsp + 44], 0
+        lea rcx, [rsp + 32]
+        call rz@write_string
+        call rz@write_newline
+        add rsp, 56
+        pop rbx
+    }
+}
+
+int main() {
+    print(count_bits(255));
+    write_string("0x1122334455667788 swapped, in decimal: ");
+    print(swap_bytes(0x1122334455667788));
+    print(highest_bit(1000));
+    print(sum_to(100));
+
+    int flags = 5;
+    asm {
+        mov eax, dword [rsp + .flags]
+        or eax, 0x80000000
+        movsxd rax, eax
+        mov qword [rsp + .flags], rax
+    }
+    print(flags);
+
+    write_string("CPU: ");
+    print_cpu_vendor();
+
+    ulong start = cycles();
+    long work = sum_to(1000000);
+    ulong spent = cycles() - start;
+    write_string("summing a million numbers took cycles: ");
+    print(spent);
+    print(work);
+
+    write_string("milliseconds since boot: ");
+    print(milliseconds_since_boot());
+    return 0;
+}

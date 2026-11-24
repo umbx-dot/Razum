@@ -1,0 +1,12 @@
+void file_copy_bytes(char *target, char *source, long count) {
+    asm {
+        push rdi
+        push rsi
+        mov rdi, qword [rsp + 16 + .target]
+        mov rsi, qword [rsp + 16 + .source]
+        mov rcx, qword [rsp + 16 + .count]
+        rep movsb
+        pop rsi
+        pop rdi
+    }
+}

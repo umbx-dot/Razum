@@ -1,0 +1,5 @@
+import linux;
+
+void thread_yield() {
+    system_call(SYS_SCHED_YIELD, 0, 0, 0, 0);
+}

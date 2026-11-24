@@ -1,0 +1,8 @@
+import gui.state;
+
+bool gui_hovered(int id, double x, double y, double width, double height) {
+    if (!gui.mouse_inside || (gui.active >= 0 && gui.active != id)) {
+        return false;
+    }
+    return gui.mouse_x >= x && gui.mouse_x < x + width && gui.mouse_y >= y && gui.mouse_y < y + height;
+}

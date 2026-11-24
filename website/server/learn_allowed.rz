@@ -1,0 +1,20 @@
+import http;
+import text;
+
+bool learn_allowed(HttpRequest *request, HttpResponse *response) {
+    string host = http_header(request, "host");
+    string origin = http_header(request, "origin");
+    bool host_ok = false;
+    bool origin_ok = length(origin) == 0;
+    for (int index = 0; index < 3; index++) {
+        host_ok = host_ok || equals_ignore_case(host, learn_hosts[index]);
+        origin_ok = origin_ok || equals_ignore_case(origin, learn_origins[index]);
+    }
+    bool is_json = starts_with(http_header(request, "content-type"), "application/json");
+    if (host_ok && origin_ok && is_json) {
+        return true;
+    }
+    http_status(response, 403);
+    http_json(response, "{\"error\": \"This server only answers its own page on localhost.\"}");
+    return false;
+}

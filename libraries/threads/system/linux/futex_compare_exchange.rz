@@ -1,0 +1,9 @@
+int futex_compare_exchange(long *word, int expected, int desired) {
+    asm {
+        mov rcx, qword [rsp + .word]
+        mov eax, dword [rsp + .expected]
+        mov edx, dword [rsp + .desired]
+        lock cmpxchg dword [rcx], edx
+        movsxd rax, eax
+    }
+}

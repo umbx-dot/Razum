@@ -1,0 +1,27 @@
+import linux;
+
+int process_collect(ProcessResult result, int pipe, long limit, long wait) {
+    while (true) {
+        long entry[1];
+        entry[0] = (long)pipe | (POLLIN << 32);
+        if (system_call(SYS_POLL, (long)&entry[0], 1, wait, 0) <= 0) {
+            return 0;
+        }
+        long room = limit - result.output_length;
+        if (room <= 0) {
+            result.truncated = true;
+            return 1;
+        }
+        long got = system_call(SYS_READ, (long)pipe, (long)&result.output[result.output_length], room, 0);
+        if (got == EINTR) {
+            continue;
+        }
+        if (got <= 0) {
+            return 2;
+        }
+        result.output_length += got;
+        result.output[result.output_length] = "\0";
+        wait = 0;
+    }
+    return 0;
+}

@@ -1,0 +1,13 @@
+// asm: mov qword [rsp + .count], 10
+// asm: inc qword [rsp + .count]
+// asm: add qword [rsp + .count], 5
+// asm: dec qword [rsp + .count]
+// asm: sub qword [rsp + .count], 2
+int main() {
+    long count = 10;
+    count++;
+    count += 5;
+    count--;
+    count -= 2;
+    return (int)count;
+}

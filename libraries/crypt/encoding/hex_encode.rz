@@ -1,0 +1,3 @@
+long hex_encode(char target[], byte *data, long length) {
+    return hex_encode_with(target, data, length, "0123456789abcdef");
+}

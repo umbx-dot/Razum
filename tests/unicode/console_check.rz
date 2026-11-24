@@ -1,0 +1,61 @@
+import stdio;
+import text;
+import windows;
+
+const string SHOWN = "Grüße Ωmega Привет";
+const string TYPED = "Ünïcødé ok";
+
+long open_console(string name) {
+    ushort wide[16];
+    to_utf16(wide, name);
+    return CreateFileW(wide, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+}
+
+void type_text(long console, string text) {
+    ushort units[64];
+    long count = to_utf16(units, text);
+    CONSOLE_KEY_INPUT keys[66];
+    for (long index = 0; index <= count; index++) {
+        keys[index].event_type = 1;
+        keys[index].key_down = 1;
+        keys[index].repeat_count = 1;
+        keys[index].character = index < count ? units[index] : (ushort)13;
+        keys[index].virtual_key = (ushort)(index < count ? 0 : 13);
+    }
+    uint written = 0;
+    WriteConsoleInputW(console, keys, (uint)(count + 1), &written);
+}
+
+int main(string args[]) {
+    long original_output = GetStdHandle(-11);
+    long original_input = GetStdHandle(-10);
+    FreeConsole();
+    AllocConsole();
+    ShowWindow(GetConsoleWindow(), SW_HIDE);
+    long output = open_console("CONOUT$");
+    long input = open_console("CONIN$");
+    SetStdHandle(-11, output);
+    SetStdHandle(-10, input);
+
+    print(SHOWN);
+    ushort screen[64];
+    uint read = 0;
+    ReadConsoleOutputCharacterW(output, screen, (uint)utf8_length(SHOWN), 0, &read);
+    screen[read] = 0;
+    char seen[128];
+    from_utf16(seen, screen);
+
+    type_text(input, TYPED);
+    char line[64];
+    read_input(line);
+
+    SetStdHandle(-11, original_output);
+    SetStdHandle(-10, original_input);
+    print(equals(seen, SHOWN) ? "console output ok" : "console output WRONG");
+    print(equals(line, TYPED) ? "console input ok" : "console input WRONG");
+    print(args.length > 1 && equals(args[1], "Grüße 世界 🌍") ? "argument ok" : "argument WRONG");
+    if (args.length > 1) {
+        print(args[1]);
+    }
+    return 0;
+}

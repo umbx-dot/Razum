@@ -1,0 +1,5 @@
+import windows;
+
+void thread_detach(long thread) {
+    CloseHandle(thread);
+}

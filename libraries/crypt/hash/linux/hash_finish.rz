@@ -1,0 +1,52 @@
+long hash_finish(Hasher hasher, byte digest[]) {
+    if (!hasher.active) {
+        return -1;
+    }
+    hasher.active = false;
+    int size = hash_size(hasher.kind);
+    if (digest.length < size) {
+        return -1;
+    }
+    long block_size = hash_block_size(hasher.kind);
+    long length_size = block_size == 128 ? 16 : 8;
+    ulong bits = (ulong)hasher.total * 8;
+    hasher.block[hasher.used] = 128;
+    hasher.used++;
+    if (hasher.used > block_size - length_size) {
+        while (hasher.used < block_size) {
+            hasher.block[hasher.used] = 0;
+            hasher.used++;
+        }
+        hash_compress(hasher, &hasher.block[0]);
+        hasher.used = 0;
+    }
+    while (hasher.used < block_size) {
+        hasher.block[hasher.used] = 0;
+        hasher.used++;
+    }
+    for (int index = 0; index < 8; index++) {
+        if (hasher.kind == Hash.MD5) {
+            hasher.block[block_size - 8 + index] = (byte)(bits >> (8 * index));
+        } else {
+            hasher.block[block_size - 1 - index] = (byte)(bits >> (8 * index));
+        }
+    }
+    hash_compress(hasher, &hasher.block[0]);
+    for (int index = 0; index < size; index++) {
+        if (hasher.kind == Hash.MD5) {
+            digest[index] = (byte)(hasher.state[index / 4] >> (8 * (index % 4)));
+        } else if (hasher.kind == Hash.SHA1 || hasher.kind == Hash.SHA256) {
+            digest[index] = (byte)(hasher.state[index / 4] >> (8 * (3 - index % 4)));
+        } else {
+            digest[index] = (byte)(hasher.state[index / 8] >> (8 * (7 - index % 8)));
+        }
+    }
+    if (!hasher.keyed) {
+        return size;
+    }
+    Hasher outer;
+    hash_start(outer, hasher.kind);
+    hash_update(outer, &hasher.outer[0], block_size);
+    hash_update(outer, &digest[0], size);
+    return hash_finish(outer, digest);
+}

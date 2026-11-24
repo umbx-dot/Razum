@@ -1,0 +1,26 @@
+import array.integers;
+
+void array_sort_double(double values[]) {
+    long count = values.length;
+    if (count < 2) {
+        return;
+    }
+    ulong *keys = (ulong *)&values[0];
+    for (long i = 0; i < count; i++) {
+        ulong bits = keys[i];
+        if ((bits >> 63) != 0) {
+            keys[i] = ~bits;
+        } else {
+            keys[i] = bits ^ 9223372036854775808;
+        }
+    }
+    array_sort_items_ulong(keys, count);
+    for (long i = 0; i < count; i++) {
+        ulong key = keys[i];
+        if ((key >> 63) != 0) {
+            keys[i] = key ^ 9223372036854775808;
+        } else {
+            keys[i] = ~key;
+        }
+    }
+}

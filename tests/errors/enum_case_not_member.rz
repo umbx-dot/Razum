@@ -1,0 +1,11 @@
+// error: 7:14: a case in a switch on Color must be a Color member, such as Color.RED
+enum Color { RED, GREEN }
+
+int main() {
+    Color color = Color.RED;
+    switch (color) {
+        case 1:
+            return 1;
+    }
+    return 0;
+}

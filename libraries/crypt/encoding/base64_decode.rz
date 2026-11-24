@@ -1,0 +1,3 @@
+long base64_decode(byte target[], string encoded) {
+    return base64_decode_with(target, encoded, false);
+}

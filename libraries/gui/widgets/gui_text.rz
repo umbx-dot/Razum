@@ -1,0 +1,11 @@
+import gui.state;
+import gui.theme;
+import gui.typography;
+import gui.draw;
+import gui.input;
+import gui.layout;
+import gui.editing;
+
+void gui_text(string text) {
+    gui_label(text, GUI_BODY, gui.theme.text);
+}

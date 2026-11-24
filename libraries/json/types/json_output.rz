@@ -1,0 +1,8 @@
+struct JsonOutput {
+    char *data;
+    long capacity;
+    long used;
+    int depth;
+    bool root;
+    byte state[JSON_MAX_DEPTH];
+}

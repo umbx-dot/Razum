@@ -1,0 +1,120 @@
+// platform: windows
+import stdio;
+import windows;
+
+extern "msvcrt" void qsort(int *values, ulong count, ulong size, fn(int *left, int *right) -> int compare);
+
+long add(long a, long b) {
+    return a + b;
+}
+
+long subtract(long a, long b) {
+    return a - b;
+}
+
+long multiply(long a, long b) {
+    return a * b;
+}
+
+long apply(fn(long, long) -> long operation, long a, long b) {
+    return operation(a, b);
+}
+
+fn(long, long) -> long pick(char symbol) {
+    switch (symbol) {
+        case '+':
+            return add;
+        case '-':
+            return subtract;
+        default:
+            return &multiply;
+    }
+}
+
+long twice(long value) {
+    return value * 2;
+}
+
+long map_sum(long *values, int count, fn(long) -> long transform) {
+    long total = 0;
+    for (int i = 0; i < count; i++) {
+        total += transform(values[i]);
+    }
+    return total;
+}
+
+int descending(int *left, int *right) {
+    return *left < *right ? 1 : *left > *right ? -1 : 0;
+}
+
+int windows_seen = 0;
+
+int count_window(long window, long data) {
+    windows_seen++;
+    long *calls = (long *)data;
+    *calls += 1;
+    return 1;
+}
+
+uint worker(long parameter) {
+    long *slot = (long *)parameter;
+    long total = 0;
+    for (int i = 1; i <= 1000; i++) {
+        total += i;
+    }
+    *slot = total;
+    return 7;
+}
+
+int main() {
+    fn(long, long) -> long operation = add;
+    print(operation(2, 3));
+    operation = subtract;
+    print(operation(10, 4));
+    print(apply(multiply, 6, 7));
+    print(pick('+')(20, 22));
+    print(pick('*')(5, 5));
+
+    fn(long, long) -> long table[3] = {add, subtract, multiply};
+    long result = 100;
+    for (int i = 0; i < table.length; i++) {
+        result = table[i](result, 3);
+    }
+    print(result);
+
+    long values[4] = {1, 2, 3, 4};
+    print(map_sum(values, values.length, twice));
+
+    fn(long) -> long nothing = null;
+    print(nothing == null);
+    nothing = twice;
+    print(nothing != null && nothing(21) == 42);
+
+    fn() -> ulong ticks = GetTickCount64;
+    print(ticks() > 0);
+    fn(int) -> int metrics = (fn(int) -> int)GetProcAddress(LoadLibraryA("user32.dll"), "GetSystemMetrics");
+    print(metrics(SM_CXSCREEN) == GetSystemMetrics(SM_CXSCREEN));
+
+    long calls = 0;
+    EnumWindows(count_window, (long)&calls);
+    print(calls > 0 && calls == windows_seen);
+
+    int numbers[6] = {5, 3, 9, 1, 7, 2};
+    qsort(numbers, 6, sizeof(int), descending);
+    for (int i = 0; i < numbers.length; i++) {
+        write_long(numbers[i]);
+        write_char(' ');
+    }
+    print_line();
+
+    long slot = 0;
+    uint thread_id = 0;
+    long thread = CreateThread(0, 0, worker, (long)&slot, 0, &thread_id);
+    WaitForSingleObject(thread, INFINITE);
+    uint code = 0;
+    GetExitCodeProcess(thread, &code);
+    CloseHandle(thread);
+    print(slot);
+    print(thread_id != 0);
+    return 0;
+}

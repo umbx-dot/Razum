@@ -1,0 +1,10 @@
+import math;
+
+int main() {
+    double total = 0.0;
+    for (int i = 1; i <= 1500000; i++) {
+        double number = i * 0.001;
+        total = total + sqrt(number) + sin(number) + log(number + 1.0);
+    }
+    return total > 47000000.0 && total < 50000000.0 ? 0 : 1;
+}

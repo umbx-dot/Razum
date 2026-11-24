@@ -1,0 +1,6 @@
+import linux;
+
+long entry_size(Directory directory) {
+    long status[18];
+    return entry_status(directory, status) == S_IFREG ? status[6] : 0;
+}

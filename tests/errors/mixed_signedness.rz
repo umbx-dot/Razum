@@ -1,0 +1,7 @@
+// error: 5:17: '+' mixes a long and a ulong; convert one side with (long) or (ulong)
+int main() {
+    long a = 1;
+    ulong b = 2;
+    ulong c = a + b;
+    return 0;
+}

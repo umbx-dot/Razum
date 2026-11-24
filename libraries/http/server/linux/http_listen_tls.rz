@@ -1,0 +1,38 @@
+import http.state;
+import crypt.certificate;
+import linux;
+
+bool http_listen_tls(HttpServer *server, string host, int port, string certificate_file, string password) {
+    long file = system_call(SYS_OPEN, (long)certificate_file, O_RDONLY | O_CLOEXEC, 0, 0);
+    if (file < 0) {
+        http_last_error = (uint)(-file);
+        return false;
+    }
+    byte data[65536];
+    long size = 0;
+    while (size < data.length) {
+        long got = system_call(SYS_READ, file, (long)&data[size], data.length - size, 0);
+        if (got == EINTR) {
+            continue;
+        }
+        if (got <= 0) {
+            break;
+        }
+        size += got;
+    }
+    system_call(SYS_CLOSE, file, 0, 0, 0);
+    Pfx *certificate = new Pfx;
+    if (size == data.length || !pfx_parse(certificate, &data[0], size, password)) {
+        http_last_error = 1;
+        free(certificate.certificates);
+        free(certificate);
+        return false;
+    }
+    if (!http_open_listener(server, host, port, true)) {
+        free(certificate.certificates);
+        free(certificate);
+        return false;
+    }
+    server.listeners[server.listener_count - 1].certificate = certificate;
+    return true;
+}

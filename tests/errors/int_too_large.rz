@@ -1,0 +1,5 @@
+// error: 3:13: 9223372036854775808 does not fit in int, which holds -2147483648 to 2147483647
+int main() {
+    int a = 9223372036854775808;
+    return 0;
+}

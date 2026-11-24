@@ -1,0 +1,14 @@
+import windows;
+import crypt.hash;
+import crypt.hmac;
+
+long pbkdf2(Hash kind, byte key[], byte *password, long password_length, byte *salt, long salt_length,
+            long iterations) {
+    if (password_length < 0 || password_length > 0xFFFFFFFF || salt_length < 0 || salt_length > 0xFFFFFFFF
+        || iterations < 1) {
+        return -1;
+    }
+    int status = BCryptDeriveKeyPBKDF2(hmac_algorithm(kind), password, (uint)password_length, salt,
+                                       (uint)salt_length, (ulong)iterations, key, (uint)key.length, 0);
+    return status == STATUS_SUCCESS ? key.length : -1;
+}

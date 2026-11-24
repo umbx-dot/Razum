@@ -1,0 +1,5 @@
+long *environment_entries() {
+    asm {
+        mov rax, [rz@environment]
+    }
+}

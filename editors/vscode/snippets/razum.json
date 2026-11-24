@@ -1,0 +1,168 @@
+{
+    "Program": {
+        "prefix": "main",
+        "body": [
+            "import stdio;",
+            "",
+            "int main() {",
+            "\t$0",
+            "\treturn 0;",
+            "}"
+        ],
+        "description": "A program with import stdio and int main()"
+    },
+    "Function": {
+        "prefix": "fn",
+        "body": [
+            "${1:int} ${2:name}(${3:int value}) {",
+            "\t$0",
+            "}"
+        ],
+        "description": "A function"
+    },
+    "If": {
+        "prefix": "if",
+        "body": [
+            "if (${1:condition}) {",
+            "\t$0",
+            "}"
+        ],
+        "description": "if"
+    },
+    "If else": {
+        "prefix": "ife",
+        "body": [
+            "if (${1:condition}) {",
+            "\t$2",
+            "} else {",
+            "\t$0",
+            "}"
+        ],
+        "description": "if / else"
+    },
+    "Else if": {
+        "prefix": "elif",
+        "body": [
+            "else if (${1:condition}) {",
+            "\t$0",
+            "}"
+        ],
+        "description": "else if"
+    },
+    "While": {
+        "prefix": "while",
+        "body": [
+            "while (${1:condition}) {",
+            "\t$0",
+            "}"
+        ],
+        "description": "while loop"
+    },
+    "For": {
+        "prefix": "for",
+        "body": [
+            "for (int ${1:i} = 0; $1 < ${2:count}; $1++) {",
+            "\t$0",
+            "}"
+        ],
+        "description": "counting for loop"
+    },
+    "Asm block": {
+        "prefix": "asm",
+        "body": [
+            "asm {",
+            "\t$0",
+            "}"
+        ],
+        "description": "inline NASM assembly"
+    },
+    "Import": {
+        "prefix": "import",
+        "body": [
+            "import ${1|stdio,math,math.integer,math.real|};"
+        ],
+        "description": "import a library or module"
+    },
+    "Print": {
+        "prefix": "print",
+        "body": [
+            "print($0);"
+        ],
+        "description": "print a value and a line end"
+    },
+    "Struct": {
+        "prefix": "struct",
+        "body": [
+            "struct ${1:Name} {",
+            "\t${2:int} ${3:field};$0",
+            "}"
+        ],
+        "description": "a struct definition"
+    },
+    "For each index": {
+        "prefix": "fori",
+        "body": [
+            "for (int ${1:i} = 0; $1 < ${2:values}.length; $1++) {",
+            "\t$0",
+            "}"
+        ],
+        "description": "loop over an array's indexes"
+    },
+    "Switch": {
+        "prefix": "switch",
+        "body": [
+            "switch (${1:value}) {",
+            "\tcase ${2:0}:",
+            "\t\t$0",
+            "\tdefault:",
+            "\t\t",
+            "}"
+        ],
+        "description": "switch with a case and default"
+    },
+    "Do while": {
+        "prefix": "do",
+        "body": [
+            "do {",
+            "\t$0",
+            "} while (${1:condition});"
+        ],
+        "description": "do / while loop"
+    },
+    "Main with arguments": {
+        "prefix": "mainargs",
+        "body": [
+            "import stdio;",
+            "",
+            "int main(string args[]) {",
+            "\t$0",
+            "\treturn 0;",
+            "}"
+        ],
+        "description": "a program that reads its command line"
+    },
+    "Extern": {
+        "prefix": "extern",
+        "body": [
+            "extern \"${1:user32}\" ${2:int} ${3:Name}(${4});"
+        ],
+        "description": "declare a function from a Windows DLL"
+    },
+    "Enum": {
+        "prefix": "enum",
+        "body": [
+            "enum ${1:Name} {",
+            "\t${2:FIRST},",
+            "\t${3:SECOND},$0",
+            "}"
+        ],
+        "description": "an enum definition"
+    },
+    "Const": {
+        "prefix": "const",
+        "body": [
+            "const ${1:int} ${2:NAME} = ${3:0};$0"
+        ],
+        "description": "a constant"
+    }
+}

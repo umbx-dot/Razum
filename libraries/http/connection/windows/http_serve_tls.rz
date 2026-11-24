@@ -1,0 +1,104 @@
+import http.state;
+import http.memory;
+import http.respond;
+import http.tls;
+import windows;
+import winsock;
+
+void http_serve_tls(HttpWorker *worker, HttpConnection *connection) {
+    HttpServer *server = worker.server;
+    HttpTls *tls = connection.tls;
+    if (tls.raw == null) {
+        tls.raw = new char[HTTP_TLS_RAW_SIZE];
+    }
+    HttpBuffer plain;
+    plain.data = worker.input;
+    plain.capacity = worker.input_capacity;
+    plain.used = 0;
+    plain.own = false;
+    if (connection.pending != null) {
+        plain.data = connection.pending;
+        plain.capacity = connection.pending_capacity;
+        plain.used = connection.pending_used;
+        plain.own = true;
+    }
+    connection.pending = null;
+    worker.output_used = 0;
+    worker.sealed_used = 0;
+    long limit = HTTP_MAX_HEADER + server.max_body;
+    bool failed = false;
+    while (!connection.close_after_send) {
+        long space = HTTP_TLS_RAW_SIZE - tls.raw_used;
+        if (space == 0) {
+            failed = true;
+            break;
+        }
+        int received = recv(connection.socket, &tls.raw[tls.raw_used], (int)space, 0);
+        if (received == 0) {
+            connection.close_after_send = true;
+            break;
+        }
+        if (received < 0) {
+            failed = WSAGetLastError() != WSAEWOULDBLOCK;
+            break;
+        }
+        tls.raw_used += received;
+        int result = http_tls_decrypt(worker, connection, plain, limit);
+        if (result < 0) {
+            failed = true;
+            break;
+        }
+        if (result > 0) {
+            connection.close_after_send = true;
+        }
+        if (plain.used > 0) {
+            if (connection.needed > plain.capacity && !http_buffer_reserve(plain, connection.needed - plain.used, limit)) {
+                http_error_response(worker, 413);
+                connection.close_after_send = true;
+                break;
+            }
+            long consumed = http_handle(worker, connection, plain.data, plain.used);
+            if (consumed > 0) {
+                http_copy(plain.data, &plain.data[consumed], plain.used - consumed);
+                plain.used -= consumed;
+            }
+        }
+        if (received < space) {
+            break;
+        }
+    }
+    if (failed) {
+        if (plain.own) {
+            free(plain.data);
+        }
+        worker.output_used = 0;
+        worker.sealed_used = 0;
+        http_close(connection);
+        return;
+    }
+    if (plain.used > 0 && !connection.close_after_send) {
+        if (!plain.own) {
+            long size = plain.used * 2 < 4096 ? 4096 : plain.used * 2;
+            char *copy = new char[size];
+            http_copy(copy, plain.data, plain.used);
+            plain.data = copy;
+            plain.capacity = size;
+        }
+        connection.pending = plain.data;
+        connection.pending_capacity = plain.capacity;
+        connection.pending_used = plain.used;
+    } else {
+        if (plain.own) {
+            free(plain.data);
+        }
+        connection.pending_capacity = 0;
+        connection.pending_used = 0;
+        connection.needed = 0;
+    }
+    if (tls.ready && tls.raw_used == 0) {
+        free(tls.raw);
+        tls.raw = null;
+    }
+    connection.last_active = GetTickCount64();
+    http_flush(worker, connection);
+}

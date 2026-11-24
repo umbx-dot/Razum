@@ -1,0 +1,133 @@
+import stdio;
+
+long wide_sum(long start, long end) {
+    long sum = 13;
+    for (long i = start; i < end; i++) {
+        sum += (i * i) ^ (i >> 3);
+    }
+    return sum;
+}
+
+long fixed_sum() {
+    long sum = 5;
+    for (long i = 2; i < 39; i++) {
+        sum += (i * i) ^ (i >> 3);
+    }
+    return sum;
+}
+
+ulong unsigned_sum(ulong first, ulong end) {
+    ulong sum = 4;
+    ulong i = first;
+    for (; i < end; i++) {
+        sum += (i << 65) ^ (i >> 65);
+    }
+    return sum + i;
+}
+
+int array_sum(int values[], int first, int end) {
+    int sum = 2147483640;
+    for (int i = first; i < end; i++) {
+        sum = sum + values[i];
+    }
+    return sum;
+}
+
+long pointer_sum(long *values, int end) {
+    long sum = 3;
+    for (int i = 0; i < end; i++) {
+        sum += values[i];
+    }
+    return sum;
+}
+
+int changing_bound() {
+    int sum = 9;
+    for (int i = 0; i < sum; i++) {
+        sum += -1;
+    }
+    return sum;
+}
+
+int narrow_square(int first, int end) {
+    int sum = 7;
+    for (int i = first; i < end; i++) {
+        sum += i * i;
+    }
+    return sum;
+}
+
+void update(int values[], int end) {
+    for (int i = 0; i < end; i++) {
+        values[i] = values[i] * 3 + i;
+    }
+}
+
+int fixed_arrays() {
+    int source[10] = {4, 9, -5, 2, 11, -7, 3, 6, 13, 8};
+    int destination[10];
+    for (int i = 0; i < 10; i++) {
+        destination[i] = source[i] - i;
+    }
+    return destination[7] + destination[9];
+}
+
+void overlapping(int *output, int *input, int end) {
+    for (int i = 0; i < end; i++) {
+        output[i] = input[i] + 1;
+    }
+}
+
+double product_loop(double a, double b, int limit) {
+    double sum = 0.0;
+    int step = 0;
+    while (step < limit && a * a + b * b < 500.0) {
+        double next = a * a + b * b;
+        a = a + 1.0;
+        sum = a * a + b * b + next;
+        step++;
+    }
+    return sum;
+}
+
+double product_for(double a, double b) {
+    double result = 0.0;
+    for (int i = 0; i < 3 && a * b < 10.0; i++) {
+        result = a * b;
+        b = b + 1.0;
+    }
+    return result;
+}
+
+int main() {
+    print(wide_sum(-5, 4));
+    print(wide_sum(4294967294, 4294967301));
+    print(wide_sum(4, 1));
+    print(wide_sum(9223372036854775802, 9223372036854775807));
+    print(fixed_sum());
+    print(unsigned_sum(18446744073709551609, 18446744073709551615));
+    int values[9] = {4, 9, -5, 2, 11, -7, 3, 6, 13};
+    print(array_sum(values, 0, 9));
+    print(array_sum(values, 1, 8));
+    print(array_sum(values, 9, 9));
+    print(array_sum(values, 1, 2));
+    long *wide = new long[7];
+    for (int i = 0; i < 7; i++) {
+        wide[i] = i - 5;
+    }
+    print(pointer_sum(wide, 7));
+    print(pointer_sum(wide, 0));
+    free(wide);
+    print(changing_bound());
+    print(narrow_square(-11, 19));
+    update(values, 9);
+    print(values[7] + values[8]);
+    print(fixed_arrays());
+    int alias[11] = {10};
+    overlapping(&alias[1], &alias[0], 10);
+    print(alias[10]);
+    print(product_loop(2.0, 3.0, 2) == 43.0);
+    print(product_loop(2.0, 3.0, 0) == 0.0);
+    print(product_for(2.0, 1.0) == 6.0);
+    return 0;
+}

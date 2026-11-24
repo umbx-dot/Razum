@@ -1,0 +1,162 @@
+import stdio;
+import array;
+
+ulong seed = 88172645463325252;
+
+ulong next_random() {
+    seed = seed ^ (seed << 13);
+    seed = seed ^ (seed >> 7);
+    seed = seed ^ (seed << 17);
+    return seed;
+}
+
+bool check_long(long count, ulong range, int pattern) {
+    long *values = new long[count];
+    long checksum = 0;
+    for (long i = 0; i < count; i++) {
+        long value = (long)(next_random() % range) - (long)(range / 2);
+        if (pattern == 1) {
+            value = i;
+        } else if (pattern == 2) {
+            value = count - i;
+        } else if (pattern == 3) {
+            value = i % 7;
+        }
+        values[i] = value;
+        checksum += value;
+    }
+    array_sort_items_long(values, count);
+    bool ok = true;
+    for (long i = 0; i < count; i++) {
+        checksum -= values[i];
+        if (i > 0 && values[i - 1] > values[i]) {
+            ok = false;
+        }
+    }
+    free(values);
+    return ok && checksum == 0;
+}
+
+bool check_sbyte(long count) {
+    sbyte *values = new sbyte[count];
+    long checksum = 0;
+    for (long i = 0; i < count; i++) {
+        values[i] = (sbyte)next_random();
+        checksum += values[i];
+    }
+    array_sort_items_sbyte(values, count);
+    bool ok = true;
+    for (long i = 0; i < count; i++) {
+        checksum -= values[i];
+        if (i > 0 && values[i - 1] > values[i]) {
+            ok = false;
+        }
+    }
+    free(values);
+    return ok && checksum == 0;
+}
+
+bool check_ulong(long count) {
+    ulong *values = new ulong[count];
+    ulong checksum = 0;
+    for (long i = 0; i < count; i++) {
+        values[i] = next_random();
+        checksum = checksum ^ values[i];
+    }
+    array_sort_items_ulong(values, count);
+    bool ok = true;
+    for (long i = 0; i < count; i++) {
+        checksum = checksum ^ values[i];
+        if (i > 0 && values[i - 1] > values[i]) {
+            ok = false;
+        }
+    }
+    free(values);
+    return ok && checksum == 0;
+}
+
+bool check_int_heap(long count) {
+    int *values = new int[count];
+    long checksum = 0;
+    for (long i = 0; i < count; i++) {
+        values[i] = (int)next_random();
+        checksum += values[i];
+    }
+    array_quick_sort_int(values, count, 0);
+    bool ok = true;
+    for (long i = 0; i < count; i++) {
+        checksum -= values[i];
+        if (i > 0 && values[i - 1] > values[i]) {
+            ok = false;
+        }
+    }
+    free(values);
+    return ok && checksum == 0;
+}
+
+void report(string name, bool ok) {
+    write_string(name);
+    print(ok ? " ok" : " FAILED");
+}
+
+int main() {
+    long sizes[11] = {0, 1, 2, 3, 24, 25, 383, 384, 3071, 3072, 20000};
+    bool all = true;
+    for (int s = 0; s < sizes.length; s++) {
+        for (int pattern = 0; pattern < 4; pattern++) {
+            all = all && check_long(sizes[s], 1000, pattern);
+            all = all && check_long(sizes[s], 18446744073709551615, pattern);
+        }
+        all = all && check_sbyte(sizes[s]);
+        all = all && check_ulong(sizes[s]);
+        all = all && check_int_heap(sizes[s]);
+    }
+    report("sorting 0 to 20000 values of long, sbyte, ulong and int, random, sorted, reversed and repeated:", all);
+
+    double numbers[7] = {2.5, -0.0, 0.0, -7.25, 1e300, -1e-300, 3.0};
+    numbers.sort();
+    for (int i = 0; i < numbers.length; i++) {
+        write_double(numbers[i]);
+        write_string(" ");
+    }
+    print("");
+    numbers.sort_descending();
+    print(numbers.first);
+    float small[3] = {1.5, -2.0, 0.25};
+    small.sort();
+    print(small.first);
+
+    int scores[5] = {70, 95, 80, 60, 95};
+    print(scores.first);
+    print(scores.last);
+    scores.last = 100;
+    print(scores.max());
+    print(scores.min());
+    print(scores.sum());
+    print(scores.contains(80));
+    print(scores.contains(81));
+    print(scores.index_of(95));
+    print(scores.index_of(1));
+    scores.sort_descending();
+    for (int i = 0; i < scores.length; i++) {
+        write_long(scores[i]);
+        write_string(" ");
+    }
+    print("");
+    scores.reverse();
+    print(scores.first);
+    scores.fill(7);
+    print(scores.sum());
+
+    char word[6] = {"r", "a", "z", "u", "m", "!"};
+    word.sort();
+    for (int i = 0; i < word.length; i++) {
+        write_char(word[i]);
+    }
+    print("");
+    ulong big[3] = {18446744073709551615, 0, 9223372036854775808};
+    big.sort();
+    print(big.last);
+    print(big.sum());
+    return 0;
+}

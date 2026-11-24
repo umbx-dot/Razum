@@ -1,0 +1,22 @@
+bool read_line(File file, char line[]) {
+    long count = 0;
+    bool found = false;
+    while (true) {
+        if (file.position == file.used && !file_fill(file)) {
+            line[count] = "\0";
+            return found;
+        }
+        char next = file.buffer[file.position];
+        file.position++;
+        found = true;
+        if (next == "\n") {
+            line[count] = "\0";
+            return true;
+        }
+        if (next != "\r" && count < line.length - 1) {
+            line[count] = next;
+            count++;
+        }
+    }
+    return found;
+}

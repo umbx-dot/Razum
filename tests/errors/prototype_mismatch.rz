@@ -1,0 +1,10 @@
+// error: 2:1: this declaration of 'f' does not match its definition at
+int f(int x);
+
+long f(long x) {
+    return x;
+}
+
+int main() {
+    return 0;
+}

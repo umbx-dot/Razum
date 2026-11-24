@@ -1,0 +1,7 @@
+void time_put_decimal(char *target, int width, int value) {
+    while (width > 0) {
+        width--;
+        target[width] = (char)(48 + value % 10);
+        value /= 10;
+    }
+}

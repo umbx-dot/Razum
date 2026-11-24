@@ -1,0 +1,16 @@
+struct ProcessResult {
+    char *output;
+    long output_length;
+    int exit_code;
+    bool started;
+    bool timed_out;
+    bool truncated;
+    long milliseconds;
+}
+
+struct ProcessLimits {
+    uint timeout_milliseconds;
+    long max_output;
+    long max_memory;
+    int max_processes;
+}

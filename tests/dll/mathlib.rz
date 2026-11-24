@@ -1,0 +1,63 @@
+import stdio;
+
+struct Point {
+    int x;
+    int y;
+}
+
+string greeting = "hello from a razum DLL";
+long calls = 0;
+
+export long add(long a, long b) {
+    calls++;
+    return a + b;
+}
+
+export int scale(int value, short factor) {
+    calls++;
+    return value * factor;
+}
+
+export long sum(int values[]) {
+    calls++;
+    long total = 0;
+    for (int i = 0; i < values.length; i++) {
+        total += values[i];
+    }
+    return total;
+}
+
+export void move_point(Point p, int dx, int dy) {
+    calls++;
+    p.x += dx;
+    p.y += dy;
+}
+
+export void increment(long *value) {
+    calls++;
+    *value += 1;
+}
+
+export double average(double a, double b) {
+    calls++;
+    return (a + b) / 2;
+}
+
+export string describe() {
+    calls++;
+    return greeting;
+}
+
+export bool is_even(long value) {
+    calls++;
+    return value % 2 == 0;
+}
+
+export long call_count() {
+    return calls;
+}
+
+export void print_from_dll(string text) {
+    calls++;
+    print(text);
+}

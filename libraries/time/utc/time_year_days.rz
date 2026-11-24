@@ -1,0 +1,4 @@
+int time_year_days(int year) {
+    int previous = year - 1;
+    return previous * 365 + previous / 4 - previous / 100 + previous / 400;
+}

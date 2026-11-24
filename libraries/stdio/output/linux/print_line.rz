@@ -1,0 +1,7 @@
+void print_line() {
+    asm {
+        call rz@lock_output
+        call rz@write_newline
+        call rz@unlock_output
+    }
+}

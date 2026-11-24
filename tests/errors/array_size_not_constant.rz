@@ -1,0 +1,6 @@
+// error: 4:16: an array size must be a whole number known when compiling, such as 10 or SIZE * 2
+int main() {
+    int count = 3;
+    int values[count];
+    return 0;
+}

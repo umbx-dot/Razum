@@ -1,0 +1,10 @@
+// error: 4:1: 'abs' is also defined by the library at <rzc>/libraries/math/integer/abs.rz:1; rename yours or remove that import
+import math;
+
+int abs(int value) {
+    return value;
+}
+
+int main() {
+    return abs(1);
+}

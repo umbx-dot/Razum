@@ -1,0 +1,6 @@
+// error: 4:14: '++' is a statement of its own in razum, not part of an expression; write it on its own line, as in x++;
+int main() {
+    int x = 0;
+    int y = x++ + 1;
+    return y;
+}

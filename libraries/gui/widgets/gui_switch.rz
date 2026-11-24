@@ -1,0 +1,44 @@
+import gui.state;
+import gui.theme;
+import gui.typography;
+import gui.draw;
+import gui.input;
+import gui.layout;
+import gui.editing;
+
+
+bool gui_switch(string label, bool *value) {
+    int id = gui_next_id();
+    int start = gui.text_used;
+    int length = gui_wide(label, -1);
+    double text_width = gui_measure(GUI_BODY, start, length, 0);
+    double line = gui.line_heights[GUI_BODY];
+    double track_width = 36;
+    double track_height = 20;
+    double height = line > track_height ? line : track_height;
+    double gap = length > 0 ? 10.0 : 0.0;
+    gui_allocate(track_width + gap + text_width, height);
+    double x = gui.slot_x;
+    double y = gui.slot_y;
+    bool hovered = gui_hovered(id, x, y, gui.slot_width, gui.slot_height);
+    if (hovered) {
+        gui.cursor = GUI_CURSOR_HAND;
+    }
+    bool changed = gui_clicked(id, hovered);
+    if (changed) {
+        *value = !*value;
+    }
+    double hover = gui_animate(gui.hover, id, hovered ? 1.0 : 0.0);
+    double on = gui_animate(gui.motion, id, *value ? 1.0 : 0.0);
+    double top = y + (height - track_height) / 2;
+    uint track = gui_mix(gui_mix(gui.theme.track, gui.theme.muted, 0.25 * hover), gui.theme.accent, on);
+    gui_fill(x, top, track_width, track_height, track_height / 2, track);
+    double knob = track_height - 6;
+    double knob_x = x + 3 + on * (track_width - knob - 6);
+    gui_circle(knob_x, top + 4, knob, gui_fade(gui.theme.shadow, 0.6));
+    gui_circle(knob_x, top + 3, knob, gui.theme.knob);
+    if (length > 0) {
+        gui_text_at(x + track_width + gap, y + (height - line) / 2, GUI_BODY, start, length, gui.theme.text);
+    }
+    return changed;
+}

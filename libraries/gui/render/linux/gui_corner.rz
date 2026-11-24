@@ -1,0 +1,10 @@
+import math.real;
+
+int gui_corner(double y, double height, double radius) {
+    double edge = y < height - y ? y : height - y;
+    if (edge >= radius || radius <= 0) {
+        return 0;
+    }
+    double arc = radius - edge;
+    return (int)(radius - sqrt(radius * radius - arc * arc) + 0.5);
+}

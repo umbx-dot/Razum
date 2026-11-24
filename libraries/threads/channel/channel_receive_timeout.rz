@@ -1,0 +1,25 @@
+import threads.system;
+
+ChannelResult channel_receive_timeout(Channel *channel, long *value, uint milliseconds) {
+    ulong deadline = GetTickCount64() + milliseconds;
+    AcquireSRWLockExclusive(&channel.lock);
+    while (channel.count == 0 && !channel.closed) {
+        uint wait = INFINITE;
+        if (milliseconds != INFINITE) {
+            ulong now = GetTickCount64();
+            if (now >= deadline) {
+                ReleaseSRWLockExclusive(&channel.lock);
+                return milliseconds == 0 ? ChannelResult.EMPTY : ChannelResult.TIMED_OUT;
+            }
+            wait = (uint)(deadline - now);
+        }
+        SleepConditionVariableSRW(&channel.readable, &channel.lock, wait, 0);
+    }
+    if (channel.count == 0) {
+        ReleaseSRWLockExclusive(&channel.lock);
+        return ChannelResult.CLOSED;
+    }
+    *value = channel_take(channel);
+    ReleaseSRWLockExclusive(&channel.lock);
+    return ChannelResult.RECEIVED;
+}

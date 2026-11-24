@@ -1,0 +1,30 @@
+long ecdsa_der_integer(byte target[], long at, byte value[]) {
+    long start = 0;
+    while (start < 31 && value[start] == 0) {
+        start++;
+    }
+    bool pad = (value[start] & 128) != 0;
+    target[at] = 2;
+    target[at + 1] = (byte)(32 - start + (pad ? 1 : 0));
+    long position = at + 2;
+    if (pad) {
+        target[position] = 0;
+        position++;
+    }
+    for (long index = start; index < 32; index++) {
+        target[position] = value[index];
+        position++;
+    }
+    return position;
+}
+
+long ecdsa_der(byte target[], byte r[], byte s[]) {
+    if (target.length < 72) {
+        return -1;
+    }
+    long end = ecdsa_der_integer(target, 2, r);
+    end = ecdsa_der_integer(target, end, s);
+    target[0] = 0x30;
+    target[1] = (byte)(end - 2);
+    return end;
+}

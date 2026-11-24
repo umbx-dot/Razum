@@ -1,0 +1,6 @@
+import gui.state;
+
+uint gui_fade(uint color, double amount) {
+    uint alpha = (uint)((double)(color >> 24) * amount + 0.5);
+    return (color & 0xFFFFFF) | (alpha << 24);
+}

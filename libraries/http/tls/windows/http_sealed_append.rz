@@ -1,0 +1,24 @@
+import http.state;
+import http.memory;
+
+void http_sealed_reserve(HttpWorker *worker, long more) {
+    long needed = worker.sealed_used + more;
+    if (needed <= worker.sealed_capacity) {
+        return;
+    }
+    long size = worker.sealed_capacity * 2;
+    while (size < needed) {
+        size *= 2;
+    }
+    char *bigger = new char[size];
+    http_copy(bigger, worker.sealed, worker.sealed_used);
+    free(worker.sealed);
+    worker.sealed = bigger;
+    worker.sealed_capacity = size;
+}
+
+void http_sealed_append(HttpWorker *worker, char *data, long length) {
+    http_sealed_reserve(worker, length);
+    http_copy(&worker.sealed[worker.sealed_used], data, length);
+    worker.sealed_used += length;
+}

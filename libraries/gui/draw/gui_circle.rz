@@ -1,0 +1,5 @@
+import gui.state;
+
+void gui_circle(double x, double y, double size, uint color) {
+    gui_push(GUI_CIRCLE, x, y, size, size, color);
+}

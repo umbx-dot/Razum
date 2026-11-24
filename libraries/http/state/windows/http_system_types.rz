@@ -1,0 +1,97 @@
+import windows;
+import winsock;
+import threads.mutex;
+
+struct HttpListener {
+    long socket;
+    int family;
+    int port;
+    bool tls;
+    SecHandle credential;
+    long certificate;
+    long store;
+}
+
+struct HttpTls {
+    SecHandle context;
+    bool started;
+    bool ready;
+    char *raw;
+    long raw_used;
+    long header;
+    long trailer;
+    long maximum_message;
+}
+
+struct HttpWorker {
+    HttpServer *server;
+    long thread;
+    char *input;
+    long input_capacity;
+    char *head;
+    char *output;
+    long output_used;
+    long output_capacity;
+    char *sealed;
+    long sealed_used;
+    long sealed_capacity;
+    long requests;
+    HttpRequest request;
+    HttpResponse response;
+}
+
+struct HttpServer {
+    long port;
+    HttpRoute routes[64];
+    int route_count;
+    HttpListener listeners[8];
+    int listener_count;
+    fn(long listener, long accepted, char *buffer, uint receive_length, uint local_length, uint remote_length,
+       uint *received, long overlapped) -> int accept_ex;
+    int worker_count;
+    HttpWorker *workers;
+    Mutex table_lock;
+    long *slots;
+    int *free_slots;
+    int slot_capacity;
+    int slot_used;
+    int free_count;
+    long connection_count;
+    uint idle_timeout;
+    uint request_timeout;
+    long max_body;
+    bool running;
+    bool stopping;
+    long sweeper;
+    int accepts_per_listener;
+}
+
+struct HttpConnection {
+    OVERLAPPED overlapped;
+    int kind;
+    int operation;
+    long socket;
+    HttpServer *server;
+    int slot;
+    int listener;
+    char *pending;
+    long pending_used;
+    long pending_capacity;
+    long needed;
+    char *outgoing;
+    long outgoing_used;
+    long outgoing_sent;
+    ulong last_active;
+    bool close_after_send;
+    bool continue_sent;
+    HttpTls *tls;
+}
+
+struct HttpAccept {
+    OVERLAPPED overlapped;
+    int kind;
+    int listener;
+    long socket;
+    HttpServer *server;
+    char addresses[96];
+}

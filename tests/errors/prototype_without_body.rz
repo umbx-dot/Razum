@@ -1,0 +1,6 @@
+// error: 2:1: 'f' is declared but has no body; razum functions need no declaration before use, so write the body here or remove this line
+int f(int x);
+
+int main() {
+    return 0;
+}

@@ -1,0 +1,56 @@
+import stdio;
+import text;
+import filesystem;
+import windows;
+
+extern "winmm" uint timeGetTime();
+
+void print_two_digits(int value) {
+    if (value < 10) {
+        write_char("0");
+    }
+    write_long(value);
+}
+
+int main() {
+    SYSTEMTIME now;
+    GetLocalTime(now);
+    write_string("local time: ");
+    print_two_digits(now.hour);
+    write_char(":");
+    print_two_digits(now.minute);
+    print_line();
+
+    write_string("screen: ");
+    write_long(GetSystemMetrics(SM_CXSCREEN));
+    write_char("x");
+    print(GetSystemMetrics(SM_CYSCREEN));
+    write_string("milliseconds since boot (winmm): ");
+    print(timeGetTime());
+
+    set_color(COLOR_GREEN + COLOR_BRIGHT);
+    print("files in this folder:");
+    reset_color();
+    Directory folder;
+    char name[260];
+    if (open_directory(folder, ".")) {
+        while (next_entry(folder, name)) {
+            write_string("  ");
+            write_string(name);
+            if (entry_is_directory(folder)) {
+                print("/");
+            } else {
+                write_string("  ");
+                print(entry_size(folder));
+            }
+        }
+        close_directory(folder);
+    }
+
+    int answer = MessageBoxA(0, "razum can call any Windows function. Beep?", "windows tour", MB_YESNO + MB_ICONQUESTION);
+    if (answer == IDYES) {
+        Beep(880, 150);
+        Beep(1320, 150);
+    }
+    return 0;
+}

@@ -1,0 +1,31 @@
+import text;
+
+long base85_decode(byte target[], string encoded) {
+    long size = length(encoded);
+    if (size % 5 == 1 || size / 5 * 4 + (size % 5 == 0 ? 0 : size % 5 - 1) > target.length) {
+        return -1;
+    }
+    long out = 0;
+    for (long i = 0; i < size; i += 5) {
+        ulong value = 0;
+        for (long k = i; k < i + 5; k++) {
+            int digit = 84;
+            if (k < size) {
+                digit = base85_value(encoded[k]);
+            }
+            if (digit < 0) {
+                return -1;
+            }
+            value = value * 85 + (ulong)digit;
+        }
+        if (value > 0xFFFFFFFF) {
+            return -1;
+        }
+        long used = size - i < 5 ? size - i - 1 : 4;
+        for (int k = 0; k < used; k++) {
+            target[out] = (byte)(value >> (24 - 8 * k));
+            out++;
+        }
+    }
+    return out;
+}

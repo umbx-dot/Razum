@@ -1,0 +1,40 @@
+import http.state;
+import linux;
+
+bool http_open_listener(HttpServer *server, string host, int port, bool tls) {
+    if (server.listener_count == server.listeners.length || server.running || port < 0 || port > 65535) {
+        return false;
+    }
+    byte address[28];
+    int family = http_address(host, port, address);
+    if (family == 0) {
+        return false;
+    }
+    long socket = system_call(SYS_SOCKET, family, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0, 0);
+    if (socket < 0) {
+        return false;
+    }
+    int yes = 1;
+    int no = 0;
+    system_call6(SYS_SETSOCKOPT, socket, SOL_SOCKET, SO_REUSEADDR, (long)&yes, 4, 0);
+    if (family == AF_INET6) {
+        system_call6(SYS_SETSOCKOPT, socket, IPPROTO_IPV6, IPV6_V6ONLY, (long)&no, 4, 0);
+    }
+    long size[1];
+    size[0] = family == AF_INET6 ? 28 : 16;
+    bool ready = system_call(SYS_BIND, socket, (long)&address[0], size[0], 0) == 0 &&
+                 system_call(SYS_LISTEN, socket, 4096, 0, 0) == 0 &&
+                 system_call(SYS_GETSOCKNAME, socket, (long)&address[0], (long)&size[0], 0) == 0;
+    if (!ready) {
+        system_call(SYS_CLOSE, socket, 0, 0, 0);
+        return false;
+    }
+    HttpListener *listener = &server.listeners[server.listener_count];
+    listener.socket = socket;
+    listener.family = family;
+    listener.port = ((int)address[2] << 8) | address[3];
+    listener.tls = tls;
+    listener.certificate = null;
+    server.listener_count++;
+    return true;
+}

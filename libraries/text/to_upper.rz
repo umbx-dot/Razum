@@ -1,0 +1,7 @@
+import text.characters;
+
+void to_upper(char text[]) {
+    for (int index = 0; index < text.length && text[index] != "\0"; index++) {
+        text[index] = upper_char(text[index]);
+    }
+}

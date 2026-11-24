@@ -1,0 +1,10 @@
+// platform: linux
+// asm: elf@header:
+// asm: mov eax, 231                            ; exit_group
+// absent: iat@
+import stdio;
+
+int main() {
+    print("no Windows here");
+    return 0;
+}

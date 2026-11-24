@@ -1,0 +1,9 @@
+long utf8_length(string text) {
+    long count = 0;
+    for (long index = 0; text[index] != "\0"; index++) {
+        if (((int)text[index] & 0xC0) != 0x80) {
+            count++;
+        }
+    }
+    return count;
+}

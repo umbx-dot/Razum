@@ -1,0 +1,19 @@
+import windows;
+
+long aes_gcm_encrypt(byte target[], byte *key, long key_length, byte *nonce, byte *aad, long aad_length,
+                     byte *data, long length) {
+    if (length < 0 || length > 0xFFFFFFFF || aad_length < 0 || aad_length > 0xFFFFFFFF
+        || target.length < length + AES_GCM_TAG_SIZE) {
+        return -1;
+    }
+    long handle = aes_key(BCRYPT_AES_GCM_ALG_HANDLE, key, key_length);
+    if (handle == 0) {
+        return -1;
+    }
+    BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO info;
+    aes_gcm_info(info, nonce, aad, aad_length, &target[length]);
+    uint written = 0;
+    int status = BCryptEncrypt(handle, data, (uint)length, &info, null, 0, target, (uint)length, &written, 0);
+    BCryptDestroyKey(handle);
+    return status == STATUS_SUCCESS ? length + AES_GCM_TAG_SIZE : -1;
+}

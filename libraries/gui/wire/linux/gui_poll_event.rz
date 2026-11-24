@@ -1,0 +1,15 @@
+import gui.state;
+import linux;
+
+int gui_poll_event(int timeout) {
+    int poll[2] = {(int)gui_desktop.socket, 1};
+    long status = system_call(SYS_POLL, (long)&poll[0], 1, timeout, 0);
+    if (status == EINTR || status == 0) {
+        return 0;
+    }
+    if (status < 0 || ((poll[1] >> 16) & 1) == 0) {
+        gui.quit = true;
+        return -1;
+    }
+    return 1;
+}

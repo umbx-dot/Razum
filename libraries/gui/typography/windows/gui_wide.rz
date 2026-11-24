@@ -1,0 +1,16 @@
+import gui.state;
+
+import windows;
+
+int gui_wide(string text, int bytes) {
+    int room = 65536 - gui.text_used;
+    int count = MultiByteToWideChar(CP_UTF8, 0, text, bytes, &gui.text[gui.text_used], room);
+    if (count <= 0) {
+        return 0;
+    }
+    if (bytes < 0) {
+        count--;
+    }
+    gui.text_used += count;
+    return count;
+}

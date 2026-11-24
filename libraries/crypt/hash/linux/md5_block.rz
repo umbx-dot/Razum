@@ -1,0 +1,38 @@
+void md5_block(Hasher hasher, byte *block) {
+    uint words[16];
+    for (int index = 0; index < 16; index++) {
+        words[index] = (uint)block[4 * index] | ((uint)block[4 * index + 1] << 8) | ((uint)block[4 * index + 2] << 16) |
+                       ((uint)block[4 * index + 3] << 24);
+    }
+    uint a = (uint)hasher.state[0];
+    uint b = (uint)hasher.state[1];
+    uint c = (uint)hasher.state[2];
+    uint d = (uint)hasher.state[3];
+    for (int round = 0; round < 64; round++) {
+        uint mixed = 0;
+        int word = 0;
+        if (round < 16) {
+            mixed = (b & c) | (~b & d);
+            word = round;
+        } else if (round < 32) {
+            mixed = (d & b) | (~d & c);
+            word = (5 * round + 1) % 16;
+        } else if (round < 48) {
+            mixed = b ^ c ^ d;
+            word = (3 * round + 5) % 16;
+        } else {
+            mixed = c ^ (b | ~d);
+            word = (7 * round) % 16;
+        }
+        uint sum = a + mixed + md5_constants[round] + words[word];
+        int shift = md5_shifts[round];
+        a = d;
+        d = c;
+        c = b;
+        b = b + ((sum << shift) | (sum >> (32 - shift)));
+    }
+    hasher.state[0] = (uint)(hasher.state[0] + a);
+    hasher.state[1] = (uint)(hasher.state[1] + b);
+    hasher.state[2] = (uint)(hasher.state[2] + c);
+    hasher.state[3] = (uint)(hasher.state[3] + d);
+}

@@ -1,0 +1,11 @@
+void hash_compress(Hasher hasher, byte *block) {
+    if (hasher.kind == Hash.MD5) {
+        md5_block(hasher, block);
+    } else if (hasher.kind == Hash.SHA1) {
+        sha1_block(hasher, block);
+    } else if (hasher.kind == Hash.SHA256) {
+        sha256_block(hasher, block);
+    } else {
+        sha512_block(hasher, block);
+    }
+}

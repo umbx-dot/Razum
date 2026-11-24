@@ -1,0 +1,27 @@
+import stdio;
+
+int total;
+int limit = -3;
+double rate = 2;
+double price = 1.25;
+int rcx = 7;
+
+void add(int amount) {
+    total += amount;
+}
+
+int main() {
+    print(total);
+    add(5);
+    add(7);
+    print(total);
+    print(limit);
+    print(rate * price);
+    rate = rate + 1;
+    print(rate);
+    total = limit * 2;
+    print(total);
+    int rax = rcx + 1;
+    print(rax);
+    return 0;
+}

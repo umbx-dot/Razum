@@ -1,0 +1,19 @@
+import http.state;
+import http.tls;
+import windows;
+import winsock;
+
+void http_close(HttpConnection *connection) {
+    http_untrack(connection.server, connection);
+    closesocket(connection.socket);
+    if (connection.pending != null) {
+        free(connection.pending);
+    }
+    if (connection.outgoing != null) {
+        free(connection.outgoing);
+    }
+    if (connection.tls != null) {
+        http_tls_close(connection);
+    }
+    free(connection);
+}

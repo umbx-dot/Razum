@@ -1,0 +1,11 @@
+import windows;
+
+int main() {
+    uint process = GetCurrentProcessId();
+    for (int i = 0; i < 10000000; i++) {
+        if (GetCurrentProcessId() != process) {
+            return 1;
+        }
+    }
+    return process != 0 ? 0 : 2;
+}

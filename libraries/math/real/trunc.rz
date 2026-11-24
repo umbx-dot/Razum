@@ -1,0 +1,7 @@
+double trunc(double value) {
+    asm {
+        movsd xmm0, qword [rsp + .value]
+        mov ecx, 3
+        call rz@round_with
+    }
+}

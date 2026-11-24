@@ -1,0 +1,3 @@
+void wait_group_done(WaitGroup group) {
+    wait_group_add(group, -1);
+}

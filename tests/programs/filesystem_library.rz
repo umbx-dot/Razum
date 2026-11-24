@@ -1,0 +1,91 @@
+// platform: windows
+import stdio;
+import text;
+import filesystem;
+
+int main(string args[]) {
+    char base[260];
+    copy(base, args[0]);
+    concat(base, ".dir");
+    char nested[300];
+    copy(nested, base);
+    concat(nested, "\\a\\b");
+    print(create_directories(nested));
+    print(is_directory(nested));
+
+    char path[320];
+    copy(path, nested);
+    concat(path, "\\data.txt");
+    print(write_text(path, "hello\r\nworld\r\n"));
+    print(append_text(path, "more"));
+    print(file_size(path));
+    char content[64];
+    print(read_text(path, content));
+    print(exists(path));
+    print(is_file(path));
+    print(is_directory(path));
+
+    char copied[320];
+    copy(copied, nested);
+    concat(copied, "\\copy.txt");
+    print(copy_file(path, copied));
+    char moved[320];
+    copy(moved, nested);
+    concat(moved, "\\moved.txt");
+    print(rename(copied, moved));
+    print(exists(copied));
+
+    char binary_path[320];
+    copy(binary_path, nested);
+    concat(binary_path, "\\data.bin");
+    File binary;
+    open(binary, binary_path, "w");
+    byte values[300];
+    for (int i = 0; i < 300; i++) {
+        values[i] = (byte)i;
+    }
+    write_bytes(binary, values, 300);
+    print(tell(binary));
+    close(binary);
+    print(file_size(binary_path));
+    File reader;
+    open(reader, binary_path, "r");
+    seek(reader, 256);
+    byte some[10];
+    print(read_bytes(reader, some));
+    print(some[0]);
+    print(some[9]);
+    print(tell(reader));
+    close(reader);
+
+    Directory listing;
+    print(open_directory(listing, nested));
+    char name[260];
+    long files = 0;
+    long bytes = 0;
+    while (next_entry(listing, name)) {
+        files++;
+        bytes += entry_size(listing);
+        if (entry_is_directory(listing)) {
+            print("unexpected folder");
+        }
+    }
+    close_directory(listing);
+    print(files);
+    print(bytes);
+
+    delete_file(path);
+    delete_file(moved);
+    delete_file(binary_path);
+    print(delete_directory(nested));
+    char middle[300];
+    copy(middle, base);
+    concat(middle, "\\a");
+    print(delete_directory(middle));
+    print(delete_directory(base));
+    print(exists(base));
+    char here[260];
+    print(current_directory(here) > 0);
+    print(open_directory(listing, "Z:\\no\\such\\folder"));
+    return 0;
+}

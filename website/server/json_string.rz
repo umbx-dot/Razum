@@ -1,0 +1,65 @@
+long json_string(char *data, long length, long position, char target[], bool keep) {
+    long used = 0;
+    if (position >= length || data[position] != "\"") {
+        return -1;
+    }
+    position++;
+    while (position < length && data[position] != "\"") {
+        char character = data[position];
+        position++;
+        int value = -1;
+        if (character == "\\") {
+            if (position >= length) {
+                return -1;
+            }
+            char escape = data[position];
+            position++;
+            switch (escape) {
+                case "n":
+                    value = 10;
+                case "t":
+                    value = 9;
+                case "r":
+                    value = 13;
+                case "b":
+                    value = 8;
+                case "f":
+                    value = 12;
+                case "u":
+                    value = json_unicode_escape(data, length, position);
+                    if (value < 0) {
+                        return -1;
+                    }
+                    position += 4;
+                    if (value >= 0xD800 && value <= 0xDBFF && position + 6 <= length && data[position] == "\\" && data[position + 1] == "u") {
+                        int low = json_unicode_escape(data, length, position + 2);
+                        if (low >= 0xDC00 && low <= 0xDFFF) {
+                            value = 0x10000 + ((value - 0xD800) << 10) + (low - 0xDC00);
+                            position += 6;
+                        }
+                    }
+                default:
+                    value = (int)escape;
+            }
+        }
+        if (!keep) {
+            continue;
+        }
+        if (value < 0) {
+            if (used + 1 >= target.length) {
+                return -1;
+            }
+            target[used] = character;
+            used++;
+        } else if (!json_put(target, &used, value)) {
+            return -1;
+        }
+    }
+    if (position >= length) {
+        return -1;
+    }
+    if (keep) {
+        target[used] = "\0";
+    }
+    return position + 1;
+}

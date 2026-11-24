@@ -1,0 +1,34 @@
+import http;
+import process;
+import text;
+
+void learn_check(HttpRequest *request, HttpResponse *response) {
+    if (!learn_allowed(request, response)) {
+        return;
+    }
+    char code[65536];
+    if (!json_field(request, "code", code)) {
+        http_status(response, 400);
+        http_json(response, "{\"error\": \"The request needs a code field of at most 64 KB.\"}");
+        return;
+    }
+    char command[1200];
+    copy(command, "\"");
+    concat(command, learn_rzc);
+    concat(command, "\" main.rz --check --stdin");
+    ProcessLimits limits;
+    limits.timeout_milliseconds = 10000;
+    limits.max_output = 65536;
+    limits.max_memory = 1024 * 1048576;
+    limits.max_processes = 2;
+    ProcessResult checked;
+    if (!process_run(checked, command, code, "", limits)) {
+        http_status(response, 500);
+        http_json(response, "{\"error\": \"rzc could not be started.\"}");
+        process_free(checked);
+        return;
+    }
+    http_json(response, "{");
+    learn_answer(response, "check", checked, true);
+    process_free(checked);
+}

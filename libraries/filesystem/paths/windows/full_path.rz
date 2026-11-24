@@ -1,0 +1,14 @@
+import text;
+import windows;
+
+long full_path(char target[], string path) {
+    ushort wide_path[1024];
+    ushort wide[1024];
+    uint needed = to_utf16(wide_path, path) < 0 ? 0 : GetFullPathNameW(wide_path, (uint)wide.length, wide, 0);
+    if (needed == 0 || needed >= wide.length) {
+        target[0] = "\0";
+        return 0;
+    }
+    long size = from_utf16(target, wide);
+    return size < 0 ? 0 : size;
+}

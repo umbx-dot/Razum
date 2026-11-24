@@ -1,0 +1,3 @@
+double exp(double value) {
+    return exp2(value * 1.4426950408889634);
+}

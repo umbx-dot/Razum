@@ -1,0 +1,7 @@
+long atomic_exchange(long *target, long value) {
+    asm {
+        mov rcx, qword [rsp + .target]
+        mov rax, qword [rsp + .value]
+        xchg qword [rcx], rax
+    }
+}

@@ -1,0 +1,16 @@
+int main(string args[]) {
+    if (args.length != 2 || args[1][0] != "v") {
+        return 1;
+    }
+    long total = 0;
+    for (int i = 0; i < 25000; i++) {
+        byte *value = new byte[64];
+        if (value == null || value[63] != 0) {
+            return 2;
+        }
+        value[63] = (byte)i;
+        total += value[63];
+        free(value);
+    }
+    return total == 3180108 ? 0 : 3;
+}

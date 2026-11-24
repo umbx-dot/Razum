@@ -1,0 +1,122 @@
+import json;
+import stdio;
+import text;
+
+int main() {
+    string source = " \t{\"\\u006eame\":\"München \\uD83D\\uDE03\\n\\u0000!\", \"values\": [null, true, false, -9223372036854775808, 2.50e+3, {}, []]} \r\n";
+    JsonToken tokens[32];
+    int used = json_parse(source, length(source), tokens, tokens.length);
+    if (used != 12 || tokens[0].next != used || tokens[0].kind != JSON_OBJECT) {
+        return 1;
+    }
+    int name = json_member(source, tokens, used, 0, "name");
+    int values = json_member(source, tokens, used, 0, "values");
+    if (name < 0 || values < 0 || json_member(source, tokens, used, 0, "missing") >= 0) {
+        return 2;
+    }
+    char decoded[64];
+    int count = json_decode_string(source, tokens[name], decoded);
+    if (count != 16 || decoded[13] != "\n" || decoded[14] != "\0" || decoded[15] != "!") {
+        return 3;
+    }
+    decoded[13] = "\0";
+    print(decoded);
+    int first = json_at(tokens, used, values, 0);
+    int second = json_at(tokens, used, values, 1);
+    int third = json_at(tokens, used, values, 2);
+    int number = json_at(tokens, used, values, 3);
+    int fraction = json_at(tokens, used, values, 4);
+    if (first < 0 || second < 0 || third < 0 || number < 0 || fraction < 0 ||
+        tokens[first].kind != JSON_NULL || tokens[second].kind != JSON_TRUE || tokens[third].kind != JSON_FALSE ||
+        json_at(tokens, used, values, 7) >= 0 || json_at(tokens, used, values, -1) >= 0) {
+        return 4;
+    }
+    long integer = 0;
+    if (!json_read_long(source, tokens[number], &integer) || integer != -9223372036854775808 ||
+        json_read_long(source, tokens[fraction], &integer)) {
+        return 5;
+    }
+    if (json_copy_raw(source, tokens[fraction], decoded) != 7 || !equals(decoded, "2.50e+3")) {
+        return 6;
+    }
+    string invalid[] = {"", " ", "null true", "01", "-01", "1e", "1.", "+1", "[1,]", "{\"x\":0,}",
+                        "{\"x\" null}", "\"\\x\"", "\"\\u12\"", "\"\\uD800\"", "\"\\uDC00\"", "\"\n\"", "tr", "[", "{"};
+    for (int i = 0; i < invalid.length; i++) {
+        if (json_parse(invalid[i], length(invalid[i]), tokens, tokens.length) != JSON_INVALID) {
+            return 7;
+        }
+    }
+    JsonToken one[1];
+    char utf8[5] = {"\"", (char)0xED, (char)0xA0, (char)0x80, "\""};
+    if (json_parse(utf8, 5, tokens, tokens.length) != JSON_INVALID || json_parse("[0]", 3, one, one.length) != JSON_CAPACITY ||
+        json_parse("null", 3, tokens, tokens.length) != JSON_INVALID ||
+        json_parse("null\0true", 9, tokens, tokens.length) != JSON_INVALID) {
+        return 8;
+    }
+    char nested[259];
+    JsonToken deep[130];
+    for (int i = 0; i < 129; i++) {
+        nested[i] = "[";
+        nested[257 - i] = "]";
+    }
+    nested[258] = "\0";
+    if (json_parse(nested, 258, deep, deep.length) != JSON_DEPTH ||
+        json_parse(&nested[1], 256, deep, deep.length) != 128) {
+        return 9;
+    }
+    char buffer[256];
+    JsonOutput output;
+    json_writer_init(&output, buffer, (long)buffer.length);
+    if (json_writer_finish(&output) != JSON_INVALID ||
+        json_write_event(&output, JSON_OBJECT, "", 0) != 0 ||
+        json_write_event(&output, JSON_KEY, "a", 1) != 0 ||
+        json_write_event(&output, JSON_END, "", 0) != JSON_INVALID ||
+        json_write_event(&output, JSON_ARRAY, "", 0) != 0 ||
+        json_write_long(&output, -9223372036854775808) != 0 ||
+        json_write_event(&output, JSON_NUMBER, "01", 2) != JSON_INVALID ||
+        json_write_event(&output, JSON_STRING, "😃\0\n\"", 7) != 0 ||
+        json_write_event(&output, JSON_TRUE, "", 0) != 0 ||
+        json_write_event(&output, JSON_END, "", 0) != 0 ||
+        json_write_event(&output, JSON_END, "", 0) != 0 ||
+        json_write_event(&output, JSON_FALSE, "", 0) != JSON_INVALID ||
+        json_writer_finish(&output) != length(buffer)) {
+        return 10;
+    }
+    print(buffer);
+    if (json_parse(buffer, length(buffer), tokens, tokens.length) != 6) {
+        return 11;
+    }
+    char small[8];
+    json_writer_init(&output, small, (long)small.length);
+    if (json_write_event(&output, JSON_ARRAY, "", 0) != 0 ||
+        json_write_event(&output, JSON_STRING, "\n", 1) != JSON_CAPACITY ||
+        !equals(small, "[") ||
+        json_write_event(&output, JSON_NULL, "", 0) != 0 ||
+        json_write_event(&output, JSON_END, "", 0) != 0 ||
+        !equals(small, "[null]")) {
+        return 12;
+    }
+    string max = "9223372036854775807";
+    string overflow = "9223372036854775808";
+    if (json_parse(max, length(max), one, one.length) != 1 || !json_read_long(max, one[0], &integer) ||
+        integer != 9223372036854775807 || json_parse(overflow, length(overflow), one, one.length) != 1 ||
+        json_read_long(overflow, one[0], &integer)) {
+        return 13;
+    }
+    string chunk = "\"abcdefghijklmnopqrstuvwxyz0123456789\\n😃ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\"";
+    int chunk_size = (int)length(chunk);
+    string control = "\"abcdefghijklmnopqrstuvwxyz0123456789\tend\"";
+    if (json_parse(chunk, chunk_size, one, one.length) != 1 ||
+        json_parse(chunk, chunk_size - 1, one, one.length) != JSON_INVALID ||
+        json_parse(control, length(control), one, one.length) != JSON_INVALID ||
+        json_parse(chunk, chunk_size, one, one.length) != 1) {
+        return 14;
+    }
+    char long_string[96];
+    if (json_decode_string(chunk, one[0], long_string) != 77 ||
+        !equals(long_string, "abcdefghijklmnopqrstuvwxyz0123456789\n😃ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")) {
+        return 15;
+    }
+    print("json ok");
+    return 0;
+}

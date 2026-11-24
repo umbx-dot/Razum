@@ -1,0 +1,16 @@
+import text;
+import windows;
+
+bool open_directory(Directory directory, string path) {
+    char pattern[264];
+    copy(pattern, path);
+    long count = length(pattern);
+    if (count > 0 && pattern[count - 1] != "\\" && pattern[count - 1] != "/") {
+        concat(pattern, "\\");
+    }
+    concat(pattern, "*");
+    ushort wide[1024];
+    directory.handle = to_utf16(wide, pattern) < 0 ? INVALID_HANDLE_VALUE : FindFirstFileW(wide, directory.entry);
+    directory.pending = directory.handle != INVALID_HANDLE_VALUE;
+    return directory.pending || GetLastError() == ERROR_FILE_NOT_FOUND;
+}

@@ -1,0 +1,57 @@
+int json_ascii_end(string source, int size, int position) {
+    asm {
+        mov r8, [rsp + .source]
+        mov r9d, dword [rsp + .size]
+        mov eax, dword [rsp + .position]
+        mov r10d, 8
+    .byte:
+        cmp eax, r9d
+        je .done
+        movzx edx, byte [r8 + rax]
+        cmp dl, 0x22
+        je .done
+        cmp dl, 0x5c
+        je .done
+        sub edx, 0x20
+        cmp edx, 0x60
+        jae .done
+        inc eax
+        dec r10d
+        jnz .byte
+        mov edx, r9d
+        sub edx, eax
+        cmp edx, 16
+        jb .byte
+        mov ecx, 0x22222222
+        movd xmm1, ecx
+        pshufd xmm1, xmm1, 0
+        mov ecx, 0x5c5c5c5c
+        movd xmm2, ecx
+        pshufd xmm2, xmm2, 0
+        mov ecx, 0x20202020
+        movd xmm3, ecx
+        pshufd xmm3, xmm3, 0
+    .chunk:
+        movdqu xmm0, [r8 + rax]
+        movdqa xmm4, xmm0
+        movdqa xmm5, xmm3
+        pcmpeqb xmm4, xmm1
+        pcmpgtb xmm5, xmm0
+        pcmpeqb xmm0, xmm2
+        por xmm4, xmm5
+        por xmm0, xmm4
+        pmovmskb ecx, xmm0
+        test ecx, ecx
+        jnz .found
+        add eax, 16
+        mov ecx, r9d
+        sub ecx, eax
+        cmp ecx, 16
+        jae .chunk
+        jmp .byte
+    .found:
+        bsf ecx, ecx
+        add eax, ecx
+    .done:
+    }
+}

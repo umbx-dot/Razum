@@ -1,0 +1,33 @@
+import gui.state;
+
+double gui_text_layout(int font, int start, int length, double max_width, int x, int y, uint color, bool draw) {
+    int advance = font == GUI_HEADING ? 17 : 9;
+    int line_height = (int)gui.line_heights[font];
+    int columns = max_width > 0 ? (int)max_width / advance : 65536;
+    columns = columns > 0 ? columns : 1;
+    int widest = 0;
+    int column = 0;
+    int row = 0;
+    for (int i = 0; i < length; i++) {
+        ushort character = gui.text[start + i];
+        if (character == 10 || column == columns) {
+            widest = column > widest ? column : widest;
+            column = 0;
+            row++;
+            if (character == 10 || character == 32) {
+                continue;
+            }
+        }
+        if (character >= 0xD800 && character <= 0xDBFF && i + 1 < length &&
+            gui.text[start + i + 1] >= 0xDC00 && gui.text[start + i + 1] <= 0xDFFF) {
+            i++;
+        }
+        if (draw && character != 32) {
+            gui_glyph(x + column * advance, y + row * line_height + 1, character, font, color);
+        }
+        column++;
+    }
+    widest = column > widest ? column : widest;
+    gui.measured_height = (row + 1) * line_height;
+    return (double)(widest * advance);
+}

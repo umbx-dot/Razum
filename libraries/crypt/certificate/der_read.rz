@@ -1,0 +1,52 @@
+import crypt.encoding;
+
+long der_read(byte *data, long at, long end, int tag, long *content_start, long *content_length) {
+    if (at + 2 > end || (tag >= 0 && data[at] != tag)) {
+        return -1;
+    }
+    long size = data[at + 1];
+    long position = at + 2;
+    if ((size & 128) != 0) {
+        long bytes = size & 127;
+        if (bytes < 1 || bytes > 4 || position + bytes > end) {
+            return -1;
+        }
+        size = 0;
+        for (long index = 0; index < bytes; index++) {
+            size = (size << 8) | data[position + index];
+        }
+        position += bytes;
+    }
+    if (position + size > end) {
+        return -1;
+    }
+    *content_start = position;
+    *content_length = size;
+    return position + size;
+}
+
+bool der_is(byte *data, long start, long length, string hex) {
+    long size = 0;
+    while (hex[size] != "\0") {
+        size++;
+    }
+    if (size != 2 * length) {
+        return false;
+    }
+    byte expected[64];
+    hex_decode(expected, hex);
+    for (long index = 0; index < length; index++) {
+        if (data[start + index] != expected[index]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+long der_integer(byte *data, long start, long length) {
+    long value = 0;
+    for (long index = 0; index < length && index < 8; index++) {
+        value = (value << 8) | data[start + index];
+    }
+    return value;
+}

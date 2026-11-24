@@ -1,0 +1,28 @@
+import stdio;
+import text;
+import threads;
+
+const int THREADS = 8;
+const int LINES = 5000;
+
+void shout(long number) {
+    char line[32];
+    char digits[16];
+    for (int i = 0; i < LINES; i++) {
+        copy(line, "thread ");
+        int_to_text(digits, number);
+        concat(line, digits);
+        print(line);
+    }
+}
+
+int main() {
+    long started[THREADS];
+    for (int i = 0; i < THREADS; i++) {
+        started[i] = thread_start(shout, i);
+    }
+    for (int i = 0; i < THREADS; i++) {
+        thread_join(started[i]);
+    }
+    return 0;
+}

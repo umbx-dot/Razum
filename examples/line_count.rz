@@ -1,0 +1,40 @@
+import stdio;
+import text;
+import filesystem;
+
+int main(string args[]) {
+    if (args.length < 2) {
+        print("usage: line_count <file>");
+        return 2;
+    }
+    File input;
+    if (!open(input, args[1], "r")) {
+        write_string("cannot open ");
+        print(args[1]);
+        return 1;
+    }
+    char line[4096];
+    long lines = 0;
+    long characters = 0;
+    long longest = 0;
+    long empty = 0;
+    while (read_line(input, line)) {
+        lines++;
+        long size = length(line);
+        characters += size;
+        longest = size > longest ? size : longest;
+        if (size == 0) {
+            empty++;
+        }
+    }
+    close(input);
+    write_string("lines:      ");
+    print(lines);
+    write_string("empty:      ");
+    print(empty);
+    write_string("characters: ");
+    print(characters);
+    write_string("longest:    ");
+    print(longest);
+    return 0;
+}

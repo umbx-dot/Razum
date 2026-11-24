@@ -1,0 +1,24 @@
+import gui.state;
+
+import windows;
+
+bool gui_create_font(int slot, string family_name, double size) {
+    int start = gui.text_used;
+    gui_wide(family_name, -1);
+    long family = 0;
+    int status = GdipCreateFontFamilyFromName(&gui.text[start], 0, &family);
+    gui.text_used = start;
+    if (status != 0) {
+        return false;
+    }
+    status = GdipCreateFont(family, (float)size, 0, 2, &gui.fonts[slot]);
+    GdipDeleteFontFamily(family);
+    if (status != 0) {
+        return false;
+    }
+    int length = gui_wide("Ag", -1);
+    gui_measure(slot, start, length, 0);
+    gui.text_used = start;
+    gui.line_heights[slot] = gui.measured_height;
+    return true;
+}

@@ -1,0 +1,35 @@
+import filesystem;
+import http;
+import text;
+
+void learn_benchmarks(HttpRequest *request, HttpResponse *response) {
+    File source;
+    if (length(learn_benchmark_source) == 0 || !open(source, learn_benchmark_source, "r")) {
+        http_status(response, 404);
+        http_text(response, "Benchmark results are unavailable.");
+        return;
+    }
+    http_content_type(response, "text/markdown; charset=utf-8");
+    char line[4096];
+    bool selected = false;
+    bool found = false;
+    while (read_line(source, line)) {
+        if (starts_with(line, "## ")) {
+            selected = equals(line, "## Library performance") || equals(line, "## Masked double loops") ||
+                       equals(line, "## Inlining and loop invariants") || equals(line, "## Loop optimization") ||
+                       equals(line, "## Compiler optimization on Zen 3") || equals(line, "## Current compiler benchmarks");
+        } else if (equals(line, "### Quick source review")) {
+            selected = false;
+        }
+        if (selected) {
+            http_write(response, line);
+            http_write(response, "\n");
+            found = true;
+        }
+    }
+    close(source);
+    if (!found) {
+        http_status(response, 404);
+        http_text(response, "Benchmark results are unavailable.");
+    }
+}

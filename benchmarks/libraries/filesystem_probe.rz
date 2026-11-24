@@ -1,0 +1,29 @@
+import filesystem;
+
+int main() {
+    byte buffer[65536];
+    File file;
+    for (int i = 0; i < 32; i++) {
+        if (!open(file, "sample.bin", "w")) {
+            return 1;
+        }
+        for (int block = 0; block < 16; block++) {
+            buffer[0] = (byte)block;
+            write_bytes(file, buffer, buffer.length);
+        }
+        if (!flush(file)) {
+            return 2;
+        }
+        close(file);
+        if (!open(file, "sample.bin", "r")) {
+            return 3;
+        }
+        for (int block = 0; block < 16; block++) {
+            if (read_bytes(file, buffer) != buffer.length || buffer[0] != (byte)block) {
+                return 4;
+            }
+        }
+        close(file);
+    }
+    return delete_file("sample.bin") ? 0 : 5;
+}

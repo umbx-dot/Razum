@@ -1,0 +1,66 @@
+import http.state;
+import crypt.hash;
+import crypt.exchange;
+
+bool http_tls12_key_exchange(HttpTls *tls, byte *body, long length) {
+    if (length != 4 + 1 + 32 || body[0] != 16 || body[4] != 32) {
+        return false;
+    }
+    hash_update(tls.transcript, body, length);
+    byte shared[32];
+    x25519(&shared[0], &tls.secret_key[0], &body[5]);
+    byte seed[64];
+    long at = http_tls_put_bytes(seed, 0, &tls.client_random[0], 32);
+    at = http_tls_put_bytes(seed, at, &tls.server_random[0], 32);
+    http_tls12_prf(&shared[0], 32, "master secret", &seed[0], 64, tls.master, 48);
+    at = http_tls_put_bytes(seed, 0, &tls.server_random[0], 32);
+    at = http_tls_put_bytes(seed, at, &tls.client_random[0], 32);
+    byte block[40];
+    http_tls12_prf(&tls.master[0], 48, "key expansion", &seed[0], 64, block, 40);
+    for (int index = 0; index < 16; index++) {
+        tls.client_key[index] = block[index];
+        tls.server_key[index] = block[16 + index];
+    }
+    for (int index = 0; index < 4; index++) {
+        tls.client_iv[index] = block[32 + index];
+        tls.server_iv[index] = block[36 + index];
+    }
+    for (int index = 0; index < 32; index++) {
+        tls.secret_key[index] = 0;
+    }
+    tls.state = 4;
+    return true;
+}
+
+bool http_tls12_finished(HttpWorker *worker, HttpConnection *connection, byte *message, long length) {
+    HttpTls *tls = connection.tls;
+    if (length != 16 || message[0] != 20 || http_tls_number(message, 1, 3) != 12) {
+        return false;
+    }
+    byte transcript[32];
+    http_tls_snapshot(tls, transcript);
+    byte expected[12];
+    http_tls12_prf(&tls.master[0], 48, "client finished", &transcript[0], 32, expected, 12);
+    int difference = 0;
+    for (int index = 0; index < 12; index++) {
+        difference = difference | (expected[index] ^ message[4 + index]);
+    }
+    if (difference != 0) {
+        return false;
+    }
+    hash_update(tls.transcript, message, length);
+    http_tls_snapshot(tls, transcript);
+    byte reply[16];
+    http_tls_put(reply, 0, 0x1400000C, 4);
+    byte verify[12];
+    http_tls12_prf(&tls.master[0], 48, "server finished", &transcript[0], 32, verify, 12);
+    http_tls_put_bytes(reply, 4, &verify[0], 12);
+    byte change[6] = {20, 3, 3, 0, 1, 1};
+    http_sealed_append(worker, &change[0], 6);
+    tls.server_sequence = 0;
+    if (!http_tls_seal(worker, connection, 22, &reply[0], 16)) {
+        return false;
+    }
+    tls.state = 2;
+    return true;
+}

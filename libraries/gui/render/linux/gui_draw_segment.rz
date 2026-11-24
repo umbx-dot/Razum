@@ -1,0 +1,18 @@
+import gui.state;
+
+void gui_draw_segment(GuiCommand *command) {
+    double dx = command.width;
+    double dy = command.height;
+    double ax = dx < 0 ? -dx : dx;
+    double ay = dy < 0 ? -dy : dy;
+    int steps = (int)(ax > ay ? ax : ay) + 1;
+    int size = (int)(command.stroke + 0.5);
+    size = size > 0 ? size : 1;
+    for (int i = 0; i < steps; i++) {
+        int x = (int)(command.x + i * dx / steps) - size / 2;
+        int y = (int)(command.y + i * dy / steps) - size / 2;
+        for (int row = y; row < y + size; row++) {
+            gui_span(x, x + size, row, command.color);
+        }
+    }
+}

@@ -1,0 +1,58 @@
+import stdio;
+import crypt;
+
+void show(string label, byte data[], long length) {
+    char text[200];
+    hex_encode(text, &data[0], length);
+    write_string(label);
+    write_string(" ");
+    print(text);
+}
+
+int main() {
+    byte scalar[32];
+    byte point[32];
+    byte shared[32];
+    hex_decode(scalar, "a546e36bf0527c9d3b16154b82465edd62144c0ac1fc5a18506a2244ba449ac4");
+    hex_decode(point, "e6db6867583030db3594c1a424b15f7c726624ec26b3353b10a903a6d0ab1c4c");
+    x25519(&shared[0], &scalar[0], &point[0]);
+    show("x25519 7748.1", shared, 32);
+
+    byte alice[32];
+    byte bob[32];
+    byte alice_public[32];
+    byte bob_public[32];
+    hex_decode(alice, "77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a");
+    hex_decode(bob, "5dab087e624a8a4b79e17f8b83800ee66f3bb1292618b6fd1c2f8b27ff88e0eb");
+    x25519_public(&alice_public[0], &alice[0]);
+    x25519_public(&bob_public[0], &bob[0]);
+    show("alice public", alice_public, 32);
+    show("bob public", bob_public, 32);
+    x25519(&shared[0], &alice[0], &bob_public[0]);
+    show("shared by alice", shared, 32);
+    x25519(&shared[0], &bob[0], &alice_public[0]);
+    show("shared by bob", shared, 32);
+
+    byte input[22];
+    for (int index = 0; index < 22; index++) {
+        input[index] = 11;
+    }
+    byte salt[13];
+    for (int index = 0; index < 13; index++) {
+        salt[index] = (byte)index;
+    }
+    byte info[10];
+    for (int index = 0; index < 10; index++) {
+        info[index] = (byte)(240 + index);
+    }
+    byte secret[32];
+    hkdf_extract(Hash.SHA256, secret, &salt[0], 13, &input[0], 22);
+    show("hkdf 5869.1 prk", secret, 32);
+    byte output[42];
+    print(hkdf_expand(Hash.SHA256, output, 42, &secret[0], 32, &info[0], 10));
+    show("hkdf 5869.1 okm", output, 42);
+    hkdf_extract(Hash.SHA256, secret, &salt[0], 0, &input[0], 22);
+    print(hkdf_expand(Hash.SHA256, output, 42, &secret[0], 32, &info[0], 0));
+    show("hkdf 5869.3 okm", output, 42);
+    return 0;
+}

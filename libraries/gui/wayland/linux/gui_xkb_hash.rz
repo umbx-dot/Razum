@@ -1,0 +1,7 @@
+uint gui_xkb_hash(char *text, int length) {
+    uint hash = 2166136261;
+    for (int i = 0; i < length; i++) {
+        hash = (hash ^ (uint)text[i]) * 16777619;
+    }
+    return hash;
+}

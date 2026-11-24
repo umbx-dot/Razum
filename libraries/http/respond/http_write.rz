@@ -1,0 +1,6 @@
+import http.state;
+import text;
+
+void http_write(HttpResponse *response, string text) {
+    http_write_bytes(response, (char *)text, length(text));
+}

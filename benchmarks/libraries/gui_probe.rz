@@ -1,0 +1,18 @@
+import gui;
+
+int main() {
+    if (!gui_open_offscreen(480, 320) || !gui_frame()) {
+        return 1;
+    }
+    for (int i = 0; i < 400; i++) {
+        gui_fill(20, 20, 200, 80, 6, 0xFF123456);
+        gui_circle(260, 20, 40, 0xFF00FF00);
+        gui_text("Razum library benchmark");
+        if (!gui_frame()) {
+            return 2;
+        }
+    }
+    bool success = gui_pixel(70, 40) == 0xFF123456;
+    gui_close();
+    return success ? 0 : 3;
+}

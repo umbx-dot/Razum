@@ -1,0 +1,26 @@
+import stdio;
+import process;
+import text;
+
+int main(string args[]) {
+    if (args.length == 2) {
+        write_string("child");
+        return 0;
+    }
+    char command[1024] = "\"";
+    concat(command, args[0]);
+    concat(command, "\" child");
+    ProcessLimits limits;
+    limits.timeout_milliseconds = 5000;
+    limits.max_output = 128;
+    ProcessResult result;
+    for (int i = 0; i < 25; i++) {
+        bool success = process_run(result, command, "", "", limits) &&
+                       result.exit_code == 0 && equals(result.output, "child");
+        process_free(result);
+        if (!success) {
+            return 1;
+        }
+    }
+    return 0;
+}

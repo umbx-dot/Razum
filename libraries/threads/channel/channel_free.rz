@@ -1,0 +1,4 @@
+void channel_free(Channel *channel) {
+    free(channel.items);
+    free(channel);
+}

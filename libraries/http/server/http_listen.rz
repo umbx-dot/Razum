@@ -1,0 +1,5 @@
+import http.state;
+
+bool http_listen(HttpServer *server, string host, int port) {
+    return http_open_listener(server, host, port, false);
+}

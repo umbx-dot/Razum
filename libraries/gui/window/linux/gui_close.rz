@@ -1,0 +1,14 @@
+import gui.state;
+
+void gui_close() {
+    if (gui_desktop.backend != 0) {
+        gui_disconnect();
+    }
+    free((uint *)gui.pixels);
+    free(gui.commands);
+    free(gui.text);
+    free(gui.hover);
+    free(gui.motion);
+    GuiState empty;
+    gui = empty;
+}

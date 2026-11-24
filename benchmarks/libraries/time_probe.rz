@@ -1,0 +1,15 @@
+import time;
+
+int main() {
+    long first = time_monotonic_ns();
+    char output[28];
+    for (long i = 0; i < 200000; i++) {
+        if (!time_format_utc(1700000000000000 + i, output) || output[26] != "Z") {
+            return 1;
+        }
+    }
+    if (time_unix_us() < 1700000000000000 || first < 0 || time_monotonic_ns() < first) {
+        return 2;
+    }
+    return 0;
+}

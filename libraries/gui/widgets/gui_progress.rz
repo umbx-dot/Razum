@@ -1,0 +1,23 @@
+import gui.state;
+import gui.theme;
+import gui.typography;
+import gui.draw;
+import gui.input;
+import gui.layout;
+import gui.editing;
+
+void gui_progress(double fraction) {
+    int id = gui_next_id();
+    if (fraction < 0) {
+        fraction = 0;
+    }
+    if (fraction > 1) {
+        fraction = 1;
+    }
+    gui_allocate(0, 8);
+    double shown = gui_animate(gui.motion, id, fraction);
+    gui_fill(gui.slot_x, gui.slot_y, gui.slot_width, 8, 4, gui.theme.track);
+    if (shown * gui.slot_width >= 1) {
+        gui_fill(gui.slot_x, gui.slot_y, gui.slot_width * shown, 8, 4, gui.theme.accent);
+    }
+}

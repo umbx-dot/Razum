@@ -1,0 +1,7 @@
+import text;
+import windows;
+
+bool exists(string path) {
+    ushort wide[1024];
+    return to_utf16(wide, path) >= 0 && GetFileAttributesW(wide) != INVALID_FILE_ATTRIBUTES;
+}

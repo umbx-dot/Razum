@@ -1,0 +1,36 @@
+import gui;
+import stdio;
+import text;
+
+int main(string args[]) {
+    if (args.length != 2) {
+        return 1;
+    }
+    if (equals(args[1], "none")) {
+        return gui_open("Razum GUI smoke", 360, 220) || gui.pixels != 0 ? 2 : 0;
+    }
+    int wanted = equals(args[1], "wayland") ? GUI_WAYLAND : GUI_X11;
+    if (!gui_open("Razum GUI smoke", 360, 220) || gui_desktop.backend != wanted) {
+        return 3;
+    }
+    if (wanted == GUI_X11 && (gui_desktop.x_key_count <= 1 || gui_desktop.x_keys == null)) {
+        return 6;
+    }
+    if (wanted == GUI_WAYLAND && gui_desktop.wl_cursor == 0 && !gui_wl_build_cursor()) {
+        return 7;
+    }
+    for (int frame = 0; frame < 5; frame++) {
+        if (!gui_frame()) {
+            return 4;
+        }
+        gui_heading("Razum GUI smoke");
+        gui_button("Continue");
+        gui.animating = true;
+    }
+    if (!gui_frame() || gui_pixel(0, 0) != gui.theme.background) {
+        return 5;
+    }
+    gui_close();
+    print(args[1]);
+    return 0;
+}

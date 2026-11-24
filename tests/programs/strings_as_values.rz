@@ -1,0 +1,36 @@
+import stdio;
+
+string greeting = "hello";
+string empty_global;
+
+string pick(int index) {
+    if (index == 0) {
+        return "zero";
+    }
+    return "other";
+}
+
+void show(string label, int value) {
+    write_string(label);
+    write_string(": ");
+    write_long(value);
+    print_line();
+}
+
+int main() {
+    print(greeting);
+    string name = "razum";
+    print(name);
+    name = pick(0);
+    print(name);
+    print(pick(5));
+    string blank;
+    print(blank);
+    print(empty_global);
+    show("answer", 42);
+    write_double(2.5);
+    print_line();
+    print_bool(1 < 2);
+    print_bool(2 < 1);
+    return 0;
+}

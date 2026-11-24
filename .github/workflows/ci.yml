@@ -1,0 +1,44 @@
+name: build and test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y nasm ninja-build weston xvfb xauth
+      - name: Build and test
+        run: |
+          export XDG_RUNTIME_DIR="$(mktemp -d)"
+          export WAYLAND_DISPLAY=razum-ci
+          weston --backend=headless --socket="$WAYLAND_DISPLAY" --idle-time=0 --no-config &
+          compositor=$!
+          trap 'kill "$compositor" 2>/dev/null || true; rm -rf "$XDG_RUNTIME_DIR"' EXIT
+          timeout 10 bash -c 'until [ -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" ]; do sleep 0.1; done'
+          RZ_REQUIRE_GUI=1 xvfb-run -a ./build.sh --test
+      - name: Check installer
+        run: |
+          ./build.sh --installer
+          bash tests/test_installer_linux.sh build/razum-setup.sh
+
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-nasm
+      - name: Build and test
+        run: bash tests/run_all.sh

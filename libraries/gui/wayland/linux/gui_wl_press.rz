@@ -1,0 +1,22 @@
+import gui.state;
+
+void gui_wl_press(uint serial) {
+    double x = gui_desktop.pointer_x;
+    double y = gui_desktop.pointer_y;
+    int edges = x < 5 ? 4 : x >= gui.width - 5 ? 8 : 0;
+    edges |= y < -GUI_TITLE_HEIGHT + 5 ? 1 : y >= gui.height - 5 ? 2 : 0;
+    if (edges != 0) {
+        uint resize[5] = {0, 0, gui_desktop.wl_seat, serial, (uint)edges};
+        gui_wl_request(gui_desktop.wl_window, 6, resize);
+    } else if (y < 0) {
+        if (x >= gui.width - 32) {
+            gui.quit = true;
+        } else {
+            uint move[4] = {0, 0, gui_desktop.wl_seat, serial};
+            gui_wl_request(gui_desktop.wl_window, 5, move);
+        }
+    } else {
+        gui.mouse_down = true;
+        gui.pressed = true;
+    }
+}

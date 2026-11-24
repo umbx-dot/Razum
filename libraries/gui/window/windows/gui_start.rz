@@ -1,0 +1,37 @@
+import gui.state;
+import gui.theme;
+import gui.typography;
+import gui.render;
+import gui.input;
+
+import windows;
+
+bool gui_start() {
+    GdiplusStartupInput input = {1, 0, 0, 0};
+    if (GdiplusStartup(&gui.token, input, 0) != 0) {
+        return false;
+    }
+    gui.commands = new GuiCommand[8195];
+    gui.text = new ushort[65536];
+    gui.hover = new double[1024];
+    gui.motion = new double[1024];
+    long generic = 0;
+    GdipStringFormatGetGenericTypographic(&generic);
+    GdipCloneStringFormat(generic, 0, &gui.format);
+    GdipSetStringFormatFlags(gui.format, 0x1000 | 0x800 | 0x4000);
+    GdipCloneStringFormat(generic, 0, &gui.wrap_format);
+    GdipSetStringFormatFlags(gui.wrap_format, 0x800 | 0x4000);
+    GdipCreateSolidFill(0xFF000000, &gui.brush);
+    GdipCreatePen1(0xFF000000, 1.0, 0, &gui.pen);
+    GdipSetPenLineCap197819(gui.pen, 2, 2, 0);
+    GdipCreatePath(0, &gui.path);
+    gui.active = -1;
+    gui.focus = -1;
+    gui.cursor = IDC_ARROW;
+    gui.animating = true;
+    gui.scale = 1.0;
+    QueryPerformanceFrequency(&gui.frequency);
+    QueryPerformanceCounter(&gui.last_counter);
+    gui_set_dark(gui_system_dark());
+    return true;
+}

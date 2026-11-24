@@ -1,0 +1,13 @@
+import linux;
+
+bool entry_is_directory(Directory directory) {
+    if (directory.entry < 0) {
+        return false;
+    }
+    long kind = (long)directory.buffer[directory.entry + 18];
+    if (kind != DT_UNKNOWN) {
+        return kind == DT_DIR;
+    }
+    long status[18];
+    return entry_status(directory, status) == S_IFDIR;
+}

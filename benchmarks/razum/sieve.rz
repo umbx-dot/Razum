@@ -1,0 +1,18 @@
+import stdio;
+
+int main() {
+    long limit = 50000000;
+    byte *composite = new byte[limit + 1];
+    long count = 0;
+    for (long i = 2; i <= limit; i++) {
+        if (composite[i] == 0) {
+            count++;
+            for (long multiple = i * i; multiple <= limit; multiple += i) {
+                composite[multiple] = 1;
+            }
+        }
+    }
+    free(composite);
+    print(count);
+    return 0;
+}

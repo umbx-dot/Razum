@@ -1,0 +1,4 @@
+void print_error(string text) {
+    write_error(text);
+    write_error("\n");
+}

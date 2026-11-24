@@ -1,0 +1,48 @@
+byte aes_forward[256];
+byte aes_inverse[256];
+bool aes_tables_ready;
+
+int aes_double(int value) {
+    return ((value << 1) ^ ((value & 0x80) != 0 ? 0x1B : 0)) & 0xFF;
+}
+
+int aes_multiply(int value, int factor) {
+    int result = 0;
+    while (factor != 0) {
+        if ((factor & 1) != 0) {
+            result = result ^ value;
+        }
+        value = aes_double(value);
+        factor = factor >> 1;
+    }
+    return result;
+}
+
+void aes_prepare() {
+    if (aes_tables_ready) {
+        return;
+    }
+    int up = 1;
+    int down = 1;
+    while (true) {
+        up = up ^ aes_double(up);
+        down = down ^ (down << 1);
+        down = down ^ (down << 2);
+        down = down ^ (down << 4);
+        down = down & 0xFF;
+        if ((down & 0x80) != 0) {
+            down = down ^ 0x09;
+        }
+        int rotated = down ^ (((down << 1) | (down >> 7)) & 0xFF) ^ (((down << 2) | (down >> 6)) & 0xFF) ^
+                      (((down << 3) | (down >> 5)) & 0xFF) ^ (((down << 4) | (down >> 4)) & 0xFF);
+        aes_forward[up] = (byte)(rotated ^ 0x63);
+        if (up == 1) {
+            break;
+        }
+    }
+    aes_forward[0] = 0x63;
+    for (int index = 0; index < 256; index++) {
+        aes_inverse[aes_forward[index]] = (byte)index;
+    }
+    aes_tables_ready = true;
+}

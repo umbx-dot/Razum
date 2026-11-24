@@ -1,0 +1,5 @@
+import json.types;
+
+long json_writer_finish(JsonOutput *output) {
+    return output.root && output.depth == 0 ? output.used : JSON_INVALID;
+}

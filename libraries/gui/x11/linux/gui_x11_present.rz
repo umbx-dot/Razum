@@ -1,0 +1,18 @@
+import gui.state;
+import gui.wire;
+
+void gui_x11_present() {
+    int width = gui.buffer_width;
+    int height = gui.buffer_height;
+    int stride = width * 4;
+    int batch = (gui_desktop.x_limit - 24) / stride;
+    for (int y = 0; y < height && !gui.quit; y += batch) {
+        int rows = batch < height - y ? batch : height - y;
+        int bytes = rows * stride;
+        uint request[6] = {(uint)(0x248 | ((6 + bytes / 4) << 16)), gui_desktop.x_window, gui_desktop.x_context,
+                           (uint)(width | (rows << 16)), (uint)(y << 16), (uint)(gui_desktop.x_depth << 8)};
+        if (!gui_send((long)&request[0], 24) || !gui_send(gui.pixels + (long)y * stride, bytes)) {
+            return;
+        }
+    }
+}

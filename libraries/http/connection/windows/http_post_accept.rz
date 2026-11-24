@@ -1,0 +1,20 @@
+import http.state;
+import windows;
+import winsock;
+
+bool http_post_accept(HttpServer *server, HttpAccept *accept) {
+    HttpListener *listener = &server.listeners[accept.listener];
+    accept.socket = WSASocketW(listener.family, SOCK_STREAM, IPPROTO_TCP, 0, 0, WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
+    if (accept.socket == INVALID_SOCKET) {
+        return false;
+    }
+    http_reset_overlapped(accept.overlapped);
+    accept.kind = HTTP_ACCEPT;
+    uint received = 0;
+    if (server.accept_ex(listener.socket, accept.socket, accept.addresses, 0, 44, 44, &received, (long)&accept.overlapped) == 0 &&
+        WSAGetLastError() != WSA_IO_PENDING) {
+        closesocket(accept.socket);
+        return false;
+    }
+    return true;
+}

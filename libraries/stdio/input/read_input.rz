@@ -1,0 +1,10 @@
+bool read_input(char line[]) {
+    long got = 0;
+    asm {
+        mov rcx, qword [rsp + .line]
+        mov rdx, qword [rsp + .line@length]
+        call rz@read_line
+        mov qword [rsp + .got], rax
+    }
+    return got >= 0;
+}

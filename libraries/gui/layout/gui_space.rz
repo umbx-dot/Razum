@@ -1,0 +1,6 @@
+import gui.state;
+import gui.draw;
+
+void gui_space(double size) {
+    gui_allocate(size, size);
+}

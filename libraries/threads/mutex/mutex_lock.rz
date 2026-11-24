@@ -1,0 +1,5 @@
+import threads.system;
+
+void mutex_lock(Mutex mutex) {
+    AcquireSRWLockExclusive(&mutex.lock);
+}

@@ -1,0 +1,7 @@
+import http.state;
+
+void http_redirect(HttpResponse *response, string location) {
+    response.status = 302;
+    http_set_header(response, "Location", location);
+    response.body_length = 0;
+}

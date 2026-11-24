@@ -1,0 +1,27 @@
+long aes_cbc_encrypt(byte target[], byte *key, long key_length, byte *iv, byte *data, long length) {
+    long size = (length / AES_BLOCK_SIZE + 1) * AES_BLOCK_SIZE;
+    if (length < 0 || size > 0xFFFFFFFF || target.length < size) {
+        return -1;
+    }
+    AesKey expanded;
+    if (!aes_expand(expanded, key, key_length)) {
+        return -1;
+    }
+    byte chain[AES_BLOCK_SIZE];
+    for (int i = 0; i < AES_BLOCK_SIZE; i++) {
+        chain[i] = iv[i];
+    }
+    long padding = size - length;
+    byte block[AES_BLOCK_SIZE];
+    for (long at = 0; at < size; at += AES_BLOCK_SIZE) {
+        for (int i = 0; i < AES_BLOCK_SIZE; i++) {
+            byte plain = at + i < length ? data[at + i] : (byte)padding;
+            block[i] = (byte)(plain ^ chain[i]);
+        }
+        aes_encrypt_block(expanded, &block[0], &chain[0]);
+        for (int i = 0; i < AES_BLOCK_SIZE; i++) {
+            target[at + i] = chain[i];
+        }
+    }
+    return size;
+}

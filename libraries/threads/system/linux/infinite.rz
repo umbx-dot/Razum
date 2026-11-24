@@ -1,0 +1,1 @@
+const uint INFINITE = 0xFFFFFFFF;

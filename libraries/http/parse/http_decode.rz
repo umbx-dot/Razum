@@ -1,0 +1,22 @@
+long http_decode(char target[], string text, long start, long end) {
+    long used = 0;
+    long index = start;
+    while (index < end && used + 1 < target.length) {
+        char character = text[index];
+        if (character == "+") {
+            character = " ";
+        } else if (character == "%" && index + 2 < end + 0 && index + 2 <= end - 1 + 1) {
+            int high = http_hex_value(text[index + 1]);
+            int low = high >= 0 ? http_hex_value(text[index + 2]) : -1;
+            if (low >= 0) {
+                character = (char)(high * 16 + low);
+                index += 2;
+            }
+        }
+        target[used] = character;
+        used++;
+        index++;
+    }
+    target[used] = "\0";
+    return used;
+}

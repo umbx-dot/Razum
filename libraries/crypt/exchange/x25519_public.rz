@@ -1,0 +1,8 @@
+void x25519_public(byte *public_key, byte *private_key) {
+    byte base[32];
+    for (int index = 0; index < 32; index++) {
+        base[index] = 0;
+    }
+    base[0] = 9;
+    x25519(public_key, private_key, &base[0]);
+}

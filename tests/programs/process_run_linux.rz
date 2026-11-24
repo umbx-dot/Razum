@@ -1,0 +1,74 @@
+// platform: linux
+import stdio;
+import process;
+import text;
+
+void show(ProcessResult result) {
+    write_string("exit ");
+    write_long(result.exit_code);
+    write_string(result.timed_out ? " timed out" : "");
+    write_string(result.truncated ? " truncated" : "");
+    write_string(": ");
+    for (long index = 0; index < result.output_length; index++) {
+        write_char(result.output[index] == "\n" ? "|" : result.output[index]);
+    }
+    print_line();
+}
+
+int main() {
+    ProcessLimits limits;
+    limits.timeout_milliseconds = 5000;
+    limits.max_output = 4096;
+    limits.max_memory = 256 * 1048576;
+    limits.max_processes = 4;
+    ProcessResult result;
+
+    process_run(result, "sh -c \"echo hello; echo to stderr 1>&2\"", "", "", limits);
+    show(result);
+    process_free(result);
+
+    process_run(result, "sort", "pear\napple\nfig\n", "", limits);
+    show(result);
+    process_free(result);
+
+    process_run(result, "sh -c \"exit 7\"", "", "", limits);
+    show(result);
+    process_free(result);
+
+    process_run(result, "pwd", "", "/usr", limits);
+    show(result);
+    process_free(result);
+
+    process_run(result, "sh -c \"test -n \\\"$PATH\\\" && echo has PATH\"", "", "", limits);
+    show(result);
+    process_free(result);
+
+    limits.timeout_milliseconds = 300;
+    process_run(result, "sleep 5", "", "", limits);
+    show(result);
+    print(result.milliseconds < 2000);
+    process_free(result);
+
+    limits.timeout_milliseconds = 5000;
+    limits.max_output = 10;
+    process_run(result, "echo 0123456789abcdef", "", "", limits);
+    print(result.truncated);
+    print(result.output);
+    process_free(result);
+
+    limits.max_output = 4096;
+    print(process_run(result, "no_such_program_razum", "", "", limits));
+    print(result.started);
+    process_free(result);
+
+    process_run(result, "printf %s|%s \"two words\" \\\"quoted\\\"", "", "", limits);
+    show(result);
+    process_free(result);
+
+    limits.max_processes = 2;
+    limits.timeout_milliseconds = 2000;
+    process_run(result, "sh -c \"for i in 1 2 3 4 5; do sleep 1 & done; wait\"", "", "", limits);
+    print(contains(result.output, "fork"));
+    process_free(result);
+    return 0;
+}

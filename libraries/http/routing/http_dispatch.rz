@@ -1,0 +1,28 @@
+import http.state;
+import http.respond;
+
+void http_dispatch(HttpWorker *worker) {
+    HttpServer *server = worker.server;
+    HttpRequest *request = &worker.request;
+    HttpResponse *response = &worker.response;
+    http_reset_response(response, request.keep_alive);
+    bool found = false;
+    for (int index = 0; index < server.route_count && !found; index++) {
+        HttpRoute *route = &server.routes[index];
+        if (http_route_matches(route, request)) {
+            found = true;
+            request.rest = (string)&((char *)request.path)[route.length];
+            if (route.handler == null) {
+                http_serve_file(route, request, response);
+            } else {
+                route.handler(request, response);
+            }
+        }
+    }
+    if (!found) {
+        response.status = 404;
+        http_text(response, "Not Found");
+    }
+    http_serialize(worker, request.head);
+    worker.requests++;
+}

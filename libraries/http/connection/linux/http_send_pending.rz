@@ -1,0 +1,22 @@
+import http.state;
+import linux;
+
+int http_send_pending(HttpConnection *connection) {
+    while (connection.outgoing_sent < connection.outgoing_used) {
+        long done = system_call(SYS_WRITE, connection.socket, (long)&connection.outgoing[connection.outgoing_sent],
+                                connection.outgoing_used - connection.outgoing_sent, 0);
+        if (done == EAGAIN) {
+            return 1;
+        }
+        if (done == EINTR) {
+            continue;
+        }
+        if (done <= 0) {
+            return 2;
+        }
+        connection.outgoing_sent += done;
+    }
+    free(connection.outgoing);
+    connection.outgoing = null;
+    return 0;
+}

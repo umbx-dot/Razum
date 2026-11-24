@@ -1,0 +1,5 @@
+// platform: windows
+// asm: ; subsystem: console
+int main() {
+    return 0;
+}

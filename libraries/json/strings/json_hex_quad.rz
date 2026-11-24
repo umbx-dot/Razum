@@ -1,0 +1,20 @@
+int json_hex_quad(string source, int size, int position) {
+    if (size - position < 4) {
+        return -1;
+    }
+    int value = 0;
+    for (int digit = 0; digit < 4; digit++) {
+        int current = (int)source[position + digit];
+        if (current >= 48 && current <= 57) {
+            current -= 48;
+        } else {
+            current |= 32;
+            if (current < 97 || current > 102) {
+                return -1;
+            }
+            current -= 87;
+        }
+        value = (value << 4) | current;
+    }
+    return value;
+}

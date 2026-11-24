@@ -1,0 +1,16 @@
+double pow(double base, double exponent) {
+    if (exponent == 0.0) {
+        return 1.0;
+    }
+    if (base == 0.0) {
+        return exponent > 0.0 ? 0.0 : 1.0 / 0.0;
+    }
+    if (base > 0.0) {
+        return exp2(exponent * log2(base));
+    }
+    if (trunc(exponent) != exponent) {
+        return 0.0 / 0.0;
+    }
+    double size = exp2(exponent * log2(-base));
+    return fmod(exponent, 2.0) == 0.0 ? size : -size;
+}

@@ -1,0 +1,11 @@
+import linux;
+
+long entry_status(Directory directory, long status[]) {
+    if (directory.entry < 0) {
+        return -1;
+    }
+    if (system_call(SYS_NEWFSTATAT, directory.handle, (long)&directory.buffer[directory.entry + 19], (long)&status[0], 0) < 0) {
+        return -1;
+    }
+    return status[3] & S_IFMT;
+}

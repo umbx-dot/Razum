@@ -1,0 +1,19 @@
+import linux;
+
+bool secure_bytes(byte *target, long length) {
+    if (length < 0) {
+        return false;
+    }
+    long done = 0;
+    while (done < length) {
+        long got = system_call(SYS_GETRANDOM, (long)&target[done], length - done, 0, 0);
+        if (got == EINTR) {
+            continue;
+        }
+        if (got <= 0) {
+            return false;
+        }
+        done += got;
+    }
+    return true;
+}

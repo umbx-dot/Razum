@@ -1,0 +1,45 @@
+import gui.state;
+import gui.theme;
+import gui.typography;
+import gui.render;
+import gui.input;
+
+import windows;
+
+bool gui_resize_buffer() {
+    if (gui.graphics != 0) {
+        GdipDeleteGraphics(gui.graphics);
+        GdipDisposeImage(gui.bitmap);
+        gui.graphics = 0;
+    }
+    int width = gui.width > 0 ? gui.width : 1;
+    int height = gui.height > 0 ? gui.height : 1;
+    BITMAPINFOHEADER info;
+    info.size = 40;
+    info.width = width;
+    info.height = -height;
+    info.planes = 1;
+    info.bit_count = 32;
+    long old = gui.dib;
+    gui.dib = CreateDIBSection(gui.memory_dc, info, 0, &gui.pixels, 0, 0);
+    if (gui.dib == 0) {
+        return false;
+    }
+    SelectObject(gui.memory_dc, gui.dib);
+    if (old != 0) {
+        DeleteObject(old);
+    }
+    if (GdipCreateBitmapFromScan0(width, height, width * 4, 0xE200B, gui.pixels, &gui.bitmap) != 0) {
+        return false;
+    }
+    if (GdipGetImageGraphicsContext(gui.bitmap, &gui.graphics) != 0) {
+        return false;
+    }
+    GdipSetSmoothingMode(gui.graphics, 5);
+    GdipSetPixelOffsetMode(gui.graphics, 4);
+    GdipSetTextRenderingHint(gui.graphics, 5);
+    GdipScaleWorldTransform(gui.graphics, (float)gui.scale, (float)gui.scale, 0);
+    gui.buffer_width = width;
+    gui.buffer_height = height;
+    return true;
+}

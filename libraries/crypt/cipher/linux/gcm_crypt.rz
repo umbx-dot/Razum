@@ -1,0 +1,19 @@
+void gcm_crypt(AesKey key, byte *nonce, byte *input, byte *output, long length) {
+    byte counter[16];
+    for (int i = 0; i < 12; i++) {
+        counter[i] = nonce[i];
+    }
+    uint number = 2;
+    byte stream[16];
+    for (long at = 0; at < length; at += 16) {
+        counter[12] = (byte)(number >> 24);
+        counter[13] = (byte)(number >> 16);
+        counter[14] = (byte)(number >> 8);
+        counter[15] = (byte)number;
+        aes_encrypt_block(key, &counter[0], &stream[0]);
+        for (int i = 0; i < 16 && at + i < length; i++) {
+            output[at + i] = (byte)(input[at + i] ^ stream[i]);
+        }
+        number++;
+    }
+}

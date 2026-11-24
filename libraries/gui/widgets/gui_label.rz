@@ -1,0 +1,22 @@
+import gui.state;
+import gui.theme;
+import gui.typography;
+import gui.draw;
+import gui.input;
+import gui.layout;
+import gui.editing;
+
+void gui_label(string text, int font, uint color) {
+    GuiBox *box = &gui.boxes[gui.depth];
+    int start = gui.text_used;
+    int length = gui_wide(text, -1);
+    double max_width = box.row ? 0.0 : gui_available_width();
+    double width = gui_measure(font, start, length, max_width);
+    double height = length > 0 ? gui.measured_height : gui.line_heights[font];
+    gui_allocate(box.row ? width : 0.0, height);
+    int index = gui_push(GUI_TEXT, gui.slot_x, gui.slot_y, box.row ? width + 1 : max_width, height, color);
+    gui.commands[index].font = font;
+    gui.commands[index].text_start = start;
+    gui.commands[index].text_length = length;
+    gui.commands[index].wrap = !box.row;
+}

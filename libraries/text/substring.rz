@@ -1,0 +1,13 @@
+long substring(char target[], string text, long start, long count) {
+    long text_length = length(text);
+    long written = 0;
+    if (start < 0) {
+        start = 0;
+    }
+    for (long index = start; index < text_length && written < count && written < target.length - 1; index++) {
+        target[written] = text[index];
+        written++;
+    }
+    target[written] = "\0";
+    return written;
+}

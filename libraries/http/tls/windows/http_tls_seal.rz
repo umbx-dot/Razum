@@ -1,0 +1,43 @@
+import http.state;
+import http.memory;
+import windows;
+
+bool http_tls_seal(HttpWorker *worker, HttpConnection *connection) {
+    HttpTls *tls = connection.tls;
+    long offset = 0;
+    while (offset < worker.output_used) {
+        long chunk = worker.output_used - offset;
+        if (chunk > tls.maximum_message) {
+            chunk = tls.maximum_message;
+        }
+        http_sealed_reserve(worker, tls.header + chunk + tls.trailer);
+        char *place = &worker.sealed[worker.sealed_used];
+        http_copy(&place[tls.header], &worker.output[offset], chunk);
+        SecBuffer buffers[4];
+        buffers[0].size = (uint)tls.header;
+        buffers[0].type = SECBUFFER_STREAM_HEADER;
+        buffers[0].buffer = place;
+        buffers[1].size = (uint)chunk;
+        buffers[1].type = SECBUFFER_DATA;
+        buffers[1].buffer = &place[tls.header];
+        buffers[2].size = (uint)tls.trailer;
+        buffers[2].type = SECBUFFER_STREAM_TRAILER;
+        buffers[2].buffer = &place[tls.header + chunk];
+        buffers[3].size = 0;
+        buffers[3].type = SECBUFFER_EMPTY;
+        buffers[3].buffer = null;
+        SecBufferDesc description;
+        description.version = 0;
+        description.count = 4;
+        description.buffers = &buffers[0];
+        uint status = EncryptMessage(&tls.context, 0, &description, 0);
+        if (status != SEC_E_OK) {
+            http_last_error = status;
+            return false;
+        }
+        worker.sealed_used += buffers[0].size + buffers[1].size + buffers[2].size;
+        offset += chunk;
+    }
+    worker.output_used = 0;
+    return true;
+}

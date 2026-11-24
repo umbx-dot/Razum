@@ -1,0 +1,174 @@
+import crypt.encoding;
+
+struct P256Point {
+    long x[16];
+    long y[16];
+    long z[16];
+}
+
+struct P256Curve {
+    Modulus field;
+    Modulus order;
+    P256Point base;
+    bool ready;
+}
+
+P256Curve p256;
+
+void p256_prepare() {
+    if (p256.ready) {
+        return;
+    }
+    modulus_prepare(p256.field, "ffffffff00000001000000000000000000000000ffffffffffffffffffffffff");
+    modulus_prepare(p256.order, "ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551");
+    byte bytes[32];
+    long value[16];
+    hex_decode(bytes, "6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296");
+    number_from_bytes(value, &bytes[0]);
+    modular_enter(p256.base.x, value, p256.field);
+    hex_decode(bytes, "4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5");
+    number_from_bytes(value, &bytes[0]);
+    modular_enter(p256.base.y, value, p256.field);
+    number_set(value, 1);
+    modular_enter(p256.base.z, value, p256.field);
+    p256.ready = true;
+}
+
+void p256_double(P256Point point) {
+    if (number_is_zero(point.z)) {
+        return;
+    }
+    Modulus field = p256.field;
+    long delta[16];
+    long gamma[16];
+    long beta[16];
+    long alpha[16];
+    long sum[16];
+    long difference[16];
+    long work[16];
+    modular_multiply(delta, point.z, point.z, field);
+    modular_multiply(gamma, point.y, point.y, field);
+    modular_multiply(beta, point.x, gamma, field);
+    modular_subtract(difference, point.x, delta, field);
+    modular_add(sum, point.x, delta, field);
+    modular_multiply(alpha, difference, sum, field);
+    modular_add(work, alpha, alpha, field);
+    modular_add(alpha, work, alpha, field);
+    modular_add(work, point.y, point.z, field);
+    modular_multiply(work, work, work, field);
+    modular_subtract(work, work, gamma, field);
+    modular_subtract(point.z, work, delta, field);
+    long eight_beta[16];
+    modular_add(eight_beta, beta, beta, field);
+    modular_add(eight_beta, eight_beta, eight_beta, field);
+    long four_beta[16];
+    number_copy(four_beta, eight_beta);
+    modular_add(eight_beta, eight_beta, eight_beta, field);
+    modular_multiply(work, alpha, alpha, field);
+    modular_subtract(point.x, work, eight_beta, field);
+    modular_subtract(work, four_beta, point.x, field);
+    modular_multiply(work, alpha, work, field);
+    long gamma_squared[16];
+    modular_multiply(gamma_squared, gamma, gamma, field);
+    modular_add(gamma_squared, gamma_squared, gamma_squared, field);
+    modular_add(gamma_squared, gamma_squared, gamma_squared, field);
+    modular_add(gamma_squared, gamma_squared, gamma_squared, field);
+    modular_subtract(point.y, work, gamma_squared, field);
+}
+
+void p256_add(P256Point target, P256Point other) {
+    if (number_is_zero(other.z)) {
+        return;
+    }
+    if (number_is_zero(target.z)) {
+        number_copy(target.x, other.x);
+        number_copy(target.y, other.y);
+        number_copy(target.z, other.z);
+        return;
+    }
+    Modulus field = p256.field;
+    long z1z1[16];
+    long z2z2[16];
+    long u1[16];
+    long u2[16];
+    long s1[16];
+    long s2[16];
+    long h[16];
+    long r[16];
+    modular_multiply(z1z1, target.z, target.z, field);
+    modular_multiply(z2z2, other.z, other.z, field);
+    modular_multiply(u1, target.x, z2z2, field);
+    modular_multiply(u2, other.x, z1z1, field);
+    modular_multiply(s1, target.y, other.z, field);
+    modular_multiply(s1, s1, z2z2, field);
+    modular_multiply(s2, other.y, target.z, field);
+    modular_multiply(s2, s2, z1z1, field);
+    modular_subtract(h, u2, u1, field);
+    modular_subtract(r, s2, s1, field);
+    if (number_is_zero(h)) {
+        if (number_is_zero(r)) {
+            p256_double(target);
+        } else {
+            number_set(target.x, 0);
+            number_set(target.y, 0);
+            number_set(target.z, 0);
+        }
+        return;
+    }
+    modular_add(r, r, r, field);
+    long i[16];
+    long j[16];
+    long v[16];
+    long work[16];
+    modular_add(i, h, h, field);
+    modular_multiply(i, i, i, field);
+    modular_multiply(j, h, i, field);
+    modular_multiply(v, u1, i, field);
+    modular_multiply(work, r, r, field);
+    modular_subtract(work, work, j, field);
+    modular_subtract(work, work, v, field);
+    modular_subtract(work, work, v, field);
+    long x3[16];
+    number_copy(x3, work);
+    modular_subtract(work, v, x3, field);
+    modular_multiply(work, r, work, field);
+    long twice_s1j[16];
+    modular_multiply(twice_s1j, s1, j, field);
+    modular_add(twice_s1j, twice_s1j, twice_s1j, field);
+    modular_subtract(target.y, work, twice_s1j, field);
+    modular_add(work, target.z, other.z, field);
+    modular_multiply(work, work, work, field);
+    modular_subtract(work, work, z1z1, field);
+    modular_subtract(work, work, z2z2, field);
+    modular_multiply(target.z, work, h, field);
+    number_copy(target.x, x3);
+}
+
+void p256_multiply(P256Point target, long scalar[], P256Point point) {
+    P256Point result;
+    number_set(result.x, 0);
+    number_set(result.y, 0);
+    number_set(result.z, 0);
+    for (int bit = 255; bit >= 0; bit--) {
+        p256_double(result);
+        if (((scalar[bit / 16] >> (bit % 16)) & 1) != 0) {
+            p256_add(result, point);
+        }
+    }
+    number_copy(target.x, result.x);
+    number_copy(target.y, result.y);
+    number_copy(target.z, result.z);
+}
+
+void p256_affine(long x[], long y[], P256Point point) {
+    Modulus field = p256.field;
+    long inverse[16];
+    long square[16];
+    modular_invert(inverse, point.z, field);
+    modular_multiply(square, inverse, inverse, field);
+    modular_multiply(x, point.x, square, field);
+    modular_multiply(square, square, inverse, field);
+    modular_multiply(y, point.y, square, field);
+    modular_leave(x, x, field);
+    modular_leave(y, y, field);
+}

@@ -1,0 +1,13 @@
+import text;
+
+long unpadded_length(string encoded, long block, long max_padding) {
+    long total = length(encoded);
+    long size = total;
+    while (size > 0 && encoded[size - 1] == "=") {
+        size--;
+    }
+    if (size < total && (total % block != 0 || total - size > max_padding)) {
+        return -1;
+    }
+    return size;
+}

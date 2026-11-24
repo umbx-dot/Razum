@@ -1,0 +1,3 @@
+bool array_contains_T(T values[], T value) {
+    return array_index_of_T(values, value) >= 0;
+}

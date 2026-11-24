@@ -1,0 +1,34 @@
+ulong des_load(byte *data) {
+    ulong value = 0;
+    for (int index = 0; index < 8; index++) {
+        value = (value << 8) | (ulong)data[index];
+    }
+    return value;
+}
+
+long des3_cbc_decrypt(byte target[], byte *key, byte *iv, byte *data, long length) {
+    if (length <= 0 || length % 8 != 0 || target.length < length) {
+        return -1;
+    }
+    ulong first[16];
+    ulong second[16];
+    ulong third[16];
+    des_subkeys(first, des_load(&key[0]));
+    des_subkeys(second, des_load(&key[8]));
+    des_subkeys(third, des_load(&key[16]));
+    ulong chain = des_load(iv);
+    for (long at = 0; at < length; at += 8) {
+        ulong block = des_load(&data[at]);
+        ulong plain = des_block(first, des_block(second, des_block(third, block, true), false), true) ^ chain;
+        chain = block;
+        for (int index = 0; index < 8; index++) {
+            target[at + index] = (byte)(plain >> (56 - 8 * index));
+        }
+    }
+    int padding = target[length - 1];
+    bool valid = padding >= 1 && padding <= 8;
+    for (int index = 1; valid && index <= padding; index++) {
+        valid = target[length - index] == padding;
+    }
+    return valid ? length - padding : -1;
+}

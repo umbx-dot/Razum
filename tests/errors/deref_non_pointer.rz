@@ -1,0 +1,6 @@
+// error: 4:13: * needs a pointer, but this is an int
+int main() {
+    int x = 5;
+    int y = *x;
+    return y;
+}

@@ -1,0 +1,48 @@
+import gui.state;
+import gui.wire;
+
+void gui_x11_event() {
+    uint message[8];
+    if (!gui_receive((long)&message[0], 32)) {
+        return;
+    }
+    int kind = (int)(message[0] & 127);
+    if (kind == 0 || kind == 17 || (kind == 33 && message[2] == gui_desktop.x_protocols && message[3] == gui_desktop.x_delete)) {
+        gui.quit = true;
+    } else if (kind == 22) {
+        int width = (int)(message[5] & 65535);
+        int height = (int)(message[5] >> 16);
+        if (width > 0 && height > 0 && width <= GUI_MAX_EDGE && height <= GUI_MAX_EDGE) {
+            gui.width = width;
+            gui.height = height;
+        }
+    } else if (kind >= 4 && kind <= 7) {
+        gui.mouse_x = (double)(short)(message[6] & 65535);
+        gui.mouse_y = (double)(short)(message[6] >> 16);
+        gui.mouse_inside = true;
+        int button = (int)((message[0] >> 8) & 255);
+        if (button == 1 && (kind == 4 || kind == 5)) {
+            gui.mouse_down = kind == 4;
+            gui.pressed = gui.pressed || kind == 4;
+            gui.released = gui.released || kind == 5;
+        }
+    } else if (kind == 8 || kind == 10) {
+        gui.mouse_inside = false;
+        if (kind == 10) {
+            gui.mouse_down = false;
+            gui.released = true;
+        }
+    } else if (kind == 2 && (message[7] & 4) == 0) {
+        int width = gui_desktop.x_symbols_per_key;
+        int key = (int)((message[0] >> 8) & 255) - gui_desktop.x_first_key;
+        if (key >= 0 && key < gui_desktop.x_key_count) {
+            uint plain = gui_desktop.x_keys[key * width];
+            bool shift = (message[7] & 1) != 0;
+            if ((message[7] & 2) != 0 && plain >= 97 && plain <= 122) {
+                shift = !shift;
+            }
+            uint symbol = shift && width > 1 ? gui_desktop.x_keys[key * width + 1] : plain;
+            gui_input_symbol(symbol != 0 ? symbol : plain);
+        }
+    }
+}

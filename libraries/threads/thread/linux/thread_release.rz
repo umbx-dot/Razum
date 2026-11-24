@@ -1,0 +1,6 @@
+import linux;
+
+void thread_release(ThreadControl *control) {
+    system_call(SYS_MUNMAP, control.stack, control.stack_size, 0, 0);
+    free(control);
+}

@@ -1,0 +1,13 @@
+const int JSON_OBJECT = 1;
+const int JSON_ARRAY = 2;
+const int JSON_STRING = 3;
+const int JSON_NUMBER = 4;
+const int JSON_TRUE = 5;
+const int JSON_FALSE = 6;
+const int JSON_NULL = 7;
+const int JSON_KEY = 8;
+const int JSON_END = 9;
+const int JSON_INVALID = -1;
+const int JSON_CAPACITY = -2;
+const int JSON_DEPTH = -3;
+const int JSON_MAX_DEPTH = 128;

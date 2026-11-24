@@ -1,0 +1,64 @@
+struct BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO {
+    uint size;
+    uint info_version;
+    byte *nonce;
+    uint nonce_size;
+    byte *auth_data;
+    uint auth_data_size;
+    byte *tag;
+    uint tag_size;
+    byte *mac_context;
+    uint mac_context_size;
+    uint aad_size;
+    ulong data_size;
+    uint flags;
+}
+
+const long BCRYPT_MD5_ALG_HANDLE = 0x21;
+const long BCRYPT_SHA1_ALG_HANDLE = 0x31;
+const long BCRYPT_SHA256_ALG_HANDLE = 0x41;
+const long BCRYPT_SHA384_ALG_HANDLE = 0x51;
+const long BCRYPT_SHA512_ALG_HANDLE = 0x61;
+const long BCRYPT_RNG_ALG_HANDLE = 0x81;
+const long BCRYPT_HMAC_MD5_ALG_HANDLE = 0x91;
+const long BCRYPT_HMAC_SHA1_ALG_HANDLE = 0xa1;
+const long BCRYPT_HMAC_SHA256_ALG_HANDLE = 0xb1;
+const long BCRYPT_HMAC_SHA384_ALG_HANDLE = 0xc1;
+const long BCRYPT_HMAC_SHA512_ALG_HANDLE = 0xd1;
+const long BCRYPT_AES_CBC_ALG_HANDLE = 0x1a1;
+const long BCRYPT_AES_ECB_ALG_HANDLE = 0x1b1;
+const long BCRYPT_AES_GCM_ALG_HANDLE = 0x1e1;
+
+const uint BCRYPT_BLOCK_PADDING = 1;
+const uint BCRYPT_USE_SYSTEM_PREFERRED_RNG = 2;
+const uint BCRYPT_ALG_HANDLE_HMAC_FLAG = 8;
+const uint BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO_VERSION = 1;
+const int STATUS_SUCCESS = 0;
+const uint STATUS_AUTH_TAG_MISMATCH = 0xC000A002;
+
+extern "bcrypt" int BCryptOpenAlgorithmProvider(long *algorithm, ushort *name, ushort *implementation, uint flags);
+extern "bcrypt" int BCryptCloseAlgorithmProvider(long algorithm, uint flags);
+extern "bcrypt" int BCryptSetProperty(long handle, ushort *property, byte *input, uint input_size, uint flags);
+extern "bcrypt" int BCryptGetProperty(long handle, ushort *property, byte *output, uint output_size, uint *result,
+                                      uint flags);
+extern "bcrypt" int BCryptHash(long algorithm, byte *secret, uint secret_size, byte *input, uint input_size,
+                               byte *output, uint output_size);
+extern "bcrypt" int BCryptCreateHash(long algorithm, long *hash, byte *hash_object, uint hash_object_size,
+                                     byte *secret, uint secret_size, uint flags);
+extern "bcrypt" int BCryptHashData(long hash, byte *input, uint input_size, uint flags);
+extern "bcrypt" int BCryptFinishHash(long hash, byte *output, uint output_size, uint flags);
+extern "bcrypt" int BCryptDuplicateHash(long hash, long *duplicate, byte *hash_object, uint hash_object_size,
+                                        uint flags);
+extern "bcrypt" int BCryptDestroyHash(long hash);
+extern "bcrypt" int BCryptDeriveKeyPBKDF2(long prf, byte *password, uint password_size, byte *salt, uint salt_size,
+                                          ulong iterations, byte *derived_key, uint derived_key_size, uint flags);
+extern "bcrypt" int BCryptGenRandom(long algorithm, byte *buffer, uint buffer_size, uint flags);
+extern "bcrypt" int BCryptGenerateSymmetricKey(long algorithm, long *key, byte *key_object, uint key_object_size,
+                                               byte *secret, uint secret_size, uint flags);
+extern "bcrypt" int BCryptEncrypt(long key, byte *input, uint input_size,
+                                  BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO *padding_info, byte *iv, uint iv_size,
+                                  byte *output, uint output_size, uint *result, uint flags);
+extern "bcrypt" int BCryptDecrypt(long key, byte *input, uint input_size,
+                                  BCRYPT_AUTHENTICATED_CIPHER_MODE_INFO *padding_info, byte *iv, uint iv_size,
+                                  byte *output, uint output_size, uint *result, uint flags);
+extern "bcrypt" int BCryptDestroyKey(long key);

@@ -1,0 +1,5 @@
+// error: 3:15: unexpected character '#'
+int main() {
+    int a = 1 # 2;
+    return a;
+}

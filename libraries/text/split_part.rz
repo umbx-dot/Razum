@@ -1,0 +1,16 @@
+long split_part(char target[], string text, char separator, long wanted) {
+    long count = length(text);
+    long part = 0;
+    long start = 0;
+    for (long index = 0; index <= count; index++) {
+        if (index == count || text[index] == separator) {
+            if (part == wanted) {
+                return substring(target, text, start, index - start);
+            }
+            part++;
+            start = index + 1;
+        }
+    }
+    target[0] = "\0";
+    return -1;
+}

@@ -1,0 +1,3 @@
+void print_line() {
+    write_string("\r\n");
+}

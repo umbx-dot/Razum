@@ -1,0 +1,7 @@
+import gui.state;
+import gui.typography;
+
+double gui_input_shift(char text[], double inner) {
+    double caret_x = gui_prefix_width(text, gui.caret);
+    return caret_x > inner - 2 ? caret_x - (inner - 2) : 0.0;
+}

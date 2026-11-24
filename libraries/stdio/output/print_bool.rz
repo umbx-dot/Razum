@@ -1,0 +1,7 @@
+void print_bool(bool value) {
+    if (value) {
+        print_string("true");
+    } else {
+        print_string("false");
+    }
+}

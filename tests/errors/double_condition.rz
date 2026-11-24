@@ -1,0 +1,8 @@
+// error: 4:9: a condition needs a bool or an integer, not a double; for a double write a comparison such as x != 0.0
+int main() {
+    double x = 1.0;
+    if (x) {
+        return 1;
+    }
+    return 0;
+}

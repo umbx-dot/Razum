@@ -1,0 +1,7 @@
+void process_free(ProcessResult result) {
+    if (result.output != null) {
+        free(result.output);
+        result.output = null;
+    }
+    result.output_length = 0;
+}

@@ -1,0 +1,3 @@
+bool is_space(char value) {
+    return value == " " || value == "\t" || value == "\n" || value == "\r";
+}

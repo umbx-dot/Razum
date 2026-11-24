@@ -1,0 +1,59 @@
+import crypt.hash;
+
+void pkcs12_derive(Hash kind, byte *password, long password_length, byte *salt, long salt_length, long iterations, int id,
+                   byte output[], long length) {
+    int size = hash_size(kind);
+    long block = hash_block_size_of(kind);
+    long salt_part = salt_length == 0 ? 0 : (salt_length + block - 1) / block * block;
+    long password_part = password_length == 0 ? 0 : (password_length + block - 1) / block * block;
+    long total = salt_part + password_part;
+    byte *input = new byte[total + 1];
+    for (long index = 0; index < salt_part; index++) {
+        input[index] = salt[index % salt_length];
+    }
+    for (long index = 0; index < password_part; index++) {
+        input[salt_part + index] = password[index % password_length];
+    }
+    byte diversifier[128];
+    for (long index = 0; index < block; index++) {
+        diversifier[index] = (byte)id;
+    }
+    byte digest[64];
+    long done = 0;
+    while (done < length) {
+        Hasher hasher;
+        hash_start(hasher, kind);
+        hash_update(hasher, &diversifier[0], block);
+        hash_update(hasher, input, total);
+        hash_finish(hasher, digest);
+        for (long round = 1; round < iterations; round++) {
+            hash_start(hasher, kind);
+            hash_update(hasher, &digest[0], size);
+            hash_finish(hasher, digest);
+        }
+        for (int index = 0; index < size && done < length; index++) {
+            output[done] = digest[index];
+            done++;
+        }
+        if (done >= length) {
+            break;
+        }
+        byte expanded[128];
+        for (long index = 0; index < block; index++) {
+            expanded[index] = digest[index % size];
+        }
+        for (long at = 0; at < total; at += block) {
+            int carry = 1;
+            for (long index = block - 1; index >= 0; index--) {
+                int sum = input[at + index] + expanded[index] + carry;
+                input[at + index] = (byte)sum;
+                carry = sum >> 8;
+            }
+        }
+    }
+    free(input);
+}
+
+long hash_block_size_of(Hash kind) {
+    return kind == Hash.SHA384 || kind == Hash.SHA512 ? 128 : 64;
+}

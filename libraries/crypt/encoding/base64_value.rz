@@ -1,0 +1,18 @@
+int base64_value(char digit, bool url_safe) {
+    if (digit >= "A" && digit <= "Z") {
+        return digit - "A";
+    }
+    if (digit >= "a" && digit <= "z") {
+        return digit - "a" + 26;
+    }
+    if (digit >= "0" && digit <= "9") {
+        return digit - "0" + 52;
+    }
+    if (digit == (url_safe ? "-" : "+")) {
+        return 62;
+    }
+    if (digit == (url_safe ? "_" : "/")) {
+        return 63;
+    }
+    return -1;
+}

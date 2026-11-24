@@ -1,0 +1,9 @@
+char learn_rzc[1024];
+char learn_benchmark_source[1024];
+char learn_hosts[3][64];
+char learn_origins[3][64];
+long learn_active;
+long learn_runs;
+const long LEARN_MAX_ACTIVE = 8;
+const long LEARN_CODE_SIZE = 65536;
+const long LEARN_INPUT_SIZE = 16384;

@@ -1,0 +1,6 @@
+long length(string text) {
+    asm {
+        mov rcx, qword [rsp + .text]
+        call rz@text_length
+    }
+}

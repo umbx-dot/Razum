@@ -1,0 +1,9 @@
+void reverse(char text[]) {
+    long last = length(text) - 1;
+    for (long first = 0; first < last; first++) {
+        char kept = text[first];
+        text[first] = text[last];
+        text[last] = kept;
+        last--;
+    }
+}

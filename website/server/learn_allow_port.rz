@@ -1,0 +1,13 @@
+import text;
+
+void learn_allow_port(int port) {
+    char number[16];
+    int_to_text(number, port);
+    string hosts[3] = {"localhost:", "127.0.0.1:", "[::1]:"};
+    for (int index = 0; index < 3; index++) {
+        copy(learn_hosts[index], hosts[index]);
+        concat(learn_hosts[index], number);
+        copy(learn_origins[index], "http://");
+        concat(learn_origins[index], learn_hosts[index]);
+    }
+}

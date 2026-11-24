@@ -1,0 +1,24 @@
+import gui.state;
+
+int gui_push(int kind, double x, double y, double width, double height, uint color) {
+    int index = gui.command_count;
+    if (index >= 8192) {
+        index = 8192;
+    } else {
+        gui.command_count++;
+    }
+    GuiCommand *command = &gui.commands[index];
+    command.kind = kind;
+    command.x = x;
+    command.y = y;
+    command.width = width;
+    command.height = height;
+    command.color = color;
+    command.radius = 0;
+    command.stroke = 1;
+    command.font = 0;
+    command.text_start = 0;
+    command.text_length = 0;
+    command.wrap = false;
+    return index;
+}

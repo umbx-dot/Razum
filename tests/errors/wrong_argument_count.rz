@@ -1,0 +1,8 @@
+// error: 7:12: 'add' takes 2 argument(s), not 1
+int add(int a, int b) {
+    return a + b;
+}
+
+int main() {
+    return add(1);
+}

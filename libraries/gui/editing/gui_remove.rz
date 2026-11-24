@@ -1,0 +1,13 @@
+import gui.state;
+import gui.typography;
+
+void gui_remove(char text[], int from, int to) {
+    int i = 0;
+    while (to + i < text.length) {
+        text[from + i] = text[to + i];
+        if (text[to + i] == "\0") {
+            break;
+        }
+        i++;
+    }
+}

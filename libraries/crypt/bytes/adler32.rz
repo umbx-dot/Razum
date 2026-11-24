@@ -1,0 +1,16 @@
+uint adler32(uint adler, byte *data, long length) {
+    ulong low = adler & 0xFFFF;
+    ulong high = adler >> 16;
+    long i = 0;
+    while (i < length) {
+        long end = length - i > 5552 ? i + 5552 : length;
+        while (i < end) {
+            low += data[i];
+            high += low;
+            i++;
+        }
+        low %= 65521;
+        high %= 65521;
+    }
+    return (uint)((high << 16) | low);
+}

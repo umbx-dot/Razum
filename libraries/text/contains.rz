@@ -1,0 +1,3 @@
+bool contains(string text, string part) {
+    return find(text, part) >= 0;
+}

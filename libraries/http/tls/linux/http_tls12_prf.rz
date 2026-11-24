@@ -1,0 +1,28 @@
+import crypt.bytes;
+import crypt.hash;
+import crypt.hmac;
+
+void http_tls12_prf(byte *secret, long secret_length, string label, byte *seed, long seed_length, byte output[], long length) {
+    byte label_seed[160];
+    long label_length = 0;
+    while (label[label_length] != "\0") {
+        label_length++;
+    }
+    long total = http_tls_put_bytes(label_seed, 0, as_bytes(label), label_length);
+    total = http_tls_put_bytes(label_seed, total, seed, seed_length);
+    byte chain[32];
+    hmac(Hash.SHA256, chain, secret, secret_length, &label_seed[0], total);
+    byte joined[192];
+    byte block[32];
+    long done = 0;
+    while (done < length) {
+        long at = http_tls_put_bytes(joined, 0, &chain[0], 32);
+        at = http_tls_put_bytes(joined, at, &label_seed[0], total);
+        hmac(Hash.SHA256, block, secret, secret_length, &joined[0], at);
+        for (int index = 0; index < 32 && done < length; index++) {
+            output[done] = block[index];
+            done++;
+        }
+        hmac(Hash.SHA256, chain, secret, secret_length, &chain[0], 32);
+    }
+}

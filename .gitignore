@@ -1,0 +1,13 @@
+build/
+*.exe
+*.asm
+!libraries/**/*.asm
+!tests/**/*.asm
+
+website/*.exe
+website/*.asm
+resources/
+
+/PLAN.md
+/PROGRESS.md
+/RULES.md

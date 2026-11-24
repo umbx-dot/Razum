@@ -1,0 +1,47 @@
+import stdio;
+
+const char SEPARATOR = ",";
+char global_mark = "*";
+
+char first_letter() {
+    return "r";
+}
+
+bool is_vowel(char c) {
+    switch (c) {
+        case "a", "e", "i", "o", "u":
+            return true;
+        default:
+            return false;
+    }
+}
+
+int main() {
+    char c = "a";
+    char newline = "\n";
+    char vowels[3] = {"a", "e", "i"};
+    write_char(c);
+    write_char(SEPARATOR);
+    write_char(global_mark);
+    write_char(first_letter());
+    write_char(newline);
+    c = "z";
+    print(c == "z");
+    print(c >= "a" && c <= "z");
+    char digit = "7";
+    print(digit - "0");
+    print((char)(3 + "0"));
+    print(is_vowel("e"));
+    print(is_vowel(vowels[2]));
+    print(is_vowel("x"));
+    bool loud = true;
+    char picked = loud ? c : "y";
+    char either = loud ? "!" : "?";
+    write_char(picked);
+    write_char(either);
+    write_char(loud ? "+" : c);
+    print(c == (loud ? "z" : "q"));
+    string word = "a";
+    print(word);
+    return 0;
+}

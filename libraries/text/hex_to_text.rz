@@ -1,0 +1,18 @@
+long hex_to_text(char target[], ulong value) {
+    char digits[16];
+    int count = 0;
+    do {
+        int nibble = (int)(value & 15);
+        digits[count] = nibble < 10 ? (char)("0" + nibble) : (char)("a" + nibble - 10);
+        count++;
+        value >>= 4;
+    } while (value != 0);
+    long written = 0;
+    while (count > 0 && written < target.length - 1) {
+        count--;
+        target[written] = digits[count];
+        written++;
+    }
+    target[written] = "\0";
+    return written;
+}

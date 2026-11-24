@@ -1,0 +1,15 @@
+import windows;
+
+long hash_finish(Hasher hasher, byte digest[]) {
+    if (hasher.handle == 0) {
+        return -1;
+    }
+    int size = hash_size(hasher.kind);
+    int status = -1;
+    if (digest.length >= size) {
+        status = BCryptFinishHash(hasher.handle, digest, (uint)size, 0);
+    }
+    BCryptDestroyHash(hasher.handle);
+    hasher.handle = 0;
+    return status == STATUS_SUCCESS ? size : -1;
+}

@@ -1,0 +1,30 @@
+void write_bytes(File file, byte data[], long count) {
+    long limit = count < data.length ? count : data.length;
+    if (limit <= 0) {
+        return;
+    }
+    if (!file.writing) {
+        file.failed = true;
+        return;
+    }
+    if (limit == 1) {
+        if (file.used == file.buffer.length) {
+            flush(file);
+        }
+        file.buffer[file.used] = (char)data[0];
+        file.used++;
+        return;
+    }
+    long index = 0;
+    while (index < limit) {
+        if (file.used == file.buffer.length) {
+            flush(file);
+        }
+        long available = file.buffer.length - file.used;
+        long remaining = limit - index;
+        long chunk = available < remaining ? available : remaining;
+        file_copy_bytes(&file.buffer[file.used], (char *)&data[index], chunk);
+        file.used += chunk;
+        index += chunk;
+    }
+}

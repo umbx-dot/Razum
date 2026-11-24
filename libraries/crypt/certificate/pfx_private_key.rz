@@ -1,0 +1,46 @@
+bool pfx_private_key(Pfx pfx, byte *data, long start, long end) {
+    long content = 0;
+    long length = 0;
+    if (der_read(data, start, end, 0x30, &content, &length) < 0) {
+        return false;
+    }
+    long finish = content + length;
+    long value = 0;
+    long size = 0;
+    long at = der_read(data, content, finish, 2, &value, &size);
+    long algorithm = 0;
+    long algorithm_length = 0;
+    at = at < 0 ? -1 : der_read(data, at, finish, 0x30, &algorithm, &algorithm_length);
+    long oid = 0;
+    long oid_length = 0;
+    long curve_at = at < 0 ? -1 : der_read(data, algorithm, algorithm + algorithm_length, 6, &oid, &oid_length);
+    long curve = 0;
+    long curve_length = 0;
+    if (curve_at < 0 || !der_is(data, oid, oid_length, "2a8648ce3d0201") ||
+        der_read(data, curve_at, algorithm + algorithm_length, 6, &curve, &curve_length) < 0 ||
+        !der_is(data, curve, curve_length, "2a8648ce3d030107")) {
+        return false;
+    }
+    long key_octets = 0;
+    long key_octets_length = 0;
+    if (der_read(data, at, finish, 4, &key_octets, &key_octets_length) < 0) {
+        return false;
+    }
+    long inner = 0;
+    long inner_length = 0;
+    if (der_read(data, key_octets, key_octets + key_octets_length, 0x30, &inner, &inner_length) < 0) {
+        return false;
+    }
+    long position = der_read(data, inner, inner + inner_length, 2, &value, &size);
+    long secret = 0;
+    long secret_length = 0;
+    if (position < 0 || der_read(data, position, inner + inner_length, 4, &secret, &secret_length) < 0 || secret_length > 32) {
+        return false;
+    }
+    for (int index = 0; index < 32; index++) {
+        long from = index - (32 - secret_length);
+        pfx.private_key[index] = from < 0 ? (byte)0 : data[secret + from];
+    }
+    pfx.has_key = true;
+    return true;
+}

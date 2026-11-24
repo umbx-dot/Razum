@@ -1,0 +1,119 @@
+import stdio;
+
+string describe(int day) {
+    switch (day) {
+        case 0, 6:
+            return "weekend";
+        case 3:
+            return "midweek";
+        default:
+            return "workday";
+    }
+}
+
+int classify(char letter) {
+    int kind = 0;
+    switch (letter) {
+        case 'a', 'e', 'i', 'o', 'u':
+            kind = 1;
+        case ' ':
+            kind = 2;
+            break;
+        default:
+            kind = 3;
+    }
+    return kind;
+}
+
+int main() {
+    int flags = 12;
+    print(flags & 10);
+    print(flags | 3);
+    print(flags ^ 5);
+    print(~flags);
+    print(1 << 10);
+    print(-64 >> 2);
+    uint big = 4294967295;
+    print(big >> 28);
+    long wide = 1;
+    print(wide << 40);
+    int count = 33;
+    print(1 << count);
+    byte bits = 200;
+    bits <<= 1;
+    print(bits);
+    flags &= 4;
+    flags |= 16;
+    flags ^= 1;
+    print(flags);
+    flags <<= 2;
+    flags >>= 1;
+    print(flags);
+    bool both = true & false;
+    print(both);
+    print(true ^ true);
+
+    int values[3] = {1, 2, 4};
+    values[1] |= 8;
+    values[2] <<= 3;
+    values[0] ^= 1;
+    print(values[0] + values[1] + values[2]);
+
+    int a = 5;
+    int b = 9;
+    print(a > b ? a : b);
+    print(a < b ? 1.5 : 2);
+    string word = a == 5 ? "five" : "other";
+    print(word);
+    print(a > 0 ? a > 3 ? 2 : 1 : 0);
+
+    for (int day = 0; day < 7; day += 3) {
+        print(describe(day));
+    }
+    print(classify('e'));
+    print(classify(' '));
+    print(classify('x'));
+
+    int total = 0;
+    for (int i = 0; i < 6; i++) {
+        switch (i % 3) {
+            case 0:
+                continue;
+            case 1:
+                total += 10;
+                break;
+            default:
+                total += 1;
+        }
+        total += 100;
+    }
+    print(total);
+
+    int n = 0;
+    do {
+        n += 2;
+    } while (n < 7);
+    print(n);
+    do {
+        n = 99;
+    } while (false);
+    print(n);
+    int tries = 0;
+    do {
+        tries++;
+        if (tries == 3) {
+            break;
+        }
+    } while (true);
+    print(tries);
+
+    string name = "razum";
+    print(name[0]);
+    print(name[4]);
+    int letters = 0;
+    while (name[letters] != '\0') {
+        letters++;
+    }
+    print(letters);
+    return 0;
+}

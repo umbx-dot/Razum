@@ -1,0 +1,4 @@
+void write_line(File file, string text) {
+    write(file, text);
+    write(file, "\r\n");
+}

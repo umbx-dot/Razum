@@ -1,0 +1,14 @@
+// asm: mov qword [rsp + 32], 5
+// asm: mov qword [rsp + 40], 6
+// asm: mov rcx, 1
+// asm: mov r9, 4
+// asm: call $six
+// asm: .f equ
+// asm: mov qword [rsp + 8], rcx
+int six(int a, int b, int c, int d, int e, int f) {
+    return a + f;
+}
+
+int main() {
+    return six(1, 2, 3, 4, 5, 6);
+}

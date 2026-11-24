@@ -1,0 +1,5 @@
+// error: 3:14: a char holds one byte, but this text is 2 bytes; use a string, or one character such as "a" or "\n"
+int main() {
+    char c = "ab";
+    return 0;
+}

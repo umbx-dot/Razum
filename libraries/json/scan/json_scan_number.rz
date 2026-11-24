@@ -1,0 +1,42 @@
+int json_scan_number(string source, int size, int position) {
+    if (position < size && source[position] == "-") {
+        position++;
+    }
+    if (position >= size) {
+        return -1;
+    }
+    if (source[position] == "0") {
+        position++;
+    } else {
+        if (source[position] < "1" || source[position] > "9") {
+            return -1;
+        }
+        do {
+            position++;
+        } while (position < size && source[position] >= "0" && source[position] <= "9");
+    }
+    if (position < size && source[position] == ".") {
+        position++;
+        int digits = position;
+        while (position < size && source[position] >= "0" && source[position] <= "9") {
+            position++;
+        }
+        if (position == digits) {
+            return -1;
+        }
+    }
+    if (position < size && (source[position] == "e" || source[position] == "E")) {
+        position++;
+        if (position < size && (source[position] == "+" || source[position] == "-")) {
+            position++;
+        }
+        int digits = position;
+        while (position < size && source[position] >= "0" && source[position] <= "9") {
+            position++;
+        }
+        if (position == digits) {
+            return -1;
+        }
+    }
+    return position;
+}

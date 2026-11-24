@@ -1,0 +1,28 @@
+import text;
+
+string http_mime_type(string path) {
+    long dot = find_last_char(path, ".");
+    if (dot < 0) {
+        return "application/octet-stream";
+    }
+    char extension[16];
+    substring(extension, path, dot + 1, 15);
+    to_lower(extension);
+    if (equals(extension, "html") || equals(extension, "htm")) return "text/html; charset=utf-8";
+    if (equals(extension, "css")) return "text/css; charset=utf-8";
+    if (equals(extension, "js") || equals(extension, "mjs")) return "text/javascript; charset=utf-8";
+    if (equals(extension, "json")) return "application/json";
+    if (equals(extension, "txt")) return "text/plain; charset=utf-8";
+    if (equals(extension, "md")) return "text/markdown; charset=utf-8";
+    if (equals(extension, "svg")) return "image/svg+xml";
+    if (equals(extension, "png")) return "image/png";
+    if (equals(extension, "jpg") || equals(extension, "jpeg")) return "image/jpeg";
+    if (equals(extension, "gif")) return "image/gif";
+    if (equals(extension, "webp")) return "image/webp";
+    if (equals(extension, "ico")) return "image/x-icon";
+    if (equals(extension, "wasm")) return "application/wasm";
+    if (equals(extension, "pdf")) return "application/pdf";
+    if (equals(extension, "xml")) return "application/xml";
+    if (equals(extension, "woff2")) return "font/woff2";
+    return "application/octet-stream";
+}

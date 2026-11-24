@@ -1,0 +1,3 @@
+byte TryAcquireSRWLockExclusive(long *lock) {
+    return futex_compare_exchange(lock, 0, 1) == 0 ? (byte)1 : (byte)0;
+}

@@ -1,0 +1,12 @@
+T array_min_T(T values[]) {
+    if (values.length == 0) {
+        return (T)0;
+    }
+    T smallest = values[0];
+    for (long i = 1; i < values.length; i++) {
+        if (values[i] < smallest) {
+            smallest = values[i];
+        }
+    }
+    return smallest;
+}

@@ -1,0 +1,33 @@
+import http.state;
+import http.output;
+import threads.atomic;
+
+void http_serialize(HttpWorker *worker, bool head_only) {
+    HttpResponse *response = &worker.response;
+    http_out(worker, "HTTP/1.1 ", 9);
+    http_out_number(worker, response.status);
+    http_out(worker, " ", 1);
+    http_out_text(worker, http_status_text(response.status));
+    http_out(worker, "\r\nServer: razum\r\nDate: ", 23);
+    http_out(worker, &http_dates[atomic_load(&http_date_index)][0], HTTP_DATE_LENGTH);
+    bool has_body = response.status >= 200 && response.status != 204 && response.status != 304;
+    if (has_body) {
+        http_out(worker, "\r\nContent-Type: ", 16);
+        http_out_text(worker, response.content_type);
+        http_out(worker, "\r\nContent-Length: ", 18);
+        http_out_number(worker, response.body_length);
+    }
+    if (response.close) {
+        http_out(worker, "\r\nConnection: close", 19);
+    }
+    for (int index = 0; index < response.header_count; index++) {
+        http_out(worker, "\r\n", 2);
+        http_out_text(worker, response.headers[index].name);
+        http_out(worker, ": ", 2);
+        http_out_text(worker, response.headers[index].value);
+    }
+    http_out(worker, "\r\n\r\n", 4);
+    if (has_body && !head_only) {
+        http_out(worker, response.body, response.body_length);
+    }
+}

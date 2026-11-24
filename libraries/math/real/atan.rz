@@ -1,0 +1,3 @@
+double atan(double value) {
+    return atan2(value, 1.0);
+}

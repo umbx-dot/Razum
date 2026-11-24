@@ -1,0 +1,6 @@
+// error: 2:23: a const must be a number, bool, char, string or enum, not int[2]
+const int VALUES[2] = {1, 2};
+
+int main() {
+    return 0;
+}

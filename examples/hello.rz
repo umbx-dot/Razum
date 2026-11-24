@@ -1,0 +1,6 @@
+import stdio;
+
+int main() {
+    print("Hello from razum!");
+    return 0;
+}

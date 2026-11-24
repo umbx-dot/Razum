@@ -1,0 +1,26 @@
+import gui.state;
+import gui.theme;
+import gui.typography;
+import gui.render;
+import gui.input;
+
+import windows;
+
+void gui_wait() {
+    if (gui.offscreen) {
+        return;
+    }
+    if (gui.animating) {
+        DwmFlush();
+    } else if (gui.focus >= 0) {
+        long elapsed = (long)((gui.time - gui.caret_since) * 1000);
+        MsgWaitForMultipleObjects(0, 0, 0, (uint)(530 - elapsed % 530), QS_ALLINPUT);
+    } else {
+        WaitMessage();
+    }
+    MSG message;
+    while (PeekMessageW(message, 0, 0, 0, PM_REMOVE) != 0) {
+        TranslateMessage(message);
+        DispatchMessageW(message);
+    }
+}

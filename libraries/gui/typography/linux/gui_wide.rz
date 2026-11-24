@@ -1,0 +1,28 @@
+import gui.state;
+import text;
+
+int gui_wide(string text, int bytes) {
+    long size = bytes >= 0 ? (long)bytes : length(text);
+    int start = gui.text_used;
+    for (long offset = 0; offset < size && gui.text_used < 65536; ) {
+        int width = 0;
+        int value = utf8_decode(text, offset, &width);
+        if (width > size - offset) {
+            break;
+        }
+        if (value <= 0xFFFF) {
+            gui.text[gui.text_used] = (ushort)value;
+            gui.text_used++;
+        } else {
+            if (gui.text_used == 65535) {
+                break;
+            }
+            value -= 0x10000;
+            gui.text[gui.text_used] = (ushort)(0xD800 + (value >> 10));
+            gui.text[gui.text_used + 1] = (ushort)(0xDC00 + (value & 0x3FF));
+            gui.text_used += 2;
+        }
+        offset += width;
+    }
+    return gui.text_used - start;
+}
