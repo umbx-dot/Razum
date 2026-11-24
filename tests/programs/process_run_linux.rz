@@ -27,7 +27,7 @@ int main() {
     show(result);
     process_free(result);
 
-    process_run(result, "sort", "pear\napple\nfig\n", "", limits);
+    process_run(result, "sh -c \"read first; read second; read third; echo $second; echo $third; echo $first\"", "pear\napple\nfig\n", "", limits);
     show(result);
     process_free(result);
 
