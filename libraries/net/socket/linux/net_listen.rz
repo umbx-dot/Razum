@@ -1,0 +1,5 @@
+import linux;
+
+int net_listen(long socket, int backlog) {
+    return (int)system_call(SYS_LISTEN, socket, backlog, 0, 0);
+}

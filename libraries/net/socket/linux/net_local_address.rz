@@ -1,0 +1,14 @@
+import net.types;
+import linux;
+
+int net_local_address(long socket, NetAddress *address) {
+    if (address == null) {
+        return NET_INVALID;
+    }
+    address.length = (int)address.bytes.length;
+    long result = system_call(SYS_GETSOCKNAME, socket, (long)&address.bytes[0], (long)&address.length, 0);
+    if (result < 0) {
+        address.length = 0;
+    }
+    return (int)result;
+}

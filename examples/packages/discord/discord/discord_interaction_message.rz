@@ -1,0 +1,14 @@
+import discord.discord_interaction_reply;
+import discord.discord_message_json;
+import text;
+
+int discord_interaction_message(DiscordBot *bot, HttpClientResponse *response, string interaction, string token,
+                                string content, bool ephemeral) {
+    char data[13000];
+    int size = discord_message_json(data, content, ephemeral);
+    if (size < 0) { return size; }
+    char callback[13032] = "{\"type\":4,\"data\":";
+    concat(callback, data);
+    concat(callback, "}");
+    return discord_interaction_reply(bot, response, interaction, token, callback);
+}

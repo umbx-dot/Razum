@@ -1,0 +1,11 @@
+struct DiscordAttachment {
+    string filename;
+    byte *data;
+    int size;
+}
+
+struct DiscordMultipart {
+    byte *body;
+    int size;
+    char content_type[96];
+}

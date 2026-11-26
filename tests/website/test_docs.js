@@ -7,6 +7,8 @@ const root = process.cwd();
 const texts = {
     language: fs.readFileSync(path.join(root, "docs", "language.md"), "utf8"),
     libraries: fs.readFileSync(path.join(root, "docs", "libraries.md"), "utf8"),
+    projects: fs.readFileSync(path.join(root, "docs", "projects.md"), "utf8"),
+    discord: fs.readFileSync(path.join(root, "docs", "discord.md"), "utf8"),
 };
 
 globalThis.fetch = async (url) => {
@@ -123,6 +125,8 @@ for (const [sourceId, sectionSlug] of pages) {
 
 const language = await render("language");
 assert.ok(language.innerHTML.includes('href="#/learn"'), "tutorial links to the course");
+const modules = await render("language", "modules-and-import");
+assert.match(modules.innerHTML, /href="#\/docs\/projects">the project manifest/);
 const operators = await render("language", "operators");
 assert.ok(operators.innerHTML.replace(/<\/?span[^>]*>/g, "").includes("<code>a || b</code>"), "escaped pipes in tables");
 const statements = await render("language", "statements");
@@ -142,6 +146,8 @@ assert.ok(crypt.nodes.list.innerHTML.includes("#/docs/libraries/crypt#crypthmac"
 for (const [query, section, anchor] of [
     ["aes_gcm_decrypt", "crypt", "api-aes_gcm_decrypt"],
     ["http_listen()", "http", "api-http_listen"],
+    ["http_https_get()", "http", "api-http_https_get"],
+    ["net_tcp_connect_for", "net", "api-net_tcp_connect_for"],
     ["write_long", "stdio", "api-write_bool"],
     ["WSACleanup", "winsock", "api-wsastartup"],
     ["environment_value", "linux", "api-environment_value"],

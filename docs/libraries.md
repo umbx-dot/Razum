@@ -2,7 +2,7 @@
 
 Add an `import` for the library you want to use. The compiler ships with these libraries and links only the code and data your executable needs. Most libraries work on both Windows and Linux. Use [windows](#windows) or [winsock](#winsock) for Windows APIs and [linux](#linux) for Linux kernel APIs.
 
-Built in: [stdio](#stdio) · [array](#array) · [text](#text) · [json](#json) · [time](#time) · [math](#math) · [filesystem](#filesystem) · [windows](#windows) · [winsock](#winsock) · [linux](#linux) · [gui](#gui) · [threads](#threads) · [http](#http) · [crypt](#crypt) · [process](#process) · [program](#program).
+Built in: [stdio](#stdio) · [array](#array) · [text](#text) · [json](#json) · [time](#time) · [math](#math) · [filesystem](#filesystem) · [windows](#windows) · [winsock](#winsock) · [linux](#linux) · [gui](#gui) · [threads](#threads) · [net](#net) · [http](#http) · [crypt](#crypt) · [process](#process) · [program](#program).
 
 `import math;` makes all of `math` available. `import math.real;` brings in only the floating-point part. Imported functions share the same namespace as your own functions. If names clash, `rzc` reports both declarations.
 
@@ -624,9 +624,120 @@ A channel carries `long` values: numbers, or pointers cast with `(long)`. It is 
 
 Every `print` and `write_...` call writes its text whole: two threads never mix the characters of one call. Separate calls from different threads can interleave, so build a line in a `char` array and print it with one call when it must stay together.
 
+## net
+
+Use `import net;` for IPv4 and IPv6 networking on Windows and Linux. Call `net_startup()` before opening sockets, close each socket, then call `net_cleanup()`. Startup and cleanup pair Winsock references on Windows and return success immediately on Linux. Socket handles and byte counts are nonnegative on success. On failure, functions return a negative Windows error code or Linux `errno`, or a `NET_*` library code for invalid arguments, unsupported features, failed lookup, malformed DNS replies or connection timeouts.
+
+### TCP streams
+
+```c
+import net;
+
+int main() {
+    if (net_startup() != 0) {
+        return 1;
+    }
+    long socket = net_tcp_connect_for("localhost", 9000, 1500);
+    if (socket < 0) {
+        net_cleanup();
+        return 2;
+    }
+    int result = net_set_timeout(socket, NET_READ, 1500);
+    byte request[4] = {112, 105, 110, 103};
+    byte reply[4];
+    if (result == 0) {
+        result = net_send_all(socket, request, 4);
+    }
+    if (result == 0) {
+        result = net_receive_exact(socket, reply, 4) == 4 ? 0 : 1;
+    }
+    net_close(socket);
+    net_cleanup();
+    return result == 0 ? 0 : 3;
+}
+```
+
+This client expects a TCP service on local port 9000 that responds with four bytes. TCP moves bytes as a stream. A single send can take only part of a buffer, and a single receive can return part of a message or several messages at once. For a fixed-size header, use `net_receive_exact` and check the returned size before reading any fields.
+
+The transport can carry your own Telnet or SSH client. Telnet needs its command negotiation and sends sensitive data in plaintext. For SSH, implement the protocol above TCP, including binary framing, key exchange, trusted server host-key verification, user authentication, encryption, integrity and channels. [`crypt`](#crypt) supplies primitives such as X25519, ECDSA P-256, SHA-256, HMAC, and AES. [Telnet RFC](https://www.rfc-editor.org/rfc/rfc854) · [SSH transport RFC](https://www.rfc-editor.org/rfc/rfc4253)
+
+| Call | Result |
+|---|---|
+| `long net_tcp_connect(string host, int port)` | Opens a blocking TCP connection by IP or hostname. |
+| `long net_tcp_connect_for(string host, int port, int timeout_ms)` | Gives each TCP connection attempt a deadline. Hostname lookup has its own timeout. |
+| `long net_tcp_connect_address(NetAddress *address)` / `net_tcp_connect_address_for(address, timeout_ms)` | Connect to a resolved address. Use `-1` for normal blocking behavior with the address overload. |
+| `long net_tcp_listen(string ip, int port, int backlog)` | Open a TCP listener. Use port `0` for an ephemeral port and `0.0.0.0` or `::` to bind a wildcard address. |
+| `long net_accept(long listener, NetAddress *peer)` | Accept a connection. Pass `null` if you do not need the peer's address. |
+| `int net_send(long socket, byte *data, int length)` / `net_receive(socket, data, capacity)` | Transfer up to the given length. TCP receive returns `0` at EOF when capacity is nonzero. |
+| `int net_send_all(long socket, byte *data, int length)` / `net_receive_exact(socket, data, length)` | For blocking streams. Send-all returns `0` after sending everything. Receive-exact returns the number received, including a short count at EOF. An I/O error may occur after a partial transfer. |
+| `int net_tcp_nodelay(long socket, bool enabled)` | Enable or disable TCP's small-packet coalescing. |
+| `int net_shutdown(long socket, int direction)` / `net_close(socket)` | Shut down `NET_SHUT_READ`, `NET_SHUT_WRITE` or `NET_SHUT_BOTH`, or release the socket. |
+
+### Buffered lines
+
+[`examples/tcp_select.rz`](../examples/tcp_select.rz) keeps one socket per client ID and uses `net_write_line` for targeted sends. Run it with `rzc examples/tcp_select.rz --run`, connect clients to `127.0.0.1:9000`, and enter `list`, `2 hello` or `quit` in the server console.
+
+| Call | Result |
+|---|---|
+| `int net_stream_attach(NetStream *stream, long socket)` | Attach to an open TCP socket and put it in nonblocking mode. The caller keeps ownership and closes the socket. |
+| `int net_read_line(NetStream *stream, char line[], int timeout_ms)` | Read one LF- or CRLF-terminated line. Returns the byte count without the line ending, and writes a trailing zero. The limit is the caller's array capacity minus one, with at most 4095 bytes before LF. |
+| `int net_write_line(NetStream *stream, string value, int timeout_ms)` | Send the string bytes and one LF. Returns `0` on success. After any error, close the connection if you need to guarantee that the next message starts on a clean boundary. |
+
+A timeout covers the whole operation. Use `-1` to wait indefinitely and `0` to attempt immediate I/O. An incomplete line stays buffered on `NET_TIMEOUT` or `NET_WOULD_BLOCK`. `NET_EOF` follows the last line, which may be unterminated. `NET_LINE_TOO_LONG` ends further line reads on that stream. Use the returned byte count when the peer may send embedded zeros. One reader and one writer can use the same attached stream concurrently once it is initialized. Coordinate socket closure with both.
+
+### UDP and socket control
+
+Use `net_udp_bind("127.0.0.1", 0)` for a local socket, `net_ip(&destination, "127.0.0.1", 9001)` for the peer, and `net_send_to(socket, data, length, &destination)` to send one datagram. `net_receive_from` fills a separate `NetAddress` that you can use for the reply. Use `net_open(NET_IPV4, NET_DATAGRAM, NET_UDP)` or `NET_IPV6` if you do not need to bind first. With a connected UDP socket, use `net_send` to send to its default peer.
+
+| Call | Result |
+|---|---|
+| `long net_udp_bind(string ip, int port)` | Open and bind a UDP socket. |
+| `int net_send_to(long socket, byte *data, int length, NetAddress *destination)` | Send one UDP datagram, raw IP packet or Ethernet frame. |
+| `int net_receive_from(long socket, byte *data, int capacity, NetAddress *source)` | Receive one datagram or packet. An oversized packet is consumed and reported as an error. `0` may represent an empty datagram. |
+| `long net_open(int family, int kind, int protocol)` | Open a native socket. Use `NET_IPV4` or `NET_IPV6` with `NET_STREAM`, `NET_DATAGRAM` or `NET_RAW`. Protocol `0` selects the native default where supported. |
+| `int net_bind(long socket, NetAddress *address)` / `net_listen(socket, backlog)` | Attach a local address and prepare a stream socket to accept connections. |
+| `int net_connect(long socket, NetAddress *address)` / `net_connect_for(socket, address, timeout_ms)` | Associate the peer. The deadline form starts with a blocking socket, temporarily switches modes and restores blocking. Close a socket after a failed deadline-based connect. |
+| `int net_set_blocking(long socket, bool blocking)` / `net_would_block(result)` | Switch modes or recognize a would-block result. Use raw read/write calls with your own offsets when nonblocking. |
+| `int net_wait(long socket, int events, int timeout_ms)` | Wait for `NET_READ`, `NET_WRITE`, or both. `1` means there is an event, including disconnect or error. `0` means time expired. Use `-1` to wait without a deadline. |
+| `int net_poll_set(NetPollState *entry, long socket, int events)` | Set up an entry in a caller-owned wait array. Request `NET_READ`, `NET_WRITE`, or both. |
+| `int net_wait_many(NetPollState entries[], int count, int timeout_ms)` | Wait on the first `count` entries in one OS call. Returns the number with events, `0` on timeout or a negative error. Reuse the array between calls. |
+| `int net_poll_events(NetPollState *entry)` | Read the event mask from the last successful wait. Possible bits are `NET_READ`, `NET_WRITE`, `NET_HANGUP`, `NET_POLL_ERROR`, and `NET_BAD_SOCKET`. |
+| `int net_set_timeout(long socket, int direction, int timeout_ms)` | Set the native blocking timeout for one read or write. `0` clears it. This is a per-call timeout. |
+| `int net_set_option(long socket, int level, int option, byte *data, int length)` / `net_get_option(socket, level, option, data, &length)` | Access native options, using the platform's constants and byte layout. For get, initialize `length` to the buffer capacity. |
+
+Use nonblocking sockets when servicing multiple clients on one thread. Register write interest only while a client has queued output, and keep its partial-write offset. That lets the loop move on when a peer cannot accept more data. `net_wait_many` uses `WSAPoll` on Windows and `poll` on Linux. The calling code owns each socket and the wait array.
+
+### Addresses and DNS
+
+`NetAddress` stores a native address in `bytes[128]` with its actual `length`. Build addresses through the library before passing them to sockets. When using native options or constructing an IP packet, IPv4 bytes start at `bytes[4]` and IPv6 bytes at `bytes[8]`. Port bytes are in network order and are also accessible through `net_port`.
+
+| Call | Result |
+|---|---|
+| `bool net_ip(NetAddress *address, string ip, int port)` | Parse dotted IPv4, compressed or bracketed IPv6, or `localhost` as IPv4. |
+| `int net_address_family(NetAddress *address)` / `net_port(address)` | Return the portable IP family or the port. Family `0` means unknown. |
+| `bool net_ipv6_scope(NetAddress *address, uint interface_index)` | Set the scope for an IPv6 link-local address using a native interface index. |
+| `int net_local_address(long socket, NetAddress *address)` / `net_peer_address(socket, address)` | Get the bound or connected endpoint. |
+| `int net_resolve(string host, int port, int family, NetAddress *address)` | Resolve one address in the selected family. Windows uses its system resolver. Linux checks `/etc/hosts` and up to three `/etc/resolv.conf` nameservers. Use a fully qualified name for DNS on Linux. |
+| `int net_dns_lookup(string host, int family, NetAddress *server, NetAddress *result, int timeout_ms)` | Query a chosen resolver over UDP, with TCP fallback for a truncated response. Supports A, AAAA and CNAMEs included in the answer. The resolver address includes its port, usually `53`. |
+
+### ICMP and raw packets
+
+| Call | Result |
+|---|---|
+| `int net_ping(NetAddress *target, int timeout_ms)` | Send a single IPv4 or IPv6 echo using IP Helper on Windows or a Linux ping socket. Returns round-trip milliseconds or a negative error. Linux permissions follow `ping_group_range`. |
+| `long net_raw_ip(int family, int protocol, bool include_header)` | Open a raw IP socket for a native protocol number. Set `include_header` when you supply the IP header yourself. Use `net_send_to` and `net_receive_from` with caller-owned byte buffers. |
+| `int net_checksum(byte *data, int length)` / `net_write_u16(byte *data, int value)` | Internet one's-complement checksum and a 16-bit network-order write. The write requires two writable bytes. |
+| `int net_icmp_echo(byte *packet, int capacity, int id, int sequence, byte *payload, int length)` | Build an ICMPv4 echo request including its checksum. |
+| `int net_interface_index(string name)` | Look up a network interface index. |
+| `long net_ethernet_open(int index, int ethertype)` / `net_ethernet_address(&address, index, ethertype, mac)` | On Linux, open an `AF_PACKET` socket and create a link-layer address for it. The MAC argument may be `null` when building an address for bind, or point to six bytes for send. EtherTypes are supplied in host order. |
+| `int net_arp_request(byte *frame, int capacity, byte *mac, NetAddress *source, NetAddress *target)` | Build a 42-byte Ethernet ARP request from six source MAC bytes and two IPv4 addresses. |
+| `int net_arp_lookup(NetAddress *target, byte mac[])` | Get an IPv4 neighbor MAC. Windows uses `SendARP` on the local link. Linux reads entries the kernel already learned. |
+
+Raw sockets require privileges. Windows Winsock exposes raw IP with OS restrictions, including limits on sending TCP, and offers no built-in raw Ethernet sockets. Linux `AF_PACKET` can send and receive caller-built frames with `CAP_NET_RAW`. The kernel's native raw-IP rules determine which header fields it fills and whether received packets include the IP header. [Windows raw sockets](https://learn.microsoft.com/en-us/windows/win32/winsock/tcp-ip-raw-sockets-2) · [Linux packet sockets](https://man7.org/linux/man-pages/man7/packet.7.html)
+
 ## http
 
-`import http;` serves HTTP/1.1 from a razum program. You register a function per path; the library listens, parses, keeps connections alive, answers pipelined requests, serves files and times out idle or slow clients. It is built for many connections on few cores (measurements below).
+`import http;` serves HTTP/1.1 and makes verified HTTPS GET requests. For a server, register a function per path. The library listens, parses requests, keeps connections alive, serves files, and times out idle or slow clients.
 
 On Linux the same functions work with an epoll loop per worker thread instead of I/O completion ports (`libraries/http/*/linux/`): every worker waits on the listening sockets with `EPOLLEXCLUSIVE`, owns the connections it accepts (no locks), sends what fits and waits for `EPOLLOUT` for the rest, and closes idle or slow connections every 250 ms. IPv4 and IPv6 addresses work as on Windows (`::1`, `[::]`, `::ffff:1.2.3.4`; an IPv6 listener also accepts IPv4), and Ctrl+C stops a running server cleanly (a second Ctrl+C after it stopped ends the program). HTTPS on Linux is a TLS server written in razum (`libraries/http/tls/linux/`): TLS 1.3 (X25519, TLS_AES_128_GCM_SHA256, the RFC 8446 key schedule) and TLS 1.2 (ECDHE-ECDSA-AES128-GCM-SHA256 with X25519, secure renegotiation indication), with an ECDSA P-256 certificate from a `.pfx` file (legacy or AES-encrypted). `tests/test_https.sh` runs the same curl checks on both systems. Not yet: RSA certificates, session resumption, HelloRetryRequest (clients that send no X25519 key share). Parsing, routing and responses are the same code on both systems. `tests/programs/http_server_linux.rz` checks routes, bodies, files, keep-alive and a 300 KB response with `curl`.
 
@@ -647,6 +758,49 @@ int main() {
 ```
 
 [examples/http_hello.rz](../examples/http_hello.rz) adds a query parameter, a POST echo, a counter and a static folder.
+
+### HTTPS client
+
+```c
+import http.client;
+import stdio;
+
+int main() {
+    HttpClientResponse response;
+    int result = http_https_get(&response, "https://example.com/", 5000, 65536);
+    if (result != 0) {
+        print(result);
+        return 1;
+    }
+    print(response.status);
+    print(response.length);
+    http_client_free(&response);
+    return 0;
+}
+```
+
+| Call | Result |
+|---|---|
+| `int http_https_get(HttpClientResponse *response, string url, int timeout_ms, int max_body)` | Fetch one HTTPS URL with server certificate and hostname verification. Use `response.status` for the HTTP status, including redirects and HTTP errors. |
+| `int http_https_get_ca(HttpClientResponse *response, string url, int timeout_ms, int max_body, string ca_file)` | On Linux, use the given PEM CA bundle. An empty path uses the system trust store. On Windows, a nonempty path returns `HTTP_CLIENT_UNSUPPORTED`. Install private trust roots through the Windows trust store. |
+| `int http_https_call(HttpClientResponse *response, HttpClientCall *request)` | Send an HTTPS request with a method, CRLF-terminated request header lines and optional binary body. Set `body_length`, `timeout_ms`, and `max_body`. The response includes headers and up to 16 MiB of body. Outbound bodies are capped at 64 MiB. |
+| `bool http_client_header(HttpClientResponse *response, string key, char output[])` | Copy the first matching response header. Header names are case-insensitive. Returns false for a missing header or a buffer that is too small. |
+| `void http_client_free(HttpClientResponse *response)` | Free the response body and headers and clear the fields for reuse. |
+
+Pass a new or freed response. A successful call returns `0` and provides `body`, its byte `length`, and `status`. The body may contain zeros. Its last byte is followed by a convenience zero terminator. The body limit is at most 16 MiB. Negative results distinguish invalid input, an unavailable backend, timeout, body limit, TLS verification failure, and other transfer or protocol errors.
+
+Requests require HTTPS and TLS 1.2 or later. Redirects are returned to the caller. The timeout covers the request and the body. Windows uses the built-in WinHTTP and trust store. Linux embeds a small backend in executables that call the client. The backend uses glibc, `libcurl.so.4` from libcurl 7.85 or later, and a CA store at runtime. It launches from sealed memory and needs no separately installed helper or curl command. Build Linux `rzc` with the libcurl development package to include the backend. [WinHTTP](https://learn.microsoft.com/en-us/windows/win32/winhttp/winhttp-start-page) · [libcurl certificate verification](https://curl.se/libcurl/c/CURLOPT_SSL_VERIFYPEER.html)
+
+### Secure WebSocket client
+
+| Call | Result |
+|---|---|
+| `int http_wss_open(HttpWebSocket *socket, string url, int timeout_ms, int max_message, string ca_file)` | Open a verified `wss://` connection. Set a maximum incoming message size between 1 byte and 16 MiB. An empty CA path uses the platform trust store. |
+| `int http_wss_send(HttpWebSocket *socket, byte *data, int length, bool binary, int timeout_ms)` | Send a text or binary message with a deadline. Returns 0 on success. |
+| `int http_wss_receive(HttpWebSocket *socket, byte *data, int capacity, int timeout_ms)` | Read a complete message. Returns its byte count or a negative status. Provide at least `max_message` bytes. Inspect `socket.binary` for the message type. An idle deadline returns `HTTP_CLIENT_TIMEOUT`. A peer close returns `HTTP_WSS_CLOSED` and stores the close code. |
+| `void http_wss_close(HttpWebSocket *socket)` | Close the connection and release its resources. |
+
+Use one owner for each socket. Receive timeouts retain partial messages. Windows uses WinHTTP. Linux requires a libcurl backend built with WSS enabled and headers supporting the WebSocket API used by Razum. A Linux backend without WSS returns `HTTP_CLIENT_UNSUPPORTED`. [WinHTTP WebSockets](https://learn.microsoft.com/en-us/windows/win32/api/winhttp/nf-winhttp-winhttpwebsocketreceive) · [libcurl WebSockets](https://curl.se/libcurl/c/libcurl-ws.html)
 
 ### Listening
 
@@ -808,6 +962,15 @@ The same rules hold in every part:
 
 MD5 and SHA-1 are broken for signatures and certificates; use them only for checksums and old protocols.
 
+### crypt.signature
+
+| Function | Result |
+|---|---|
+| `bool ed25519_verify(byte public_key[], byte signature[], byte *message, long length)` | Verify an RFC 8032 Ed25519 signature with a 32-byte public key and a 64-byte signature. |
+| `bool ed25519_verify_parts(byte public_key[], byte signature[], byte *first, long first_length, byte *second, long second_length)` | Verify the concatenation of two byte ranges without copying them into a single buffer. |
+
+Both functions verify ordinary Ed25519 signatures. Verification rejects malformed point encodings, noncanonical scalars and public keys outside the prime-order subgroup. These functions take only public values and do not implement signing. [RFC 8032](https://www.rfc-editor.org/rfc/rfc8032.html)
+
 ### crypt.hmac
 
 | Function | Result |
@@ -922,6 +1085,7 @@ int main() {
 | `result.timed_out`, `result.truncated` | It was stopped after `timeout_milliseconds`, or after printing more than `max_output` bytes |
 | `limits.max_memory`, `limits.max_processes` | Memory per process in bytes and processes at once (0: no limit), enforced by a Windows job object, which also ends every process it started when the run ends |
 | `void process_free(ProcessResult result)` | Frees the output |
+| `bool process_getenv(string key, char output[])` | Copy a nonempty environment variable. Clears the output and returns false if the name is missing or the value does not fit. |
 
 ## program
 

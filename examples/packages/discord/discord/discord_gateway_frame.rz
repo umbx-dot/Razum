@@ -1,0 +1,54 @@
+import discord.types;
+import discord.discord_gateway_parse;
+import discord.discord_gateway_ready;
+import discord.discord_gateway_identify;
+import discord.discord_gateway_heartbeat;
+import discord.discord_gateway_reconnect;
+import discord.discord_json_number;
+import crypt.random;
+import text;
+
+int discord_gateway_frame(DiscordBot *bot, DiscordEvent *event, int length) {
+    int used = discord_gateway_parse(bot, length);
+    if (used <= 0 || bot.tokens[0].kind != JSON_OBJECT) { return DISCORD_GATEWAY_PROTOCOL; }
+    string source = (string)bot.payload;
+    long opcode = discord_json_number(source, bot.tokens, used, 0, "op");
+    int data = json_member(source, bot.tokens, used, 0, "d");
+    if (opcode == 0) {
+        int name = json_member(source, bot.tokens, used, 0, "t");
+        long sequence = discord_json_number(source, bot.tokens, used, 0, "s");
+        if (name < 0 || sequence < 0 || data < 0 || json_decode_string(source, bot.tokens[name], event.name) <= 0) {
+            return DISCORD_GATEWAY_PROTOCOL;
+        }
+        event.source = source;
+        event.tokens = bot.tokens;
+        event.used = used;
+        event.data = data;
+        event.sequence = sequence;
+        event.shard = bot.shard;
+        if (equals(event.name, "READY") && !discord_gateway_ready(bot, event)) { return DISCORD_GATEWAY_PROTOCOL; }
+        if (equals(event.name, "READY") || equals(event.name, "RESUMED")) { bot.reconnect_count = 0; }
+        bot.sequence = sequence;
+        return DISCORD_GATEWAY_MESSAGE;
+    }
+    if (opcode == 10) {
+        long interval = data >= 0 ? discord_json_number(source, bot.tokens, used, data, "heartbeat_interval") : -1;
+        if (interval < 1 || interval > 600000 || bot.heartbeat_interval != 0) { return DISCORD_GATEWAY_PROTOCOL; }
+        byte jitter[2];
+        long offset = 0;
+        if (secure_bytes(&jitter[0], 2)) {
+            offset = (long)(((uint)jitter[0] * 256 + (uint)jitter[1]) % (uint)interval);
+        }
+        bot.heartbeat_interval = interval;
+        bot.heartbeat_at = discord_millis() + offset;
+        return discord_gateway_identify(bot);
+    }
+    if (opcode == 11) { bot.awaiting_ack = false; return 0; }
+    if (opcode == 1) { return discord_gateway_heartbeat(bot, false); }
+    if (opcode == 7) { return discord_gateway_reconnect(bot, false, 0); }
+    if (opcode == 9) {
+        bool resumable = data >= 0 && bot.tokens[data].kind == JSON_TRUE;
+        return discord_gateway_reconnect(bot, !resumable, 2000);
+    }
+    return opcode < 0 ? DISCORD_GATEWAY_PROTOCOL : 0;
+}

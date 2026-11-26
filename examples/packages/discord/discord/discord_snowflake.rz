@@ -1,0 +1,10 @@
+import text;
+
+bool discord_snowflake(string value) {
+    long size = length(value);
+    if (size < 1 || size > 20 || value[0] == "0") { return false; }
+    for (long index = 0; index < size; index++) {
+        if (value[index] < "0" || value[index] > "9") { return false; }
+    }
+    return true;
+}

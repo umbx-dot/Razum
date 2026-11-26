@@ -1,0 +1,14 @@
+import discord.discord_request;
+import discord.discord_message_json;
+import discord.discord_snowflake;
+import text;
+
+int discord_send_message(DiscordBot *bot, HttpClientResponse *response, string channel, string content) {
+    if (!discord_snowflake(channel)) { return DISCORD_INVALID; }
+    char route[96] = "/channels/";
+    concat(route, channel);
+    concat(route, "/messages");
+    char message[13000];
+    int result = discord_message_json(message, content, false);
+    return result >= 0 ? discord_request(bot, response, "POST", route, message) : result;
+}

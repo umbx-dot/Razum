@@ -1,0 +1,6 @@
+import linux;
+
+int net_set_blocking(long socket, bool blocking) {
+    int nonblocking = blocking ? 0 : 1;
+    return (int)system_call(SYS_IOCTL, socket, 0x5421, (long)&nonblocking, 0);
+}

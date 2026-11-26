@@ -1,0 +1,14 @@
+import net.types;
+import time;
+
+int net_stream_remaining(long deadline) {
+    if (deadline <= 0) {
+        return (int)deadline;
+    }
+    long now = time_monotonic_ns();
+    if (now < 0) {
+        return NET_CLOCK_ERROR;
+    }
+    long left = deadline - now;
+    return left > 0 ? (int)((left + 999999) / 1000000) : NET_TIMEOUT;
+}

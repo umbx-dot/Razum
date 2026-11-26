@@ -1,0 +1,3 @@
+int http_https_get(HttpClientResponse *response, string url, int timeout_ms, int max_body) {
+    return http_https_get_ca(response, url, timeout_ms, max_body, "");
+}

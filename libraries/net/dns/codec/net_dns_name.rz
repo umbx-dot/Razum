@@ -1,0 +1,44 @@
+int net_dns_name(byte *packet, int length, int *cursor, byte *name) {
+    int read_at = *cursor;
+    int used = 0;
+    bool jumped = false;
+    for (int step = 0; step < 128; step++) {
+        if (read_at >= length) {
+            return 0;
+        }
+        int size = (int)packet[read_at];
+        read_at++;
+        if (size >= 192) {
+            if (read_at >= length) {
+                return 0;
+            }
+            int offset = ((size & 63) << 8) | packet[read_at];
+            if (offset < 12 || offset >= read_at - 1) {
+                return 0;
+            }
+            if (!jumped) {
+                *cursor = read_at + 1;
+                jumped = true;
+            }
+            read_at = offset;
+        } else {
+            if (size > 63 || size > length - read_at || size > 254 - used) {
+                return 0;
+            }
+            name[used] = (byte)size;
+            used++;
+            if (size == 0) {
+                if (!jumped) {
+                    *cursor = read_at;
+                }
+                return used;
+            }
+            for (int index = 0; index < size; index++) {
+                name[used] = packet[read_at];
+                read_at++;
+                used++;
+            }
+        }
+    }
+    return 0;
+}

@@ -14,10 +14,10 @@ static void write_output(const char *path, const char *text) {
     }
 }
 
-static const char *temporary_asm_path(const char *output_path) {
+static const char *temporary_output_path(const char *output_path, const char *extension) {
     size_t size = strlen(output_path) + 32;
     char *path = arena_alloc(size);
-    snprintf(path, size, "%s.rzc-%ld.asm", output_path, process_id());
+    snprintf(path, size, "%s.rzc-%ld%s", output_path, process_id(), extension);
     return path;
 }
 
@@ -66,15 +66,21 @@ int main(int argc, char **argv) {
         print_symbols(analyze_source(options.source_path, source, length).program);
         return diagnostic_count > 0 ? 1 : 0;
     }
-    if (options.dll && host_target() != TARGET_WINDOWS) {
-        fatal_error("--dll makes a Windows DLL; Linux shared libraries are not supported yet");
+    bool windows = host_target() == TARGET_WINDOWS;
+    if (options.dll && !windows) {
+        fatal_error("--dll makes a Windows DLL; use --shared for a Linux shared library");
     }
-    const char *program_extension = host_target() == TARGET_WINDOWS ? ".exe" : "";
+    if (options.shared && windows) {
+        options.dll = true;
+    }
+    bool shared_elf = options.shared && !windows;
+    bool object_code = options.object || shared_elf;
+    const char *extension = options.dll ? ".dll" : shared_elf ? ".so" : options.object ? (windows ? ".obj" : ".o") : (windows ? ".exe" : "");
     const char *output_path = options.output_path != NULL ? options.output_path
-                                                          : replace_extension(options.source_path, options.dll ? ".dll" : program_extension);
+                                                          : replace_extension(options.source_path, extension);
     CompiledProgram compiled = compile_source(options.source_path, source, length, options.check_only,
                                               options.dll ? file_name_of(output_path) : NULL, options.window_program,
-                                              options.optimize, options.zen3);
+                                              options.optimize, options.zen3, object_code);
     if (options.check_only) {
         return 0;
     }
@@ -83,25 +89,35 @@ int main(int argc, char **argv) {
     bool keeps_asm = options.asm_only || options.keep_asm;
     const char *asm_path = options.asm_only && names_asm ? output_path
                          : keeps_asm                     ? replace_extension(output_path, ".asm")
-                                                         : temporary_asm_path(output_path);
+                                                         : temporary_output_path(output_path, ".asm");
     const char *def_path = options.dll ? replace_extension(output_path, ".def") : NULL;
-    const char *header_path = options.dll ? replace_extension(output_path, ".h") : NULL;
-    const char *outputs[] = {asm_path, options.asm_only ? NULL : output_path, def_path, header_path};
+    const char *header_path = options.dll || object_code ? replace_extension(output_path, ".h") : NULL;
+    const char *object_path = shared_elf && !options.asm_only ? temporary_output_path(output_path, ".o") : NULL;
+    const char *outputs[] = {asm_path, options.asm_only ? NULL : output_path, def_path, header_path, object_path};
     check_output_paths(&options, outputs, sizeof outputs / sizeof outputs[0]);
     write_output(asm_path, compiled.assembly);
     if (options.dll) {
         write_output(def_path, compiled.definitions);
+    }
+    if (header_path != NULL) {
         write_output(header_path, compiled.header);
     }
     if (options.asm_only) {
         return 0;
     }
-    assemble_file(asm_path, output_path);
-    if (!make_executable(output_path)) {
+    assemble_file(asm_path, shared_elf ? object_path : output_path, object_code);
+    if (!object_code && !make_executable(output_path)) {
         fatal_error("cannot mark %s as executable", output_path);
     }
     if (!options.keep_asm) {
         remove(asm_path);
+    }
+    if (shared_elf) {
+        int result = link_shared_object(object_path, output_path, file_name_of(output_path));
+        remove(object_path);
+        if (result != 0) {
+            fatal_error("the C linker could not build %s; install cc or set RZ_CC", output_path);
+        }
     }
     if (!options.run) {
         return 0;

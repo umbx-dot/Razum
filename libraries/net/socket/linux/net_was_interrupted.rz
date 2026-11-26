@@ -1,0 +1,5 @@
+import linux;
+
+bool net_was_interrupted(int result) {
+    return result == EINTR;
+}

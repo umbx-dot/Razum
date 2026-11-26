@@ -1,4 +1,5 @@
 import linux;
+import net.address.parse;
 import text;
 
 int http_address(string host, int port, byte address[]) {
@@ -19,14 +20,14 @@ int http_address(string host, int port, byte address[]) {
     }
     address[2] = (byte)(port >> 8);
     address[3] = (byte)port;
-    if (http_parse_ipv4(text, 0, address, 4)) {
+    if (net_parse_ipv4(text, 0, address, 4)) {
         address[0] = (byte)AF_INET;
         return (int)AF_INET;
     }
     for (int index = 4; index < 8; index++) {
         address[index] = 0;
     }
-    if (address.length >= 28 && http_parse_ipv6(text, address, 8)) {
+    if (address.length >= 28 && net_parse_ipv6(text, address, 8)) {
         address[0] = (byte)AF_INET6;
         return (int)AF_INET6;
     }

@@ -1,0 +1,11 @@
+manifest_version = 1
+
+[project]
+name = "discord"
+version = "0.1.0"
+
+[[target]]
+name = "bot"
+kind = "exe"
+source = "example/main.rz"
+import_dirs = ["."]

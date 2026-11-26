@@ -1,0 +1,19 @@
+import linux;
+import process;
+
+int http_backend_transfer(long socket, long buffer, long size, bool writing, long deadline) {
+    long sent = 0;
+    while (sent < size) {
+        long moved = writing ? system_call6(SYS_SENDTO, socket, buffer + sent, size - sent, MSG_NOSIGNAL | MSG_DONTWAIT, 0, 0) :
+                     system_call6(SYS_RECVFROM, socket, buffer + sent, size - sent, MSG_DONTWAIT, 0, 0);
+        if (moved > 0) { sent += moved; continue; }
+        if (moved != EAGAIN && moved != EINTR) { return HTTP_CLIENT_TRANSFER; }
+        long remaining = deadline - process_clock();
+        if (remaining <= 0) { return HTTP_CLIENT_TIMEOUT; }
+        int poll_fd[2] = {(int)socket, (int)(writing ? POLLOUT : POLLIN)};
+        long ready = system_call(SYS_POLL, (long)&poll_fd[0], 1, remaining, 0);
+        if (ready == 0) { return HTTP_CLIENT_TIMEOUT; }
+        if (ready < 0 && ready != EINTR) { return HTTP_CLIENT_TRANSFER; }
+    }
+    return 0;
+}

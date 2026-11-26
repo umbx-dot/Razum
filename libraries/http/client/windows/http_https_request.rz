@@ -1,0 +1,45 @@
+import text;
+
+int http_https_request(HttpClientResponse *response, string url, int timeout_ms, int max_body, string ca_file) {
+    HttpClientCall call;
+    call.method = "GET";
+    call.url = url;
+    call.timeout_ms = timeout_ms;
+    call.max_body = max_body;
+    call.ca_file = ca_file;
+    return http_windows_request(response, &call, false);
+}
+
+int http_win_open_handles(long session, string url, ushort *method, long *connected, long *opened) {
+    ushort wide[4097];
+    ushort host[1024];
+    HttpWinUrl parts;
+    parts.size = (uint)sizeof(HttpWinUrl);
+    parts.host = &host[0];
+    parts.host_length = (uint)host.length;
+    parts.path_length = 1;
+    if (to_utf16(wide, url) < 0 || WinHttpCrackUrl(wide, 0, HTTP_WIN_REJECT_CREDENTIALS, &parts) == 0 || parts.host_length == 0) {
+        return HTTP_CLIENT_INVALID;
+    }
+    ushort path[4098];
+    int at = 0;
+    if (parts.path_length == 0 || parts.path[0] != 47) {
+        path[0] = 47;
+        at++;
+    }
+    for (uint index = 0; index < parts.path_length && parts.path[index] != 35; index++) {
+        path[at] = parts.path[index];
+        at++;
+    }
+    path[at] = 0;
+    uint protocols = HTTP_WIN_TLS_12 | HTTP_WIN_TLS_13;
+    if (WinHttpSetOption(session, HTTP_WIN_TLS_PROTOCOLS, (void *)&protocols, 4) == 0) {
+        protocols = HTTP_WIN_TLS_12;
+        if (WinHttpSetOption(session, HTTP_WIN_TLS_PROTOCOLS, (void *)&protocols, 4) == 0) {
+            return HTTP_CLIENT_BACKEND;
+        }
+    }
+    *connected = WinHttpConnect(session, host, parts.port, 0);
+    *opened = *connected != 0 ? WinHttpOpenRequest(*connected, method, path, 0, 0, 0, HTTP_WIN_SECURE) : 0;
+    return *opened != 0 ? 0 : HTTP_CLIENT_BACKEND;
+}

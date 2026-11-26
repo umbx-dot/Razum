@@ -187,7 +187,7 @@ void emit_int(FunctionContext *context, Expression *expression) {
             if (expression->function_value->extern_dll != NULL) {
                 emit(context, "mov rax, qword [iat@%s@%s]", expression->function_value->extern_dll, expression->function_value->name);
             } else {
-                emit(context, "lea rax, [$%s]", expression->function_value->name);
+                emit(context, "lea rax, [%s%s]", function_label_prefix(context->program), expression->function_value->name);
             }
             return;
         case EXPRESSION_INT:

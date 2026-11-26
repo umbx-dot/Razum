@@ -1,0 +1,9 @@
+import discord.multipart_types;
+import http;
+import text;
+
+void discord_multipart_append(DiscordMultipart *output, string text_value) {
+    int size = (int)length(text_value);
+    http_copy((char *)&output.body[output.size], (char *)text_value, size);
+    output.size += size;
+}

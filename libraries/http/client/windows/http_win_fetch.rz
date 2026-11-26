@@ -1,0 +1,39 @@
+import windows;
+
+int http_win_fetch(long request, HttpClientResponse *response, HttpClientCall *call, long headers, bool capture_headers) {
+    uint disabled = HTTP_WIN_NO_COOKIES_REDIRECTS_OR_AUTH;
+    if (WinHttpSetOption(request, HTTP_WIN_DISABLED_FEATURES, (void *)&disabled, 4) == 0) {
+        WinHttpCloseHandle(request);
+        return HTTP_CLIENT_BACKEND;
+    }
+    HttpWinState state;
+    state.ready = CreateEventW(0, 0, 0, 0);
+    state.closed = CreateEventW(0, 0, 0, 0);
+    state.deadline = GetTickCount64() + (ulong)call.timeout_ms;
+    long context = (long)&state;
+    byte *body = new byte[call.max_body + 1];
+    uint events = HTTP_WIN_HANDLE_CLOSING | HTTP_WIN_HEADERS_AVAILABLE | HTTP_WIN_READ_COMPLETE |
+                  HTTP_WIN_REQUEST_ERROR | HTTP_WIN_SEND_COMPLETE;
+    bool callback = state.ready != 0 && state.closed != 0 && body != null &&
+                    WinHttpSetOption(request, HTTP_WIN_CONTEXT, (void *)&context, 8) != 0 &&
+                    WinHttpSetStatusCallback(request, http_win_callback, events, 0) != -1;
+    int result = callback ? http_win_read(request, &state, response, body, call, headers) : HTTP_CLIENT_BACKEND;
+    if (result == 0 && capture_headers) {
+        result = http_win_response_headers(request, response);
+        if (result != 0) { response.body = null; response.status = 0; response.length = 0; }
+    }
+    WinHttpCloseHandle(request);
+    if (callback) {
+        WaitForSingleObject(state.closed, 0xffffffff);
+    }
+    if (state.ready != 0) {
+        CloseHandle(state.ready);
+    }
+    if (state.closed != 0) {
+        CloseHandle(state.closed);
+    }
+    if (result != 0 && body != null) {
+        free(body);
+    }
+    return result;
+}

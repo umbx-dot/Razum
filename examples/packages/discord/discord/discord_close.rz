@@ -1,0 +1,15 @@
+import discord.types;
+
+void discord_close(DiscordBot *bot) {
+    if (bot == null) { return; }
+    http_wss_close(&bot.websocket);
+    free(bot.payload);
+    free(bot.tokens);
+    bot.payload = null;
+    bot.tokens = null;
+    bot.token_capacity = 0;
+    bot.running = false;
+    bot.sequence = -1;
+    bot.session_id[0] = "\0";
+    bot.resume_url[0] = "\0";
+}

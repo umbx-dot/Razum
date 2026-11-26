@@ -1,0 +1,53 @@
+int csv_field(string row, int *cursor, char field[]) {
+    if (cursor == null || *cursor < 0 || field.length < 1) {
+        return -1;
+    }
+    int position = *cursor;
+    for (int index = 0; index < position; index++) {
+        if (row[index] == "\0") {
+            return -1;
+        }
+    }
+    int used = 0;
+    bool quoted = row[position] == "\"";
+    if (quoted) {
+        position++;
+    }
+    while (true) {
+        char next = row[position];
+        if (quoted) {
+            if (next == "\0") {
+                return -1;
+            }
+            if (next == "\"") {
+                position++;
+                if (row[position] != "\"") {
+                    break;
+                }
+            }
+        } else {
+            if (next == "," || next == "\0") {
+                break;
+            }
+            if (next == "\"" || next == "\n" || next == "\r") {
+                return -1;
+            }
+        }
+        if (used + 1 >= field.length) {
+            return -1;
+        }
+        field[used] = next;
+        used++;
+        position++;
+    }
+    field[used] = "\0";
+    if (row[position] == ",") {
+        *cursor = position + 1;
+        return 1;
+    }
+    if (row[position] == "\0") {
+        *cursor = position;
+        return 0;
+    }
+    return -1;
+}

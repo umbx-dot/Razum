@@ -1,0 +1,9 @@
+import discord.multipart_types;
+
+void discord_multipart_free(DiscordMultipart *multipart) {
+    if (multipart == null) { return; }
+    free(multipart.body);
+    multipart.body = null;
+    multipart.size = 0;
+    multipart.content_type[0] = "\0";
+}

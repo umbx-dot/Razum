@@ -1,0 +1,29 @@
+import linux;
+import process;
+import text;
+
+int http_https_request(HttpClientResponse *response, string url, int timeout_ms, int max_body, string ca_file) {
+    long fd = http_backend_file();
+    if (fd < 0) { return (int)fd; }
+    char number[32];
+    char input[8250];
+    int_to_text(input, timeout_ms);
+    concat(input, "\n");
+    int_to_text(number, max_body);
+    concat(input, number);
+    concat(input, "\n");
+    concat(input, url);
+    concat(input, "\n");
+    concat(input, ca_file);
+    concat(input, "\n");
+
+    ProcessLimits limits;
+    limits.timeout_milliseconds = (uint)timeout_ms;
+    limits.max_output = max_body < 1020 ? 1024 : (long)max_body + 4;
+    ProcessResult result;
+    bool started = process_run_from(result, "razum-https", input, "", limits, fd);
+    system_call(SYS_CLOSE, fd, 0, 0, 0);
+    int status = http_client_result(response, &result, started, max_body);
+    process_free(result);
+    return status;
+}

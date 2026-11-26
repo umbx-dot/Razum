@@ -1,0 +1,20 @@
+import crypt.encoding;
+import crypt.signature;
+import text;
+import time;
+
+bool discord_verify_signature(string public_key_hex, string signature_hex, string timestamp, byte *body, long length_bytes) {
+    long stamp_size = length(timestamp);
+    if (stamp_size == 0 || stamp_size > 12 || length(public_key_hex) != 64 || length(signature_hex) != 128 ||
+        length_bytes < 0 || length_bytes > 16777216 || (length_bytes != 0 && body == null)) { return false; }
+    for (long index = 0; index < stamp_size; index++) {
+        if (timestamp[index] < "0" || timestamp[index] > "9") { return false; }
+    }
+    long now = time_unix_us() / 1000000;
+    long sent = parse_int(timestamp);
+    if (now < 0 || sent < now - 300 || sent > now + 300) { return false; }
+    byte key[32];
+    byte signature[64];
+    if (hex_decode(key, public_key_hex) != 32 || hex_decode(signature, signature_hex) != 64) { return false; }
+    return ed25519_verify_parts(key, signature, (byte *)timestamp, stamp_size, body, length_bytes);
+}

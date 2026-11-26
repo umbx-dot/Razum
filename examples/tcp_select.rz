@@ -1,0 +1,178 @@
+import net;
+import stdio;
+import text;
+import threads;
+
+const int MAX_CLIENTS = 32;
+
+struct Client {
+    long id;
+    NetStream stream;
+    bool sending;
+}
+
+Client *clients;
+Mutex clients_lock;
+bool stopping;
+long next_id = 1;
+
+void accept_clients(long listener) {
+    byte incoming[256];
+    NetPollState polls[MAX_CLIENTS + 1];
+    int slots[MAX_CLIENTS + 1];
+    net_poll_set(&polls[0], listener, NET_READ);
+    while (true) {
+        mutex_lock(clients_lock);
+        if (stopping) {
+            mutex_unlock(clients_lock);
+            return;
+        }
+        int count = 1;
+        for (int i = 0; i < MAX_CLIENTS; i++) {
+            if (clients[i].id != 0 && !clients[i].sending) {
+                net_poll_set(&polls[count], clients[i].stream.socket, NET_READ);
+                slots[count] = i;
+                count++;
+            }
+        }
+        mutex_unlock(clients_lock);
+
+        if (net_wait_many(polls, count, 100) <= 0) {
+            continue;
+        }
+        long accepted = (net_poll_events(&polls[0]) & NET_READ) != 0 ? net_accept(listener, null) : -1;
+
+        mutex_lock(clients_lock);
+        for (int entry = 1; entry < count; entry++) {
+            int i = slots[entry];
+            long socket = clients[i].stream.socket;
+            if (clients[i].id != 0 && !clients[i].sending && net_poll_events(&polls[entry]) != 0) {
+                int received = net_receive(socket, incoming, 256);
+                if (received <= 0 && !net_would_block(received)) {
+                    net_close(socket);
+                    clients[i].id = 0;
+                }
+            }
+        }
+        if (accepted >= 0) {
+            for (int i = 0; i < MAX_CLIENTS; i++) {
+                if (clients[i].id == 0 && net_stream_attach(&clients[i].stream, accepted) == 0) {
+                    clients[i].id = next_id;
+                    next_id++;
+                    accepted = -1;
+                    break;
+                }
+            }
+        }
+        mutex_unlock(clients_lock);
+        if (accepted >= 0) {
+            net_close(accepted);
+        }
+    }
+}
+
+void list_clients() {
+    mutex_lock(clients_lock);
+    printf("Clients:");
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        if (clients[i].id != 0) {
+            printf(" ");
+            printf(clients[i].id);
+        }
+    }
+    print("");
+    mutex_unlock(clients_lock);
+}
+
+void send_to_client(long id, string message) {
+    mutex_lock(clients_lock);
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        if (clients[i].id == id) {
+            long socket = clients[i].stream.socket;
+            clients[i].sending = true;
+            mutex_unlock(clients_lock);
+            int result = net_write_line(&clients[i].stream, message, 1000);
+            mutex_lock(clients_lock);
+            clients[i].sending = false;
+            if (result != 0) {
+                net_close(socket);
+                clients[i].id = 0;
+            }
+            mutex_unlock(clients_lock);
+            print(result == 0 ? "Sent." : "Send failed. Client removed.");
+            return;
+        }
+    }
+    mutex_unlock(clients_lock);
+    print("Unknown client ID.");
+}
+
+int main(string args[]) {
+    if (net_startup() != 0) {
+        return 1;
+    }
+
+    int port = args.length > 1 ? (int)parse_int(args[1]) : 9000;
+    long listener = net_tcp_listen("127.0.0.1", port, MAX_CLIENTS);
+    if (listener < 0) {
+        print(listener);
+        net_cleanup();
+        return 2;
+    }
+    clients = new Client[MAX_CLIENTS];
+    if (clients == null) {
+        net_close(listener);
+        net_cleanup();
+        return 3;
+    }
+    NetAddress address;
+    net_local_address(listener, &address);
+    long worker = thread_start(accept_clients, listener);
+    if (worker == 0) {
+        free(clients);
+        net_close(listener);
+        net_cleanup();
+        return 3;
+    }
+
+    printf("Listening on 127.0.0.1:");
+    print(net_port(&address));
+    print("Commands: list | <id> <message> | quit");
+    flush_output();
+    char line[1024];
+    while (read_input(line)) {
+        if (equals(line, "quit")) {
+            break;
+        }
+        if (equals(line, "list")) {
+            list_clients();
+        } else {
+            int at = 0;
+            while (line[at] >= "0" && line[at] <= "9") {
+                at++;
+            }
+            long id = parse_int(line);
+            if (at == 0 || line[at] != " " || id <= 0) {
+                print("Use list, <id> <message>, or quit.");
+            } else {
+                send_to_client(id, (string)&line[at + 1]);
+            }
+        }
+        flush_output();
+    }
+
+    mutex_lock(clients_lock);
+    stopping = true;
+    mutex_unlock(clients_lock);
+    thread_join(worker);
+
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        if (clients[i].id != 0) {
+            net_close(clients[i].stream.socket);
+        }
+    }
+    free(clients);
+    net_close(listener);
+    net_cleanup();
+    return 0;
+}

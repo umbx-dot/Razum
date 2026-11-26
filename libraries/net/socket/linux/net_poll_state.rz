@@ -1,0 +1,5 @@
+struct NetPollState {
+    int socket;
+    short requested;
+    short returned;
+}

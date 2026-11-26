@@ -1,0 +1,8 @@
+import net.types;
+
+bool net_ethernet_address(NetAddress *address, int interface_index, int ethertype, byte *mac) {
+    if (address != null) {
+        address.length = 0;
+    }
+    return false;
+}

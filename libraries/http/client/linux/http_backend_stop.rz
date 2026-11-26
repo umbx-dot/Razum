@@ -1,0 +1,8 @@
+import linux;
+
+void http_backend_stop(long socket, long child) {
+    system_call(SYS_CLOSE, socket, 0, 0, 0);
+    system_call(SYS_KILL, child, SIGKILL, 0, 0);
+    while (system_call(SYS_WAIT4, child, 0, 0, 0) == EINTR) {
+    }
+}

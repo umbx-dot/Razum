@@ -42,9 +42,9 @@ endif()
 
 add_custom_command(
     OUTPUT ${SETUP}
-    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/make_setup.sh ${SETUP} $<TARGET_FILE:rzc> ${PROJECT_SOURCE_DIR}/cmake/package/RazumConfig.cmake
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/make_setup.sh ${SETUP} $<TARGET_FILE:rzc> $<TARGET_FILE:rz> ${PROJECT_SOURCE_DIR}/cmake/package/RazumConfig.cmake
             "${BUNDLED_NASM}" "${BUNDLED_NASM_LICENSE}" ${VSIX_ARGUMENTS}
-    DEPENDS rzc ${VSIX_DEPENDENCY} ${BUNDLED_NASM} ${BUNDLED_NASM_LICENSE}
+    DEPENDS rzc rz ${VSIX_DEPENDENCY} ${BUNDLED_NASM} ${BUNDLED_NASM_LICENSE} ${PROJECT_SOURCE_DIR}/rz/vendor/tomlc17/LICENSE
             ${CMAKE_CURRENT_SOURCE_DIR}/setup.sh ${CMAKE_CURRENT_SOURCE_DIR}/make_setup.sh
             ${PROJECT_SOURCE_DIR}/cmake/package/RazumConfig.cmake ${RAZUM_LICENSE} ${GUI_NOTICES}
     VERBATIM

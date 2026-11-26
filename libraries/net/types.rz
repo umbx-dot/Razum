@@ -1,0 +1,36 @@
+struct NetAddress {
+    int length;
+    byte bytes[128];
+}
+
+const int NET_IPV4 = 4;
+const int NET_IPV6 = 6;
+const int NET_ETHERNET = 17;
+const int NET_STREAM = 1;
+const int NET_DATAGRAM = 2;
+const int NET_RAW = 3;
+const int NET_ICMP = 1;
+const int NET_TCP = 6;
+const int NET_UDP = 17;
+const int NET_ICMPV6 = 58;
+const int NET_ETHERTYPE_IPV4 = 0x0800;
+const int NET_ETHERTYPE_ARP = 0x0806;
+const int NET_ETHERTYPE_IPV6 = 0x86DD;
+const int NET_READ = 1;
+const int NET_WRITE = 2;
+const int NET_HANGUP = 4;
+const int NET_POLL_ERROR = 8;
+const int NET_BAD_SOCKET = 16;
+const int NET_SHUT_READ = 0;
+const int NET_SHUT_WRITE = 1;
+const int NET_SHUT_BOTH = 2;
+const int NET_INVALID = -30000;
+const int NET_UNSUPPORTED = -30001;
+const int NET_NOT_FOUND = -30002;
+const int NET_DNS_REPLY = -30003;
+const int NET_DNS_TRUNCATED = -30004;
+const int NET_TIMEOUT = -30005;
+const int NET_EOF = -30006;
+const int NET_WOULD_BLOCK = -30007;
+const int NET_LINE_TOO_LONG = -30008;
+const int NET_CLOCK_ERROR = -30009;

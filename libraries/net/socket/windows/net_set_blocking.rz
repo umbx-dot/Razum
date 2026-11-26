@@ -1,0 +1,6 @@
+import winsock;
+
+int net_set_blocking(long socket, bool blocking) {
+    uint nonblocking = (uint)(blocking ? 0 : 1);
+    return net_wsa_result(ioctlsocket(socket, FIONBIO, &nonblocking));
+}

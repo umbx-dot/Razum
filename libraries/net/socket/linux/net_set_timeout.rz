@@ -1,0 +1,13 @@
+import net.types;
+import linux;
+
+int net_set_timeout(long socket, int events, int timeout_ms) {
+    if ((events != NET_READ && events != NET_WRITE) || timeout_ms < 0) {
+        return NET_INVALID;
+    }
+    long timeout[2];
+    timeout[0] = timeout_ms / 1000;
+    timeout[1] = (timeout_ms % 1000) * 1000;
+    int option = events == NET_READ ? 20 : 21;
+    return (int)system_call6(SYS_SETSOCKOPT, socket, SOL_SOCKET, option, (long)&timeout[0], sizeof(long) * 2, 0);
+}

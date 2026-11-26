@@ -17,6 +17,12 @@ void echo(HttpRequest *request, HttpResponse *response) {
     http_write_bytes(response, request.body, request.body_length);
 }
 
+void binary(HttpRequest *request, HttpResponse *response) {
+    byte body[4] = {65, 0, 66, 255};
+    http_status(response, 201);
+    http_write_bytes(response, (char *)&body[0], 4);
+}
+
 void stop(HttpRequest *request, HttpResponse *response) {
     http_text(response, "stopping");
     http_close_after(response);
@@ -32,6 +38,7 @@ int main(string args[]) {
     http_workers(server, 2);
     http_route(server, "GET", "/", hello);
     http_route(server, "GET", "/large", large);
+    http_route(server, "GET", "/binary", binary);
     http_route(server, "POST", "/echo", echo);
     http_route(server, "GET", "/stop", stop);
     if (!http_listen_tls(server, "127.0.0.1", 0, args[1], "razum-test")) {

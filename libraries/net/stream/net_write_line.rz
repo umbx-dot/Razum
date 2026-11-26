@@ -1,0 +1,30 @@
+import net.types;
+import text;
+
+int net_write_line(NetStream *stream, string value, int timeout_ms) {
+    if (stream == null || !stream.attached) {
+        return NET_INVALID;
+    }
+    long deadline = net_stream_deadline(timeout_ms);
+    if (deadline < -1) {
+        return (int)deadline;
+    }
+    long size = length(value);
+    if (size > 2147483647) {
+        return NET_INVALID;
+    }
+    byte tail[1024];
+    int prefix = size >= tail.length ? (int)(size - tail.length + 1) : 0;
+    if (prefix != 0) {
+        int result = net_write_until(stream.socket, (byte *)value, prefix, deadline);
+        if (result != 0) {
+            return result;
+        }
+    }
+    int left = (int)size - prefix;
+    for (int index = 0; index < left; index++) {
+        tail[index] = (byte)value[prefix + index];
+    }
+    tail[left] = 10;
+    return net_write_until(stream.socket, tail, left + 1, deadline);
+}

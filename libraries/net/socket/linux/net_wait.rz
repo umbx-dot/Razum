@@ -1,0 +1,12 @@
+import net.types;
+import linux;
+
+int net_wait(long socket, int events, int timeout_ms) {
+    if (socket < 0 || events <= 0 || events > (NET_READ | NET_WRITE) || timeout_ms < -1) {
+        return NET_INVALID;
+    }
+    NetPollState descriptor;
+    descriptor.socket = (int)socket;
+    descriptor.requested = (short)(((events & NET_READ) != 0 ? 1 : 0) | ((events & NET_WRITE) != 0 ? 4 : 0));
+    return (int)system_call(SYS_POLL, (long)&descriptor, 1, timeout_ms, 0);
+}

@@ -1,0 +1,20 @@
+import net.address;
+import net.resolve;
+import net.types;
+
+long net_tcp_dial(string host, int port, int timeout_ms) {
+    NetAddress address;
+    if (net_ip(&address, host, port)) {
+        return net_tcp_connect_address_for(&address, timeout_ms);
+    }
+    int status = net_resolve(host, port, NET_IPV4, &address);
+    long socket = status == 0 ? net_tcp_connect_address_for(&address, timeout_ms) : status;
+    if (socket >= 0 || socket == NET_INVALID) {
+        return socket;
+    }
+    int alternate = net_resolve(host, port, NET_IPV6, &address);
+    if (alternate == 0) {
+        return net_tcp_connect_address_for(&address, timeout_ms);
+    }
+    return status == NET_NOT_FOUND ? alternate : socket;
+}

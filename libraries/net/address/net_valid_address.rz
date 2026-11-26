@@ -1,0 +1,5 @@
+import net.types;
+
+bool net_valid_address(NetAddress *address) {
+    return address != null && address.length > 0 && address.length <= address.bytes.length;
+}

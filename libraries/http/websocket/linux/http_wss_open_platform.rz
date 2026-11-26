@@ -1,0 +1,19 @@
+import text;
+import process;
+
+int http_wss_open_platform(HttpWebSocket *socket, string url, int timeout_ms, string ca_file) {
+    long child = 0;
+    long channel = http_backend_start("--websocket", &child);
+    if (channel < 0) { return (int)channel; }
+    int sizes[4] = {(int)length(url), (int)length(ca_file), timeout_ms, socket.max_message};
+    long deadline = process_clock() + (long)timeout_ms + 100;
+    int result = http_backend_transfer(channel, (long)&sizes[0], 16, true, deadline);
+    if (result == 0) { result = http_backend_transfer(channel, (long)url, sizes[0], true, deadline); }
+    if (result == 0) { result = http_backend_transfer(channel, (long)ca_file, sizes[1], true, deadline); }
+    int status = HTTP_CLIENT_PROTOCOL;
+    if (result == 0) { result = http_backend_transfer(channel, (long)&status, 4, false, deadline); }
+    if (result == 0) { result = status; }
+    if (result != 0) { http_backend_stop(channel, child); }
+    else { socket.socket = channel; socket.native_one = child; }
+    return result;
+}

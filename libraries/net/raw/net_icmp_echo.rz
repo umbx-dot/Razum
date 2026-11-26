@@ -1,0 +1,19 @@
+import net.types;
+
+int net_icmp_echo(byte *packet, int capacity, int identifier, int sequence, byte *payload, int length) {
+    if (packet == null || capacity < 8 || length < 0 || length > capacity - 8 ||
+        identifier < 0 || identifier > 65535 || sequence < 0 || sequence > 65535 ||
+        (length > 0 && payload == null)) {
+        return NET_INVALID;
+    }
+    for (int index = 0; index < length; index++) {
+        packet[index + 8] = payload[index];
+    }
+    packet[0] = 8;
+    packet[1] = 0;
+    net_write_u16(&packet[2], 0);
+    net_write_u16(&packet[4], identifier);
+    net_write_u16(&packet[6], sequence);
+    net_write_u16(&packet[2], net_checksum(packet, length + 8));
+    return length + 8;
+}

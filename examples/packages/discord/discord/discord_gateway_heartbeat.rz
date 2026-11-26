@@ -1,0 +1,15 @@
+import discord.types;
+import discord.discord_gateway_send;
+import discord.discord_millis;
+import text;
+
+int discord_gateway_heartbeat(DiscordBot *bot, bool scheduled) {
+    char sequence[32] = "null";
+    if (bot.sequence >= 0) { int_to_text(sequence, bot.sequence); }
+    int sent = discord_gateway_send(bot, 1, sequence);
+    if (sent == 0) {
+        bot.awaiting_ack = true;
+        if (scheduled) { bot.heartbeat_at = discord_millis() + bot.heartbeat_interval; }
+    }
+    return sent;
+}

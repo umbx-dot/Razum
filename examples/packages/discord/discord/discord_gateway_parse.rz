@@ -1,0 +1,15 @@
+import discord.types;
+
+int discord_gateway_parse(DiscordBot *bot, int length) {
+    bot.payload[length] = "\0";
+    while (true) {
+        int used = json_parse((string)bot.payload, length, bot.tokens, bot.token_capacity);
+        if (used != JSON_CAPACITY) { return used; }
+        if (bot.token_capacity >= 524288) { return used; }
+        JsonToken *larger = new JsonToken[bot.token_capacity * 2];
+        if (larger == null) { return used; }
+        free(bot.tokens);
+        bot.tokens = larger;
+        bot.token_capacity *= 2;
+    }
+}

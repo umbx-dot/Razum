@@ -1,0 +1,26 @@
+import net.address;
+import net.types;
+
+int net_arp_request(byte *frame, int capacity, byte *source_mac, NetAddress *source_ip, NetAddress *target_ip) {
+    if (frame == null || capacity < 42 || source_mac == null ||
+        net_address_family(source_ip) != NET_IPV4 || net_address_family(target_ip) != NET_IPV4) {
+        return NET_INVALID;
+    }
+    for (int index = 0; index < 6; index++) {
+        frame[index] = 255;
+        frame[6 + index] = source_mac[index];
+        frame[22 + index] = source_mac[index];
+        frame[32 + index] = 0;
+    }
+    net_write_u16(&frame[12], NET_ETHERTYPE_ARP);
+    net_write_u16(&frame[14], 1);
+    net_write_u16(&frame[16], NET_ETHERTYPE_IPV4);
+    frame[18] = 6;
+    frame[19] = 4;
+    net_write_u16(&frame[20], 1);
+    for (int index = 0; index < 4; index++) {
+        frame[28 + index] = source_ip.bytes[4 + index];
+        frame[38 + index] = target_ip.bytes[4 + index];
+    }
+    return 42;
+}

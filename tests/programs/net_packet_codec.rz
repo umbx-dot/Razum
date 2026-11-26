@@ -1,0 +1,26 @@
+import net;
+
+int main() {
+    byte packet[16];
+    byte payload[3] = {1, 2, 3};
+    if (net_icmp_echo(packet, 10, 0x1234, 0x5678, payload, 3) != NET_INVALID ||
+        net_icmp_echo(packet, 16, 0x1234, 0x5678, payload, 3) != 11 ||
+        packet[0] != 8 || packet[2] != 0x8b || packet[3] != 0x51 || packet[10] != 3 || net_checksum(packet, 11) != 0) {
+        return 1;
+    }
+    byte frame[42];
+    byte mac[6] = {2, 0, 3, 4, 5, 6};
+    NetAddress source;
+    NetAddress target;
+    if (!net_ip(&source, "192.0.2.42", 0) || !net_ip(&target, "192.0.2.55", 0) ||
+        net_arp_request(frame, 42, mac, &source, &target) != 42) {
+        return 2;
+    }
+    for (int index = 0; index < 6; index++) {
+        if (frame[index] != 255 || frame[6 + index] != mac[index] || frame[22 + index] != mac[index] || frame[32 + index] != 0) {
+            return 3;
+        }
+    }
+    return frame[12] == 8 && frame[13] == 6 && frame[18] == 6 && frame[19] == 4 && frame[21] == 1 &&
+           frame[28] == 192 && frame[31] == 42 && frame[38] == 192 && frame[41] == 55 ? 0 : 4;
+}

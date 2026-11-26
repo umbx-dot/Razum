@@ -1,0 +1,8 @@
+long http_https_image(long *size) {
+    asm {
+        mov rcx, qword [rsp + .size]
+        sub rsp, 40
+        call rz@http_https_image
+        add rsp, 40
+    }
+}

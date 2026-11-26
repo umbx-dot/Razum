@@ -1,0 +1,96 @@
+import discord;
+import stdio;
+import text;
+
+int main(string args[]) {
+    if (args.length == 6 && equals(args[1], "signature")) {
+        return discord_verify_signature(args[2], args[3], args[4], (byte *)args[5], length(args[5])) ? 0 : 12;
+    }
+    if (args.length == 2 && equals(args[1], "multipart")) {
+        DiscordAttachment files[1];
+        byte data[4] = {65, 0, 255, 90};
+        files[0].filename = "file.bin";
+        files[0].size = 4;
+        files[0].data = &data[0];
+        DiscordMultipart body;
+        if (discord_multipart(&body, "{}", files) != 0 || body.size <= 4) { return 13; }
+        bool found = false;
+        for (int index = 0; index < body.size - 3; index++) {
+            if (body.body[index] == 65 && body.body[index + 1] == 0 && body.body[index + 2] == 255 && body.body[index + 3] == 90) {
+                found = true;
+            }
+        }
+        if (!starts_with(body.content_type, "multipart/form-data; boundary=")) { found = false; }
+        discord_multipart_free(&body);
+        files[0].filename = "invalid\".bin";
+        return found && discord_multipart(&body, "{}", files) == DISCORD_INVALID ? 0 : 14;
+    }
+    if (args.length == 2 && equals(args[1], "helpers")) {
+        DiscordBot bot;
+        if (!discord_init(&bot, "abc.X-y_0.def") || discord_init(&bot, "bad token")) { return 1; }
+        if (discord_route_key("GET", "/channels/12/messages/34") != discord_route_key("GET", "/channels/12/messages/56?after=10") ||
+            discord_route_key("GET", "/channels/12/messages/34") == discord_route_key("GET", "/channels/13/messages/34")) { return 2; }
+        char body[256];
+        if (discord_message_json(body, "\"@everyone\n", true) < 0) { return 3; }
+        print(body);
+        HttpClientResponse limit;
+        limit.status = 429;
+        limit.headers = (char *)"X-RateLimit-Scope: global\r\nRetry-After: 0.125\r\n";
+        discord_rate_update(&bot, &limit, 5);
+        if (bot.retry_after_ms != 126 || bot.global_limit <= discord_millis()) { return 4; }
+        return 0;
+    }
+    if (args.length != 4) { return 5; }
+    if (equals(args[1], "https")) {
+        HttpClientCall request;
+        request.method = "PATCH";
+        request.url = args[2];
+        request.ca_file = args[3];
+        request.headers = "Authorization: Bot test-only\r\nContent-Type: application/octet-stream\r\n";
+        byte body[4] = {65, 0, 255, 90};
+        request.body = &body[0];
+        request.body_length = 4;
+        request.max_body = 32;
+        request.timeout_ms = 3000;
+        HttpClientResponse response;
+        int result = http_https_call(&response, &request);
+        if (result != 0) { print(result); return 6; }
+        char retry[24];
+        bool okay = response.status == 201 && response.length == 4 && response.body[2] == 255 && response.body[1] == 0 &&
+                    http_client_header(&response, "x-ratelimit-remaining", retry) && equals(retry, "0");
+        http_client_free(&response);
+        if (!okay) { return 7; }
+        print("HTTPS PATCH and binary response");
+        return 0;
+    }
+    DiscordBot bot;
+    if (!discord_init(&bot, "abc.mock.token")) { return 8; }
+    int result = http_wss_open(&bot.websocket, args[2], 5000, DISCORD_MAX_PAYLOAD, args[3]);
+    if (result != 0) { print(result); return 9; }
+    bot.running = true;
+    bot.shards = 1;
+    bot.payload = new char[DISCORD_MAX_PAYLOAD + 1];
+    bot.tokens = new JsonToken[1024];
+    bot.token_capacity = 1024;
+    DiscordEvent event;
+    int ready = discord_next(&bot, &event, 4000);
+    if (ready != 1 || !equals(event.name, "READY") || bot.sequence != 42 || !equals(bot.session_id, "session-123")) {
+        print(ready);
+        discord_close(&bot);
+        return 10;
+    }
+    int following = discord_next(&bot, &event, 2500);
+    if (following != 1 || !equals(event.name, "INTERACTION_CREATE") || bot.sequence != 43) {
+        print(following);
+        discord_close(&bot);
+        return 11;
+    }
+    if (discord_next(&bot, &event, 2000) != DISCORD_GATEWAY_FATAL || bot.close_code != 4014 || bot.running) {
+        print(bot.close_code);
+        discord_close(&bot);
+        return 15;
+    }
+    discord_close(&bot);
+    print("Gateway identify, heartbeat, interactions and fatal close");
+    return 0;
+}

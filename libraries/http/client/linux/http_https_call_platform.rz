@@ -1,0 +1,19 @@
+import process;
+import text;
+
+int http_https_call_platform(HttpClientResponse *response, HttpClientCall *request) {
+    long child = 0;
+    long socket = http_backend_start("--call", &child);
+    if (socket < 0) { return (int)socket; }
+    int sizes[7] = {(int)length(request.url), (int)length(request.method), (int)length(request.headers),
+                    request.body_length, (int)length(request.ca_file), request.timeout_ms, request.max_body};
+    long payloads[5] = {(long)request.url, (long)request.method, (long)request.headers, (long)request.body, (long)request.ca_file};
+    long deadline = process_clock() + (long)request.timeout_ms + 100;
+    int result = http_backend_transfer(socket, (long)&sizes[0], 28, true, deadline);
+    for (int index = 0; result == 0 && index < payloads.length; index++) {
+        result = http_backend_transfer(socket, payloads[index], sizes[index], true, deadline);
+    }
+    if (result == 0) { result = http_backend_read_reply(socket, response, deadline, request.max_body); }
+    http_backend_stop(socket, child);
+    return result;
+}

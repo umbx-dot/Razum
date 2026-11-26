@@ -1,0 +1,3 @@
+int net_startup() {
+    return 0;
+}

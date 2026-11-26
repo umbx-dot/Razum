@@ -1,0 +1,5 @@
+import linux;
+
+int net_close(long socket) {
+    return (int)system_call(SYS_CLOSE, socket, 0, 0, 0);
+}

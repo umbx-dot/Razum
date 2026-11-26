@@ -1,6 +1,8 @@
 #pragma once
 
-#ifdef TEXTUTILS_BUILD
+#if !defined(_WIN32)
+#define TEXTUTILS_API
+#elif defined(TEXTUTILS_BUILD)
 #define TEXTUTILS_API __declspec(dllexport)
 #else
 #define TEXTUTILS_API __declspec(dllimport)

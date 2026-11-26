@@ -1,0 +1,12 @@
+void http_client_free(HttpClientResponse *response) {
+    if (response != null) {
+        if (response.body != null) {
+            free(response.body);
+        }
+        response.body = null;
+        free(response.headers);
+        response.headers = null;
+        response.length = 0;
+        response.status = 0;
+    }
+}

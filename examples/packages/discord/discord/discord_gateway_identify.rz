@@ -1,0 +1,29 @@
+import discord.types;
+import discord.discord_gateway_send;
+import text;
+
+int discord_gateway_identify(DiscordBot *bot) {
+    char payload[1024] = "{\"token\":\"";
+    concat(payload, bot.token);
+    char number[32];
+    if (bot.sequence >= 0 && bot.session_id[0] != "\0") {
+        concat(payload, "\",\"session_id\":\"");
+        concat(payload, bot.session_id);
+        concat(payload, "\",\"seq\":");
+        int_to_text(number, bot.sequence);
+        concat(payload, number);
+        concat(payload, "}");
+        return discord_gateway_send(bot, 6, payload);
+    }
+    concat(payload, "\",\"intents\":");
+    int_to_text(number, bot.intents);
+    concat(payload, number);
+    concat(payload, ",\"properties\":{\"os\":\"razum\",\"browser\":\"razum\",\"device\":\"razum\"},\"shard\":[");
+    int_to_text(number, bot.shard);
+    concat(payload, number);
+    concat(payload, ",");
+    int_to_text(number, bot.shards);
+    concat(payload, number);
+    concat(payload, "]}");
+    return discord_gateway_send(bot, 2, payload);
+}

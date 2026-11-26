@@ -1,0 +1,17 @@
+import net.socket;
+import net.types;
+
+int net_send_all(long socket, byte *data, int length) {
+    if (length < 0 || (length > 0 && data == null)) {
+        return NET_INVALID;
+    }
+    int sent = 0;
+    while (sent < length) {
+        int count = net_send(socket, &data[sent], length - sent);
+        if (count <= 0) {
+            return count == 0 ? NET_INVALID : count;
+        }
+        sent += count;
+    }
+    return 0;
+}

@@ -1,0 +1,15 @@
+import net.types;
+import linux;
+
+int net_native_family(int family) {
+    if (family == NET_IPV4) {
+        return (int)AF_INET;
+    }
+    if (family == NET_IPV6) {
+        return (int)AF_INET6;
+    }
+    if (family == NET_ETHERNET) {
+        return 17;
+    }
+    return NET_UNSUPPORTED;
+}

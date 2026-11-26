@@ -9,6 +9,7 @@ const fixture = `## Library performance
 | \`array\`, integer sorts | 10 → 10 | 5 → 5 |
 | \`filesystem\`, 32 MiB | **50 → 20** | **40 → 10** |
 | \`linux\`, environment \`A \\| B\` | Linux only | 12 → 11 |
+| \`net.tcp\`, loopback | new → 130 | new → 120 |
 
 ## Masked double loops
 
@@ -69,6 +70,10 @@ workload.selectedIndex = 2;
 workload.change();
 assert.match(libraryGrid.innerHTML, /<h3>WSL<\/h3>[\s\S]+?12 ms[\s\S]+?11 ms/);
 assert.doesNotMatch(libraryGrid.innerHTML, /<h3>Windows<\/h3>|NaN/);
+workload.selectedIndex = 3;
+workload.change();
+assert.match(libraryGrid.innerHTML, /Current[\s\S]+?130 ms[\s\S]+?Current[\s\S]+?120 ms/);
+assert.doesNotMatch(libraryGrid.innerHTML, /Before|NaN/);
 
 source = fixture.replace("50 → 20", "50 → 15.100");
 const disclosure = { open: false };
@@ -101,6 +106,11 @@ source = fs.readFileSync(new URL("../../KNOWLEDGE.md", import.meta.url), "utf8")
 await renderBenchmarks(view);
 assert.match(view.innerHTML, /benchmark-compiler-grid/);
 assert.match(view.innerHTML, /benchmark-library-grid/);
+assert.match(view.innerHTML, /href="#\/benchmarks#project-charts"/);
+const warm = source.match(/^\| Project warm build \| (\d+\.\d+ ms) \| (\d+\.\d+ ms) \|/m);
+const warmChart = view.innerHTML.split("<h3>Project warm build</h3>")[1]?.split("</article>")[0];
+assert.ok(warm && warmChart?.includes(warm[1]) && warmChart.includes(warm[2]));
+assert.match(view.innerHTML, /Discord transport regression/);
 
 source = "## Library performance\nRecorded measurements are pending.\n";
 await renderBenchmarks(view);

@@ -1,0 +1,10 @@
+import net.address;
+import net.types;
+import linux;
+
+int net_connect(long socket, NetAddress *address) {
+    if (!net_valid_address(address)) {
+        return NET_INVALID;
+    }
+    return (int)system_call(SYS_CONNECT, socket, (long)&address.bytes[0], address.length, 0);
+}

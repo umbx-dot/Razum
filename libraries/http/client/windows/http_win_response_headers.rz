@@ -1,0 +1,17 @@
+import windows;
+
+int http_win_response_headers(long request, HttpClientResponse *response) {
+    uint needed = 0;
+    WinHttpQueryHeaders(request, 22, 0, null, &needed, 0);
+    if (needed < 2 || needed > 65536) { return HTTP_CLIENT_LIMIT; }
+    ushort *wide = new ushort[needed / 2 + 1];
+    char *headers = new char[needed * 2 + 1];
+    int converted = 0;
+    if (wide != null && headers != null && WinHttpQueryHeaders(request, 22, 0, (void *)wide, &needed, 0) != 0) {
+        converted = WideCharToMultiByte(65001, 0, wide, -1, headers, (int)(needed * 2 + 1), 0, 0);
+    }
+    free(wide);
+    if (converted == 0) { free(headers); return HTTP_CLIENT_BACKEND; }
+    response.headers = headers;
+    return 0;
+}

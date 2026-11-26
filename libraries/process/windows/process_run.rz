@@ -8,6 +8,9 @@ bool process_run(ProcessResult result, string command, string input, string dire
     result.started = false;
     result.timed_out = false;
     result.truncated = false;
+    if (result.output == null) {
+        return false;
+    }
     ushort wide_command[8192];
     ushort wide_directory[1024];
     if (to_utf16(wide_command, command) < 0 || to_utf16(wide_directory, directory) < 0) {

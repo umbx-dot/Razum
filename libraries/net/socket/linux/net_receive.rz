@@ -1,0 +1,9 @@
+import net.types;
+import linux;
+
+int net_receive(long socket, byte *data, int capacity) {
+    if (capacity < 0 || (capacity > 0 && data == null)) {
+        return NET_INVALID;
+    }
+    return (int)system_call6(SYS_RECVFROM, socket, (long)data, capacity, 0, 0, 0);
+}

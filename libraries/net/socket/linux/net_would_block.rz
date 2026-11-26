@@ -1,0 +1,6 @@
+import linux;
+import net.types;
+
+bool net_would_block(int result) {
+    return result == EAGAIN || result == NET_WOULD_BLOCK;
+}

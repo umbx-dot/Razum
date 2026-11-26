@@ -1,0 +1,5 @@
+import windows.dll;
+
+int DllMain(long module, uint reason, void *reserved) {
+    return reason == DLL_PROCESS_ATTACH ? 0 : 1;
+}

@@ -1,0 +1,16 @@
+void http_win_callback(long handle, long context, uint status, byte *details, uint size) {
+    if (context == 0) {
+        return;
+    }
+    HttpWinState *state = (HttpWinState *)context;
+    if (status == HTTP_WIN_HANDLE_CLOSING) {
+        SetEvent(state.closed);
+        return;
+    }
+    if (status == HTTP_WIN_REQUEST_ERROR && details != null && size >= 12) {
+        uint *error = (uint *)&details[8];
+        state.error = *error;
+    }
+    state.count = size;
+    SetEvent(state.ready);
+}

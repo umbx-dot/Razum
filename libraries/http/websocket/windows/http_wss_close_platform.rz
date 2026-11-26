@@ -1,0 +1,18 @@
+import windows;
+
+void http_wss_close_platform(HttpWebSocket *socket) {
+    HttpWinWsState *state = (HttpWinWsState *)socket.state;
+    if (socket.socket != 0) {
+        WinHttpCloseHandle(socket.socket);
+        WaitForSingleObject(state.closed, 0xffffffff);
+    }
+    if (socket.native_two != 0) { WinHttpCloseHandle(socket.native_two); }
+    if (socket.native_one != 0) { WinHttpCloseHandle(socket.native_one); }
+    if (state.read_ready != 0) { CloseHandle(state.read_ready); }
+    if (state.write_ready != 0) { CloseHandle(state.write_ready); }
+    if (state.closed != 0) { CloseHandle(state.closed); }
+    free(state.data);
+    free(state);
+    socket.state = null;
+    socket.socket = 0;
+}

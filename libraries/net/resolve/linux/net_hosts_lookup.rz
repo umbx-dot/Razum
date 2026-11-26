@@ -1,0 +1,29 @@
+import filesystem;
+import net.address;
+import net.config;
+import net.types;
+import text;
+
+bool net_hosts_lookup(string host, int port, int family, NetAddress *result) {
+    File file;
+    if (!open(file, "/etc/hosts", "r")) {
+        return false;
+    }
+    char line[1024];
+    char token[256];
+    while (read_line(file, line)) {
+        int cursor = 0;
+        if (!net_config_word(line, &cursor, token) || !net_ip(result, token, port) || net_address_family(result) != family) {
+            continue;
+        }
+        while (net_config_word(line, &cursor, token)) {
+            if (equals_ignore_case(token, host)) {
+                close(file);
+                return true;
+            }
+        }
+    }
+    close(file);
+    result.length = 0;
+    return false;
+}

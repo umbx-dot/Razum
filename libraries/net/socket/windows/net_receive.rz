@@ -1,0 +1,9 @@
+import net.types;
+import winsock;
+
+int net_receive(long socket, byte *data, int capacity) {
+    if (capacity < 0 || (capacity > 0 && data == null)) {
+        return NET_INVALID;
+    }
+    return net_wsa_result(recv(socket, (char *)data, capacity, 0));
+}

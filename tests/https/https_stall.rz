@@ -1,0 +1,25 @@
+import net;
+import stdio;
+import threads;
+
+int main() {
+    if (net_startup() != 0) {
+        return 1;
+    }
+    long listener = net_tcp_listen("127.0.0.1", 0, 4);
+    NetAddress address;
+    if (listener < 0 || net_local_address(listener, &address) != 0) {
+        return 2;
+    }
+    print(net_port(&address));
+    flush_output();
+    if (net_wait(listener, NET_READ, 5000) == 1) {
+        long client = net_accept(listener, null);
+        if (client >= 0) {
+            thread_sleep(1200);
+            net_close(client);
+        }
+    }
+    net_close(listener);
+    return net_cleanup();
+}

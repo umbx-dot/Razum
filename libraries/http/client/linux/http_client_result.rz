@@ -1,0 +1,40 @@
+import process;
+
+int http_client_result(HttpClientResponse *response, ProcessResult *result, bool started, int max_body) {
+    if (!started || result.exit_code == 2 || result.exit_code == 127) {
+        return HTTP_CLIENT_BACKEND;
+    }
+    if (result.timed_out || result.exit_code == 28) {
+        return HTTP_CLIENT_TIMEOUT;
+    }
+    if (result.truncated || result.exit_code == 63 || result.output_length > (long)max_body + 3) {
+        return HTTP_CLIENT_LIMIT;
+    }
+    if (result.exit_code == 60 || result.exit_code == 51 || result.exit_code == 77) {
+        return HTTP_CLIENT_TLS;
+    }
+    if (result.exit_code != 0) {
+        return HTTP_CLIENT_TRANSFER;
+    }
+    long end = result.output_length - 3;
+    if (end < 0) {
+        return HTTP_CLIENT_PROTOCOL;
+    }
+    int status = 0;
+    for (int index = 0; index < 3; index++) {
+        char digit = result.output[end + index];
+        if (digit < "0" || digit > "9") {
+            return HTTP_CLIENT_PROTOCOL;
+        }
+        status = status * 10 + digit - "0";
+    }
+    if (status < 100 || status > 599) {
+        return HTTP_CLIENT_PROTOCOL;
+    }
+    result.output[end] = "\0";
+    response.body = (byte *)result.output;
+    response.length = end;
+    response.status = status;
+    result.output = null;
+    return 0;
+}

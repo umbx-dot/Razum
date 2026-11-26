@@ -1,0 +1,8 @@
+import net.types;
+
+int net_wait_many(NetPollState items[], int count, int timeout_ms) {
+    if (count <= 0 || count > items.length || timeout_ms < -1) {
+        return NET_INVALID;
+    }
+    return net_wsa_result(WSAPoll(items, (uint)count, timeout_ms));
+}

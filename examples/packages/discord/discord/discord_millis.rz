@@ -1,0 +1,5 @@
+import time;
+
+long discord_millis() {
+    return time_monotonic_ns() / 1000000;
+}

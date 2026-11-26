@@ -1,0 +1,13 @@
+import net.socket;
+import net.types;
+
+int net_set_ip_header(long socket, int family) {
+    int enabled = 1;
+    if (family == NET_IPV4) {
+        return net_set_option(socket, 0, 2, (byte *)&enabled, sizeof(int));
+    }
+    if (family == NET_IPV6) {
+        return net_set_option(socket, 41, 2, (byte *)&enabled, sizeof(int));
+    }
+    return NET_INVALID;
+}

@@ -1,0 +1,7 @@
+import net.socket;
+import net.types;
+
+int net_tcp_nodelay(long socket, bool enabled) {
+    int option = enabled ? 1 : 0;
+    return net_set_option(socket, NET_TCP, 1, (byte *)&option, sizeof(int));
+}

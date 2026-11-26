@@ -1,0 +1,23 @@
+import net.address;
+import net.socket;
+import net.types;
+
+long net_tcp_listen(string host, int port, int backlog) {
+    NetAddress address;
+    if (!net_ip(&address, host, port) || backlog < 0) {
+        return NET_INVALID;
+    }
+    long socket = net_open(net_address_family(&address), NET_STREAM, NET_TCP);
+    if (socket < 0) {
+        return socket;
+    }
+    int result = net_bind(socket, &address);
+    if (result == 0) {
+        result = net_listen(socket, backlog);
+    }
+    if (result < 0) {
+        net_close(socket);
+        return result;
+    }
+    return socket;
+}

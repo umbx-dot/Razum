@@ -12,9 +12,10 @@ static bool is_ascii(const char *text) {
     return true;
 }
 
-int run_assembler(const char *program, const char *assembly, const char *output) {
+int run_assembler(const char *program, const char *assembly, const char *output, const char *format) {
+    bool object = strcmp(format, "win64") == 0;
     if (is_ascii(assembly) && is_ascii(output)) {
-        const char *arguments[] = {program, "-f", "bin", assembly, "-o", output, NULL};
+        const char *arguments[] = {program, "-f", format, assembly, "-o", output, object ? "--reproducible" : NULL, NULL};
         return run_process(arguments, NULL);
     }
     char directory[MAX_PATH];
@@ -32,8 +33,8 @@ int run_assembler(const char *program, const char *assembly, const char *output)
     int status = -1;
     if (GetTempFileNameA(directory, "rzb", 0, output_temp)) {
         if (CopyFileA(assembly, input_temp, FALSE)) {
-            const char *arguments[] = {program, "-f", "bin", strrchr(input_temp, '\\') + 1,
-                                       "-o", strrchr(output_temp, '\\') + 1, NULL};
+            const char *arguments[] = {program, "-f", format, strrchr(input_temp, '\\') + 1,
+                                       "-o", strrchr(output_temp, '\\') + 1, object ? "--reproducible" : NULL, NULL};
             status = run_process(arguments, directory);
             if (status == 0 && !MoveFileExA(output_temp, output, MOVEFILE_REPLACE_EXISTING)) {
                 status = -1;

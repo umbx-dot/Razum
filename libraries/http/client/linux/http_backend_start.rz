@@ -1,0 +1,31 @@
+import linux;
+import process;
+
+long http_backend_start(string mode, long *child) {
+    long image_fd = http_backend_file();
+    if (image_fd < 0) { return image_fd; }
+    int sockets[2];
+    if (system_call(SYS_SOCKETPAIR, AF_UNIX, 1 | O_CLOEXEC, 0, (long)&sockets[0]) < 0) {
+        system_call(SYS_CLOSE, image_fd, 0, 0, 0);
+        return HTTP_CLIENT_BACKEND;
+    }
+    long pid = system_call(SYS_FORK, 0, 0, 0, 0);
+    if (pid == 0) {
+        system_call(SYS_CLOSE, sockets[0], 0, 0, 0);
+        long endpoint = system_call(SYS_FCNTL, sockets[1], F_DUPFD_CLOEXEC, 3, 0);
+        if (endpoint >= 0 && system_call(SYS_DUP2, endpoint, 0, 0, 0) == 0 &&
+            system_call(SYS_DUP2, endpoint, 1, 0, 0) == 1) {
+            long arguments[3] = {(long)"razum-https", (long)mode, 0};
+            system_call6(SYS_EXECVEAT, image_fd, (long)"", (long)&arguments[0], process_environment(), AT_EMPTY_PATH, 0);
+        }
+        system_call(SYS_EXIT, 127, 0, 0, 0);
+    }
+    system_call(SYS_CLOSE, image_fd, 0, 0, 0);
+    system_call(SYS_CLOSE, sockets[1], 0, 0, 0);
+    if (pid < 0) {
+        system_call(SYS_CLOSE, sockets[0], 0, 0, 0);
+        return HTTP_CLIENT_BACKEND;
+    }
+    *child = pid;
+    return sockets[0];
+}

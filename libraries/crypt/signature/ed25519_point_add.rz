@@ -1,0 +1,25 @@
+import crypt.exchange.x25519_field;
+
+void ed25519_point_add(Ed25519Point *result, Ed25519Point *left, Ed25519Point *right) {
+    long a[16]; long b[16]; long c[16]; long d[16];
+    long e[16]; long f[16]; long g[16]; long h[16];
+    field_subtract(a, left.y, left.x);
+    field_subtract(b, right.y, right.x);
+    field_multiply(a, a, b);
+    field_add(b, left.y, left.x);
+    field_add(c, right.y, right.x);
+    field_multiply(b, b, c);
+    field_multiply(c, left.t, right.t);
+    field_multiply(c, c, ed25519_d);
+    field_add(c, c, c);
+    field_multiply(d, left.z, right.z);
+    field_add(d, d, d);
+    field_subtract(e, b, a);
+    field_subtract(f, d, c);
+    field_add(g, d, c);
+    field_add(h, b, a);
+    field_multiply(result.x, e, f);
+    field_multiply(result.y, g, h);
+    field_multiply(result.z, f, g);
+    field_multiply(result.t, e, h);
+}

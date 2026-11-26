@@ -1,0 +1,4 @@
+void net_write_u16(byte *data, int value) {
+    data[0] = (byte)(value >> 8);
+    data[1] = (byte)value;
+}

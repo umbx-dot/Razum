@@ -1,0 +1,31 @@
+import text;
+
+int http_wss_open_platform(HttpWebSocket *socket, string url, int timeout_ms, string ca_file) {
+    if (length(ca_file) != 0) { return HTTP_CLIENT_UNSUPPORTED; }
+    HttpWinWsState *state = new HttpWinWsState;
+    if (state == null) { return HTTP_CLIENT_BACKEND; }
+    socket.state = (void *)state;
+    state.data = new byte[socket.max_message + 1];
+    state.read_ready = CreateEventW(0, 0, 0, 0);
+    state.write_ready = CreateEventW(0, 0, 0, 0);
+    state.closed = CreateEventW(0, 0, 0, 0);
+    ushort agent[6];
+    ushort method[4];
+    to_utf16(agent, "Razum");
+    to_utf16(method, "GET");
+    char https[4099] = "https://";
+    concat(https, (string)&url[6]);
+    socket.socket = 0;
+    socket.native_one = 0;
+    socket.native_two = 0;
+    bool ready = state.data != null && state.read_ready != 0 && state.write_ready != 0 && state.closed != 0;
+    socket.native_one = ready ? WinHttpOpen(agent, HTTP_WIN_AUTO_PROXY, 0, 0, HTTP_WIN_ASYNC) : 0;
+    long request = 0;
+    int result = HTTP_CLIENT_BACKEND;
+    if (socket.native_one != 0 && WinHttpSetTimeouts(socket.native_one, timeout_ms, timeout_ms, timeout_ms, 0) != 0) {
+        result = http_win_open_handles(socket.native_one, https, &method[0], &socket.native_two, &request);
+        if (result == 0) { result = http_win_ws_upgrade(socket, request, timeout_ms, state); }
+    }
+    if (result != 0) { http_wss_close_platform(socket); }
+    return result;
+}

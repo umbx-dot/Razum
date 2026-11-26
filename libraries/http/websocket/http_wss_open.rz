@@ -1,0 +1,13 @@
+import text;
+
+int http_wss_open(HttpWebSocket *socket, string url, int timeout_ms, int max_message, string ca_file) {
+    if (socket == null || socket.open || timeout_ms <= 0 || max_message <= 0 || max_message > 16777216 ||
+        length(url) <= 6 || !starts_with(url, "wss://") || !http_client_argument(url) ||
+        (length(ca_file) > 0 && !http_client_argument(ca_file))) { return HTTP_CLIENT_INVALID; }
+    socket.binary = false;
+    socket.close_code = 0;
+    socket.max_message = max_message;
+    int result = http_wss_open_platform(socket, url, timeout_ms, ca_file);
+    socket.open = result == 0;
+    return result;
+}

@@ -1,0 +1,17 @@
+import text;
+
+extern "kernel32" uint GetEnvironmentVariableW(ushort *name, ushort *value, uint capacity);
+
+bool process_getenv(string key, char output[]) {
+    if (output.length == 0) { return false; }
+    output[0] = "\0";
+    ushort name[128];
+    ushort value[4096];
+    if (to_utf16(name, key) <= 0) { return false; }
+    uint copied = GetEnvironmentVariableW(&name[0], &value[0], 4096);
+    if (copied == 0 || copied >= 4096 || from_utf16(output, &value[0]) <= 0) {
+        output[0] = "\0";
+        return false;
+    }
+    return true;
+}

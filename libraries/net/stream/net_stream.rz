@@ -1,0 +1,8 @@
+struct NetStream {
+    long socket;
+    bool attached;
+    int read_status;
+    int first;
+    int end;
+    byte input[4096];
+}

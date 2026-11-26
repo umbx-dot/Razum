@@ -160,7 +160,11 @@ static void mark_function(Function *function, bool optimize) {
 
 void mark_used_functions(Program *program) {
     for (int index = 0; index < program->globals.count; index++) {
-        mark_expression(LIST_AT(program->globals, GlobalVariable, index)->initial, false, 0);
+        GlobalVariable *variable = LIST_AT(program->globals, GlobalVariable, index);
+        if (variable->is_exported) {
+            variable->symbol->is_used = true;
+        }
+        mark_expression(variable->initial, false, 0);
     }
     for (int index = 0; index < program->functions.count; index++) {
         Function *function = LIST_AT(program->functions, Function, index);

@@ -1,0 +1,8 @@
+import stdio;
+
+extern "plugin" int plugin_value(int value);
+
+int main() {
+    print(plugin_value(41));
+    return 0;
+}

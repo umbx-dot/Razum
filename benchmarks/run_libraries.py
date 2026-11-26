@@ -35,6 +35,8 @@ CASES = (
     Case("json"),
     Case("linux", host="linux"),
     Case("math"),
+    Case("net.tcp", ("tcp",)),
+    Case("net.udp", ("udp",)),
     Case("process"),
     Case("program", ("value",)),
     Case("stdio"),
@@ -139,6 +141,9 @@ def main():
     if modules != covered:
         parser.error(f"benchmark inventory mismatch: {', '.join(sorted(modules ^ covered))}")
     compilers = [rzc.resolve() for rzc in (args.baseline, args.rzc) if rzc is not None]
+    has_net_baseline = args.baseline is not None and subprocess.run(
+        [str(compilers[0]), "--source", "<rzc>/libraries/net/types.rz"], capture_output=True,
+    ).returncode == 0
     flags = ["-march=znver3"] if args.zen3 else ["-O"]
     print(f"{HOST} {flags[0]} | median ms, {args.runs} measured runs", flush=True)
     with tempfile.TemporaryDirectory(prefix="razum-libraries-") as directory:
@@ -149,15 +154,18 @@ def main():
             if case.host and case.host != HOST:
                 print(f"{case.name:<17} {case.host} only", flush=True)
                 continue
+            start = 1 if library(case) == "net" and args.baseline is not None and not has_net_baseline else 0
             programs = [
                 build(rzc, case, work / f"{library(case)}-{i}{EXE}", flags)
-                for i, rzc in enumerate(compilers)
+                for i, rzc in enumerate(compilers) if i >= start
             ]
             try:
                 medians = measure(case, programs, args.runs)
             except subprocess.CalledProcessError as error:
                 raise SystemExit(f"{case.name} failed with exit code {error.returncode}: {error.stderr!r}") from error
             times = " -> ".join(f"{ms:.3f}" for ms in medians)
+            if start:
+                times = f"new -> {times}"
             print(f"{case.name:<17} {times}", flush=True)
 
 

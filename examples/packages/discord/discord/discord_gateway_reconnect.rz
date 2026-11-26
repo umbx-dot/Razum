@@ -1,0 +1,26 @@
+import discord.types;
+import discord.discord_millis;
+
+int discord_gateway_reconnect(DiscordBot *bot, bool fresh, int requested_delay) {
+    int code = bot.websocket.close_code;
+    http_wss_close(&bot.websocket);
+    bot.heartbeat_interval = 0;
+    bot.awaiting_ack = false;
+    bot.close_code = code;
+    if (code == 4004 || (code >= 4010 && code <= 4014)) {
+        bot.running = false;
+        return DISCORD_GATEWAY_FATAL;
+    }
+    if (fresh || code == 4007 || code == 4009 || code == 1000 || code == 1001) {
+        bot.sequence = -1;
+        bot.session_id[0] = "\0";
+        bot.resume_url[0] = "\0";
+        if (requested_delay < 5000) { requested_delay = 5000; }
+    }
+    int count = bot.reconnect_count < 5 ? bot.reconnect_count : 5;
+    long backoff = (long)1000 << count;
+    if (requested_delay > backoff) { backoff = requested_delay; }
+    bot.reconnect_count = count + 1;
+    bot.reconnect_at = discord_millis() + backoff;
+    return 0;
+}

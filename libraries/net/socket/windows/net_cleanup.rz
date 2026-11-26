@@ -1,0 +1,5 @@
+import winsock;
+
+int net_cleanup() {
+    return net_wsa_result(WSACleanup());
+}

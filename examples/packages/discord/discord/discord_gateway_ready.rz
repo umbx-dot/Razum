@@ -1,0 +1,35 @@
+import discord.types;
+import text;
+
+bool discord_gateway_ready(DiscordBot *bot, DiscordEvent *event) {
+    int session = json_member(event.source, event.tokens, event.used, event.data, "session_id");
+    int resume = json_member(event.source, event.tokens, event.used, event.data, "resume_gateway_url");
+    char session_id[128];
+    char resume_url[512];
+    if (session < 0 || resume < 0) { return false; }
+    int session_size = json_decode_string(event.source, event.tokens[session], session_id);
+    int resume_size = json_decode_string(event.source, event.tokens[resume], resume_url);
+    if (session_size <= 0 || resume_size <= 0 || session_size != length(session_id) ||
+        resume_size != length(resume_url)) { return false; }
+    for (long index = 0; session_id[index] != "\0"; index++) {
+        char ch = session_id[index];
+        if (!((ch >= "a" && ch <= "z") || (ch >= "A" && ch <= "Z") || (ch >= "0" && ch <= "9") ||
+              ch == "-" || ch == "_")) { return false; }
+    }
+    if (!starts_with(resume_url, "wss://")) { return false; }
+    char host[252];
+    long end = 6;
+    while (resume_url[end] != "\0" && resume_url[end] != "/") {
+        char ch = resume_url[end];
+        if (!((ch >= "a" && ch <= "z") || (ch >= "0" && ch <= "9") || ch == "-" || ch == ".")) { return false; }
+        end++;
+    }
+    if (end - 6 >= host.length || end == 6 || (resume_url[end] == "/" && resume_url[end + 1] != "\0")) { return false; }
+    substring(host, resume_url, 6, end - 6);
+    if (!ends_with(host, ".discord.gg")) { return false; }
+    copy(bot.resume_url, resume_url);
+    if (resume_url[end] != "/") { concat(bot.resume_url, "/"); }
+    concat(bot.resume_url, "?v=10&encoding=json");
+    copy(bot.session_id, session_id);
+    return true;
+}

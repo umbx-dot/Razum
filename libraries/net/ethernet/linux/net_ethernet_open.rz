@@ -1,0 +1,20 @@
+import net.socket;
+import net.types;
+
+long net_ethernet_open(int interface_index, int ethertype) {
+    NetAddress address;
+    if (!net_ethernet_address(&address, interface_index, ethertype, null)) {
+        return NET_INVALID;
+    }
+    int protocol = ((ethertype & 255) << 8) | (ethertype >> 8);
+    long socket = net_open(NET_ETHERNET, NET_RAW, protocol);
+    if (socket < 0) {
+        return socket;
+    }
+    int result = net_bind(socket, &address);
+    if (result < 0) {
+        net_close(socket);
+        return result;
+    }
+    return socket;
+}

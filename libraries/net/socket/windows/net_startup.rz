@@ -1,0 +1,6 @@
+import winsock;
+
+int net_startup() {
+    byte data[512];
+    return -WSAStartup(0x0202, data);
+}

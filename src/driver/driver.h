@@ -14,6 +14,8 @@ typedef struct {
     bool read_stdin;
     bool run;
     bool dll;
+    bool object;
+    bool shared;
     bool symbols;
     bool help;
     const char *show_source;
@@ -53,8 +55,9 @@ extern PointerList import_folders;
 
 LoadedProgram load_program(const char *main_path, const char *main_text, size_t main_length, bool allow_module);
 CompiledProgram compile_source(const char *source_path, const char *text, size_t length, bool check_only, const char *dll_name,
-                               int window_program, bool optimize, bool zen3);
-void assemble_file(const char *asm_path, const char *exe_path);
+                               int window_program, bool optimize, bool zen3, bool object);
+void assemble_file(const char *asm_path, const char *output_path, bool object);
+int link_shared_object(const char *object_path, const char *output_path, const char *soname);
 void print_symbols(const Program *program);
 bool print_embedded_source(const char *path);
 LoadedProgram analyze_source(const char *source_path, const char *text, size_t length);

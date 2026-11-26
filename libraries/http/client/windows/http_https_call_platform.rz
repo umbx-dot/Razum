@@ -1,0 +1,3 @@
+int http_https_call_platform(HttpClientResponse *response, HttpClientCall *request) {
+    return http_windows_request(response, request, true);
+}

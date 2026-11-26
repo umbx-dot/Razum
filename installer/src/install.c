@@ -58,7 +58,7 @@ void install(bool include_vscode) {
     }
     wchar_t message[MESSAGE_SIZE];
     swprintf(message, MESSAGE_SIZE,
-             L"Install razum %ls into\n%ls ?\n\nSetup adds rzc to your PATH and gives .rz files the razum icon. It changes nothing outside your user account.",
+             L"Install razum %ls into\n%ls ?\n\nSetup adds rzc and rz to your PATH and gives .rz files the razum icon. It changes nothing outside your user account.",
              RAZUM_VERSION, paths.root);
     if (!ask(message)) {
         return;
@@ -67,6 +67,8 @@ void install(bool include_vscode) {
     create_directory(paths.bin);
     create_directory(paths.cmake);
     extract(RESOURCE_RZC, paths.bin, L"rzc.exe");
+    extract(RESOURCE_RZ, paths.bin, L"rz.exe");
+    extract(RESOURCE_TOML_LICENSE, paths.root, L"tomlc17-LICENSE.txt");
     extract(RESOURCE_NASM, paths.bin, L"nasm.exe");
     extract(RESOURCE_NASM_LICENSE, paths.bin, L"nasm-LICENSE.txt");
     extract(RESOURCE_FILE_ICON, paths.root, L"rz.ico");

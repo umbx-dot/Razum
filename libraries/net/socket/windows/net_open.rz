@@ -1,0 +1,11 @@
+import net.address.family;
+import winsock;
+
+long net_open(int family, int kind, int protocol) {
+    int native = net_native_family(family);
+    if (native < 0) {
+        return native;
+    }
+    long socket = WSASocketW(native, kind, protocol, 0, 0, WSA_FLAG_NO_HANDLE_INHERIT);
+    return socket == INVALID_SOCKET ? -WSAGetLastError() : socket;
+}

@@ -1,0 +1,20 @@
+import net.address;
+import net.socket;
+import net.types;
+
+long net_udp_bind(string host, int port) {
+    NetAddress address;
+    if (!net_ip(&address, host, port)) {
+        return NET_INVALID;
+    }
+    long socket = net_open(net_address_family(&address), NET_DATAGRAM, NET_UDP);
+    if (socket < 0) {
+        return socket;
+    }
+    int result = net_bind(socket, &address);
+    if (result < 0) {
+        net_close(socket);
+        return result;
+    }
+    return socket;
+}

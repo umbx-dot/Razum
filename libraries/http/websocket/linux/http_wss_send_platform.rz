@@ -1,0 +1,11 @@
+import process;
+
+int http_wss_send_platform(HttpWebSocket *socket, byte *data, int length, bool binary, int timeout_ms) {
+    int command[3] = {binary ? 3 : 2, length, timeout_ms};
+    long deadline = process_clock() + (long)timeout_ms + 100;
+    int result = http_backend_transfer(socket.socket, (long)&command[0], 12, true, deadline);
+    if (result == 0) { result = http_backend_transfer(socket.socket, (long)data, length, true, deadline); }
+    int reply[2];
+    if (result == 0) { result = http_backend_transfer(socket.socket, (long)&reply[0], 8, false, deadline); }
+    return result == 0 ? reply[0] : result;
+}

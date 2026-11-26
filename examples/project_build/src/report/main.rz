@@ -1,0 +1,7 @@
+import stdio;
+import report_text;
+
+int main() {
+    print(report_message());
+    return 0;
+}

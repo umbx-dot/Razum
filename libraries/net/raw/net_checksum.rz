@@ -1,0 +1,20 @@
+import net.types;
+
+int net_checksum(byte *data, int length) {
+    if (length < 0 || (length > 0 && data == null)) {
+        return NET_INVALID;
+    }
+    long sum = 0;
+    int index = 0;
+    while (index < length - 1) {
+        sum += ((long)data[index] << 8) | data[index + 1];
+        index += 2;
+    }
+    if (index < length) {
+        sum += (long)data[index] << 8;
+    }
+    while (sum > 65535) {
+        sum = (sum & 65535) + (sum >> 16);
+    }
+    return (int)(sum ^ 65535);
+}

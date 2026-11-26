@@ -1,0 +1,50 @@
+import discord.types;
+import discord.discord_gateway_frame;
+import discord.discord_gateway_reconnect;
+import threads;
+
+int discord_next(DiscordBot *bot, DiscordEvent *event, int timeout_ms) {
+    if (bot == null || event == null || !bot.running || timeout_ms <= 0) { return DISCORD_INVALID; }
+    long deadline = discord_millis() + timeout_ms;
+    while (true) {
+        long now = discord_millis();
+        long remaining = deadline - now;
+        if (remaining <= 0) { return DISCORD_GATEWAY_TIMEOUT; }
+        if (!bot.websocket.open) {
+            long delay = bot.reconnect_at - now;
+            if (delay > 0) {
+                thread_sleep((uint)(delay < remaining ? delay : remaining));
+                continue;
+            }
+            string url = bot.resume_url[0] == "\0" ? "wss://gateway.discord.gg/?v=10&encoding=json" : (string)&bot.resume_url[0];
+            int opened = http_wss_open(&bot.websocket, url, (int)(remaining < 10000 ? remaining : 10000), DISCORD_MAX_PAYLOAD, "");
+            if (opened != 0) {
+                discord_gateway_reconnect(bot, false, 0);
+                return opened;
+            }
+            continue;
+        }
+        if (bot.heartbeat_interval > 0 && now >= bot.heartbeat_at) {
+            if (bot.awaiting_ack || discord_gateway_heartbeat(bot, true) != 0) {
+                int result = discord_gateway_reconnect(bot, false, 0);
+                if (result < 0) { return result; }
+                continue;
+            }
+        }
+        if (bot.heartbeat_interval > 0 && bot.heartbeat_at - now < remaining) { remaining = bot.heartbeat_at - now; }
+        int got = http_wss_receive(&bot.websocket, (byte *)bot.payload, DISCORD_MAX_PAYLOAD, (int)(remaining > 0 ? remaining : 1));
+        if (got == HTTP_CLIENT_TIMEOUT) { continue; }
+        if (got < 0) {
+            int reset = discord_gateway_reconnect(bot, false, 0);
+            if (reset < 0) { return reset; }
+            continue;
+        }
+        int result = bot.websocket.binary ? DISCORD_GATEWAY_PROTOCOL : discord_gateway_frame(bot, event, got);
+        if (result < 0) {
+            discord_gateway_reconnect(bot, false, 0);
+            return result;
+        }
+        if (result == DISCORD_GATEWAY_MESSAGE) { return result; }
+    }
+    return DISCORD_GATEWAY_TIMEOUT;
+}

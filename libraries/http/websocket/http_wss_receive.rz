@@ -1,0 +1,8 @@
+int http_wss_receive(HttpWebSocket *socket, byte *data, int capacity, int timeout_ms) {
+    if (socket == null || !socket.open || data == null || capacity <= 0 || timeout_ms <= 0 || capacity < socket.max_message) {
+        return HTTP_CLIENT_INVALID;
+    }
+    int result = http_wss_receive_platform(socket, data, timeout_ms);
+    if (result < 0 && result != HTTP_CLIENT_TIMEOUT) { http_wss_close(socket); }
+    return result;
+}

@@ -1,0 +1,15 @@
+import http;
+import stdio;
+
+int main() {
+    HttpWebSocket socket;
+    int status = http_wss_open(&socket, "wss://gateway.discord.gg/?v=10&encoding=json", 5000, 8192, "");
+    if (status != 0) { print(status); return 1; }
+    byte reply[8193];
+    int size = http_wss_receive(&socket, &reply[0], 8192, 3000);
+    http_wss_close(&socket);
+    if (size < 0) { print(size); return 2; }
+    reply[size] = 0;
+    print((string)&reply[0]);
+    return 0;
+}

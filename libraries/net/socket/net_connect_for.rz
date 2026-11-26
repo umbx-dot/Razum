@@ -1,0 +1,19 @@
+import net.address;
+import net.types;
+
+int net_connect_for(long socket, NetAddress *address, int timeout_ms) {
+    if (timeout_ms < 0 || !net_valid_address(address)) {
+        return NET_INVALID;
+    }
+    int result = net_set_blocking(socket, false);
+    if (result < 0) {
+        return result;
+    }
+    result = net_connect(socket, address);
+    if (net_connect_pending(result)) {
+        int ready = net_wait(socket, NET_WRITE, timeout_ms);
+        result = ready > 0 ? net_socket_error(socket) : ready == 0 ? NET_TIMEOUT : ready;
+    }
+    int restored = net_set_blocking(socket, true);
+    return result < 0 ? result : restored;
+}

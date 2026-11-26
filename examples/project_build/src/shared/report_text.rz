@@ -1,0 +1,3 @@
+string report_message() {
+    return "manifest build works";
+}

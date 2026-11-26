@@ -1,0 +1,31 @@
+manifest_version = 1
+
+[project]
+name = "project-build"
+version = "0.1.0"
+
+[profile.dev]
+keep_asm = true
+
+[profile.release]
+optimize = true
+cpu = "portable"
+
+[[target]]
+name = "report"
+kind = "exe"
+source = "src/report/main.rz"
+import_dirs = ["src/shared"]
+
+[[target]]
+name = "plugin"
+kind = "shared"
+source = "src/plugin/main.rz"
+
+[[target]]
+name = "plugin-app"
+kind = "exe"
+source = "src/plugin-app/main.rz"
+platforms = ["windows"]
+subsystem = "console"
+depends_on = ["plugin"]

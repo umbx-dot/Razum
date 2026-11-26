@@ -1,0 +1,29 @@
+import text;
+
+bool http_client_headers_valid(string headers) {
+    long size = length(headers);
+    long start = 0;
+    while (start < size) {
+        long split = start;
+        while (split < size && headers[split] != ":") {
+            char ch = headers[split];
+            if (!((ch >= "A" && ch <= "Z") || (ch >= "a" && ch <= "z") || (ch >= "0" && ch <= "9") || ch == "-")) {
+                return false;
+            }
+            split++;
+        }
+        if (split == start || split == size || split - start > 128) { return false; }
+        char name[129];
+        substring(name, headers, start, split - start);
+        if (equals_ignore_case(name, "Host") || equals_ignore_case(name, "Content-Length") ||
+            equals_ignore_case(name, "Transfer-Encoding") || equals_ignore_case(name, "Connection")) { return false; }
+        long end = split + 1;
+        while (end < size && headers[end] != "\r") {
+            if ((byte)headers[end] < 32 || (byte)headers[end] > 126) { return false; }
+            end++;
+        }
+        if (end + 1 >= size || headers[end + 1] != "\n") { return false; }
+        start = end + 2;
+    }
+    return true;
+}

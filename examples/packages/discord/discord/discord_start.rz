@@ -1,0 +1,28 @@
+import discord.types;
+import discord.discord_close;
+import text;
+
+int discord_start(DiscordBot *bot, long intents, int shard, int shards) {
+    if (bot == null || bot.running || bot.token[0] == "\0" || intents < 0 || shard < 0 || shards <= 0 || shard >= shards) {
+        return DISCORD_INVALID;
+    }
+    bot.payload = new char[DISCORD_MAX_PAYLOAD + 1];
+    bot.tokens = new JsonToken[1024];
+    if (bot.payload == null || bot.tokens == null) {
+        discord_close(bot);
+        return HTTP_CLIENT_BACKEND;
+    }
+    bot.token_capacity = 1024;
+    bot.shard = shard;
+    bot.shards = shards;
+    bot.intents = intents;
+    bot.heartbeat_interval = 0;
+    bot.reconnect_at = 0;
+    bot.reconnect_count = 0;
+    bot.awaiting_ack = false;
+    bot.close_code = 0;
+    int open = http_wss_open(&bot.websocket, "wss://gateway.discord.gg/?v=10&encoding=json", 10000, DISCORD_MAX_PAYLOAD, "");
+    if (open != 0) { discord_close(bot); }
+    else { bot.running = true; }
+    return open;
+}

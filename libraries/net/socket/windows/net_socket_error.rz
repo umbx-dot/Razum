@@ -1,0 +1,8 @@
+import winsock;
+
+int net_socket_error(long socket) {
+    int error = 0;
+    int size = sizeof(int);
+    int result = net_get_option(socket, SOL_SOCKET, 0x1007, (byte *)&error, &size);
+    return result < 0 ? result : -error;
+}

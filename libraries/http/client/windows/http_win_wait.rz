@@ -1,0 +1,22 @@
+import windows;
+
+int http_win_wait(HttpWinState *state, int started) {
+    if (started == 0) {
+        uint error = GetLastError();
+        if (error != 997) {
+            return http_win_error(error);
+        }
+    }
+    ulong now = GetTickCount64();
+    if (now >= state.deadline) {
+        return HTTP_CLIENT_TIMEOUT;
+    }
+    uint waited = WaitForSingleObject(state.ready, (uint)(state.deadline - now));
+    if (waited != WAIT_OBJECT_0) {
+        return waited == WAIT_TIMEOUT ? HTTP_CLIENT_TIMEOUT : HTTP_CLIENT_TRANSFER;
+    }
+    if (GetTickCount64() >= state.deadline) {
+        return HTTP_CLIENT_TIMEOUT;
+    }
+    return state.error == 0 ? 0 : http_win_error(state.error);
+}

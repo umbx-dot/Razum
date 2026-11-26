@@ -1,0 +1,21 @@
+import discord;
+import stdio;
+import text;
+
+void bot_answer(DiscordBot *bot, DiscordEvent *event) {
+    int data = json_member(event.source, event.tokens, event.used, event.data, "data");
+    int name = data >= 0 ? json_member(event.source, event.tokens, event.used, data, "name") : -1;
+    int id = json_member(event.source, event.tokens, event.used, event.data, "id");
+    int key = json_member(event.source, event.tokens, event.used, event.data, "token");
+    char command[96];
+    char interaction[24];
+    char token[513];
+    if (name < 0 || id < 0 || key < 0 ||
+        json_decode_string(event.source, event.tokens[name], command) <= 0 || !equals(command, "ping") ||
+        json_decode_string(event.source, event.tokens[id], interaction) <= 0 ||
+        json_decode_string(event.source, event.tokens[key], token) <= 0) { return; }
+    HttpClientResponse reply;
+    int status = discord_interaction_message(bot, &reply, interaction, token, "Pong!", true);
+    http_client_free(&reply);
+    if (status < 200 || status >= 300) { print(status); }
+}

@@ -1,0 +1,14 @@
+import crypt.exchange.x25519_field;
+
+void ed25519_point_encode(byte *packed, Ed25519Point *point) {
+    long inverse[16];
+    long x[16];
+    long y[16];
+    byte encoded_x[32];
+    field_invert(inverse, point.z);
+    field_multiply(x, point.x, inverse);
+    field_multiply(y, point.y, inverse);
+    field_pack(&encoded_x[0], x);
+    field_pack(packed, y);
+    packed[31] = (byte)(packed[31] | ((encoded_x[0] & 1) << 7));
+}

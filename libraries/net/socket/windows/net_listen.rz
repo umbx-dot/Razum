@@ -1,0 +1,5 @@
+import winsock;
+
+int net_listen(long socket, int backlog) {
+    return net_wsa_result(listen(socket, backlog));
+}

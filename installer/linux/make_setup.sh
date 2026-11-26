@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-output="${1:?usage: make_setup.sh OUTPUT RZC CMAKE_PACKAGE [NASM NASM_LICENSE] [VSIX EXTENSION_ID]}"
+output="${1:?usage: make_setup.sh OUTPUT RZC RZ CMAKE_PACKAGE [NASM NASM_LICENSE] [VSIX EXTENSION_ID]}"
 compiler="$2"
-package="$3"
-nasm="${4:-}"
-license="${5:-}"
-vsix="${6:-}"
-extension_id="${7:-}"
+driver="$3"
+package="$4"
+nasm="${5:-}"
+license="${6:-}"
+vsix="${7:-}"
+extension_id="${8:-}"
 here="$(cd "$(dirname "$0")" && pwd)"
 stage="$(mktemp -d)"
 trap 'rm -rf "$stage"' EXIT
 cp "$compiler" "$stage/rzc"
+cp "$driver" "$stage/rz"
+cp "$here/../../rz/vendor/tomlc17/LICENSE" "$stage/tomlc17-LICENSE.txt"
 cp "$package" "$stage/RazumConfig.cmake"
 cp "$here/../../LICENSE" "$stage/LICENSE.txt"
 cp "$here/../../docs/linux-gui-notices.md" "$stage/linux-gui-NOTICES.txt"

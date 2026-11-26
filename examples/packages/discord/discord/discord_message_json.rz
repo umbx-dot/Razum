@@ -1,0 +1,24 @@
+import json;
+import text;
+
+int discord_message_json(char output[], string content, bool ephemeral) {
+    long bytes = length(content);
+    long characters = utf8_length(content);
+    if (bytes > 8000 || characters < 0 || characters > 2000) { return DISCORD_INVALID; }
+    JsonOutput writer;
+    json_writer_init(&writer, &output[0], output.length);
+    if (json_write_event(&writer, JSON_OBJECT, "", 0) != 0 ||
+        json_write_event(&writer, JSON_KEY, "content", 7) != 0 ||
+        json_write_event(&writer, JSON_STRING, content, (int)bytes) != 0 ||
+        json_write_event(&writer, JSON_KEY, "allowed_mentions", 16) != 0 ||
+        json_write_event(&writer, JSON_OBJECT, "", 0) != 0 ||
+        json_write_event(&writer, JSON_KEY, "parse", 5) != 0 ||
+        json_write_event(&writer, JSON_ARRAY, "", 0) != 0 ||
+        json_write_event(&writer, JSON_END, "", 0) != 0 ||
+        json_write_event(&writer, JSON_END, "", 0) != 0) { return HTTP_CLIENT_LIMIT; }
+    if (ephemeral && (json_write_event(&writer, JSON_KEY, "flags", 5) != 0 || json_write_long(&writer, 64) != 0)) {
+        return HTTP_CLIENT_LIMIT;
+    }
+    if (json_write_event(&writer, JSON_END, "", 0) != 0) { return HTTP_CLIENT_LIMIT; }
+    return (int)json_writer_finish(&writer);
+}

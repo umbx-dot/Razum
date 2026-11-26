@@ -7,23 +7,27 @@ razum runs on **Windows** and **Linux**, both x86-64, from the same source tree.
 | | Windows 10/11 x64 | Linux x86-64 |
 |---|---|---|
 | Building `rzc` | `.\build.ps1` (GCC from MSYS2 or MSVC) | `./build.sh` (GCC or Clang) |
-| Output | PE `.exe`, console or window (`program gui;`), DLLs (`--dll`) | static ELF executable, no file extension, no libc |
+| Output | PE `.exe` and DLLs | Static ELF executables and shared `.so` libraries |
 | Language, `-O`, `import` of your own modules | yes | yes |
 | `stdio`, `text`, `math`, `array`, `json`, `time` | yes | yes |
 | `program` (`main(string args[])`, `new`, `free`) | yes | yes |
 | `filesystem` | yes | yes (see the differences in [libraries.md](libraries.md#filesystem)) |
 | `threads` | yes | yes: `clone` and futexes (see [libraries.md](libraries.md#threads)) |
 | `process` | yes | yes: the command line is split with the Windows rules and the program started directly, as on Windows (see [libraries.md](libraries.md#process)) |
-| `http` | yes | yes, IPv4 and IPv6, Ctrl+C, HTTPS with TLS 1.3 and 1.2 written in razum; ECDSA P-256 certificates only so far (see [libraries.md](libraries.md#http)) |
+| `net` | IPv4 and IPv6 TCP, UDP, DNS, ICMP and native raw IP, plus IPv4 neighbor lookup | Same transport API, with Linux raw Ethernet and ARP frames through `AF_PACKET` (see [libraries.md](libraries.md#net)) |
+| `http` | HTTP/HTTPS server and verified HTTPS requests and WebSockets through WinHTTP | HTTP/HTTPS server with native Razum TLS. Verified client requests and WSS use the embedded libcurl backend. [Transport requirements](libraries.md#secure-websocket-client) |
 | `crypt` | yes | yes: the algorithms in razum, `getrandom` for random bytes (see [libraries.md](libraries.md#crypt)) |
 | `gui` | yes, via GDI+ | yes, native Wayland or local X11, with the same widget API and a software renderer |
 | `windows`, `winsock` | yes | by definition no: they declare the Windows API itself. Their Linux counterpart is the `linux` library (`system_call`, constants), which in turn is not available on Windows |
 | `extern` functions from DLLs | yes | no (an error names the function and its DLL) |
 | `--dll` | yes | no |
-| Installer | `razum-setup.exe` | `razum-setup.sh` (`./build.sh --installer`): `rzc`, NASM if missing, PATH, CMake package, VS Code extension, `--uninstall` |
+| `--object` | x64 COFF `.obj` and C ABI header | x64 ELF `.o` and C ABI header |
+| `--shared` | DLL, C ABI header and `.def` | `.so` and C ABI header. Requires `cc` or `RZ_CC`. |
+| `rz build` | Manifest targets, profiles and locked source packages | Same driver for Linux targets |
+| Installer | `razum-setup.exe` installs `rzc` and `rz` | `razum-setup.sh` installs `rzc` and `rz`, NASM if needed, the CMake package and the VS Code extension |
 | Razum website server | yes | planned. The Windows site displays Linux results. |
 
-Tested on Windows 11 build 26200 with MSYS2 UCRT64 GCC 16.2 and on Fedora Linux 45 under WSL 2 with GCC 16.2 and NASM 3.02. The test suite also uses Bash, curl, OpenSSL, and awk. The compiler currently generates x86-64 programs for Windows and Linux.
+Tested on Windows 11 build 26200 (GCC 16.2, MSYS2 UCRT64) and Fedora Linux 45 under WSL 2 (GCC 16.2, NASM 3.02, curl, OpenSSL, gawk). ARM64 Linux (for example a Raspberry Pi) can build `rzc`. Generated programs require x86-64. macOS is not supported.
 
 Unicode source, import directory, and output paths in Windows `rzc` require Windows 10 version 1903 or later. NASM receives ASCII temporary names from the output directory when the assembly or binary path contains non-ASCII characters.
 
@@ -60,7 +64,7 @@ A Linux program is one static ELF file with no C library and no dynamic linker: 
 
 `main(string args[])` reads `argc` and `argv` from the stack the kernel prepared, so arguments arrive exactly as the shell split them. Line ends are `\n` on Linux and `\r\n` on Windows.
 
-razum code keeps one calling convention on both systems, the Windows x64 one (arguments in `rcx`, `rdx`, `r8`, `r9`, 32 bytes of shadow space, `rbx`, `rsi`, `rdi`, `r12`-`r15` and `xmm6`-`xmm15` preserved). On Linux it never calls C code, so it does not need the System V convention; `asm { }` blocks are written the same way on both. Calling C libraries on Linux would need it and is part of the open work.
+razum code keeps the Windows x64 calling convention on both systems (arguments in `rcx`, `rdx`, `r8`, `r9`, 32 bytes of shadow space, `rbx`, `rsi`, `rdi`, `r12`-`r15` and `xmm6`-`xmm15` preserved). On Linux, direct C library calls would need the System V convention. The HTTPS client keeps the outer executable static and runs an embedded backend in a separate process, where glibc and libcurl use their native ABI and thread-local storage.
 
 ## Linux desktop sessions
 
@@ -70,7 +74,7 @@ WSLg worked with both paths. Native Wayland was tested with `DISPLAY` unset. X11
 
 ## Tests per platform
 
-`bash tests/run_all.sh` runs on both. A test that needs a Windows-only library starts with `// platform: windows` and is reported as `skip` on Linux; `// platform: linux` does the opposite (`tests/shapes/linux_program.rz` checks the ELF header and `exit_group`). On Linux the suites `test_unicode` (the Windows console), `test_dll`, `test_cmake` (MSVC-style DLL linking) and the installer's PATH test do not run, because they test Windows-only features; `test_https` and `test_parallel_print` run on both. Linux runs an offscreen GUI regression in the program suite and `test_gui.sh` for each display protocol whose local socket is available.
+`bash tests/run_all.sh` runs on both. Tests marked `// platform: windows` or `// platform: linux` run on the named host. The manifest, CMake, HTTPS and parallel-print suites run on both. The Windows console, DLL lifecycle and installer PATH tests run on Windows. The Linux suite checks the ELF entry point, an offscreen GUI regression and each display protocol whose local socket is available.
 
 Linux CI starts headless Weston and Xvfb and sets `RZ_REQUIRE_GUI=1` so missing displays fail the suite. It also installs into a relative prefix in a temporary home, checks PATH, and uninstalls.
 

@@ -1,0 +1,10 @@
+import net.types;
+import winsock;
+
+int net_set_timeout(long socket, int events, int timeout_ms) {
+    if ((events != NET_READ && events != NET_WRITE) || timeout_ms < 0) {
+        return NET_INVALID;
+    }
+    int option = events == NET_READ ? 0x1006 : 0x1005;
+    return net_wsa_result(setsockopt(socket, SOL_SOCKET, option, (byte *)&timeout_ms, sizeof(int)));
+}

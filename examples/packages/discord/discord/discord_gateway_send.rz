@@ -1,0 +1,16 @@
+import discord.types;
+import text;
+
+int discord_gateway_send(DiscordBot *bot, int opcode, string payload) {
+    if (bot == null || !bot.websocket.open || opcode < 0 || opcode > 255 || length(payload) == 0 || length(payload) > 4060) {
+        return DISCORD_INVALID;
+    }
+    char frame[4097] = "{\"op\":";
+    char number[16];
+    int_to_text(number, opcode);
+    concat(frame, number);
+    concat(frame, ",\"d\":");
+    concat(frame, payload);
+    concat(frame, "}");
+    return http_wss_send(&bot.websocket, (byte *)&frame[0], (int)length(frame), false, 3000);
+}

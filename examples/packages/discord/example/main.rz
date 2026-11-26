@@ -1,0 +1,45 @@
+import discord;
+import bot;
+import process;
+import stdio;
+import text;
+
+int main(string args[]) {
+    char token[256];
+    DiscordBot bot;
+    if (!process_getenv("DISCORD_TOKEN", token) || !discord_init(&bot, token)) {
+        print_error("Set DISCORD_TOKEN to your application's bot token.");
+        return 2;
+    }
+    if (args.length == 2 && equals(args[1], "register")) {
+        char application[24];
+        char guild[24];
+        if (!process_getenv("DISCORD_APPLICATION_ID", application)) {
+            print_error("Set DISCORD_APPLICATION_ID before registering /ping.");
+            return 2;
+        }
+        process_getenv("DISCORD_GUILD_ID", guild);
+        HttpClientResponse response;
+        int status = discord_command(&bot, &response, application, guild, "{\"name\":\"ping\",\"description\":\"Check if the bot is online\"}");
+        http_client_free(&response);
+        print(status);
+        return status >= 200 && status < 300 ? 0 : 1;
+    }
+    int connected = discord_start(&bot, DISCORD_GUILDS, 0, 1);
+    if (connected != 0) { print(connected); return 1; }
+    DiscordEvent event;
+    while (true) {
+        int next = discord_next(&bot, &event, 15000);
+        if (next < 0) {
+            print(next);
+            if (!bot.running) { print(bot.close_code); break; }
+            continue;
+        }
+        if (next == DISCORD_GATEWAY_MESSAGE) {
+            if (equals(event.name, "READY")) { print("Discord bot ready"); }
+            if (equals(event.name, "INTERACTION_CREATE")) { bot_answer(&bot, &event); }
+        }
+    }
+    discord_close(&bot);
+    return 1;
+}

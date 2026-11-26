@@ -1,0 +1,20 @@
+import discord.discord_request_raw;
+import discord.discord_snowflake;
+import text;
+
+int discord_interaction_reply(DiscordBot *bot, HttpClientResponse *response, string interaction, string token, string callback) {
+    if (!discord_snowflake(interaction) || length(token) == 0 || length(token) > 512 ||
+        length(callback) == 0 || length(callback) > 67108864) { return DISCORD_INVALID; }
+    for (long index = 0; token[index] != "\0"; index++) {
+        char ch = token[index];
+        if (!((ch >= "A" && ch <= "Z") || (ch >= "a" && ch <= "z") || (ch >= "0" && ch <= "9") ||
+              ch == "." || ch == "-" || ch == "_" || ch == "=")) { return DISCORD_INVALID; }
+    }
+    char route[640] = "/interactions/";
+    concat(route, interaction);
+    concat(route, "/");
+    concat(route, token);
+    concat(route, "/callback");
+    return discord_request_raw(bot, response, "POST", route, (byte *)callback, (int)length(callback),
+                               "application/json", "", false);
+}

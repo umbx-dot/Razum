@@ -34,7 +34,7 @@ static bool emit_single_scalar_call(FunctionContext *context, Expression *call) 
         emit_int(context, argument);
         emit(context, "mov rcx, rax");
     }
-    emit(context, "call $%s", target->name);
+    emit(context, "call %s%s", function_label_prefix(context->program), target->name);
     return true;
 }
 
@@ -171,7 +171,7 @@ void emit_call(FunctionContext *context, Expression *call) {
     } else if (target->extern_dll != NULL) {
         emit(context, "call [iat@%s@%s]", target->extern_dll, target->name);
     } else {
-        emit(context, "call $%s", target->name);
+        emit(context, "call %s%s", function_label_prefix(context->program), target->name);
     }
     for (int index = 0; index < temps; index++) {
         release_temp(context);

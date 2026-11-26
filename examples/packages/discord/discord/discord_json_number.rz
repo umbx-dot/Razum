@@ -1,0 +1,8 @@
+import json;
+
+long discord_json_number(string source, JsonToken *tokens, int used, int object, string key) {
+    int index = json_member(source, tokens, used, object, key);
+    long number = -1;
+    if (index >= 0) { json_read_long(source, tokens[index], &number); }
+    return number;
+}

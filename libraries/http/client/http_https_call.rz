@@ -1,0 +1,21 @@
+import text;
+
+int http_https_call(HttpClientResponse *response, HttpClientCall *request) {
+    if (response == null || request == null || response.body != null || response.headers != null ||
+        request.timeout_ms <= 0 || request.max_body < 0 || request.max_body > 16777216 ||
+        request.body_length < 0 || request.body_length > 67108864 ||
+        (request.body_length != 0 && request.body == null) || !starts_with(request.url, "https://") ||
+        !http_client_argument(request.url) || (length(request.ca_file) > 0 && !http_client_argument(request.ca_file))) {
+        return HTTP_CLIENT_INVALID;
+    }
+    long method = length(request.method);
+    if (method == 0 || method > 16 || length(request.headers) > 8192) { return HTTP_CLIENT_INVALID; }
+    for (long index = 0; index < method; index++) {
+        if (request.method[index] < "A" || request.method[index] > "Z") { return HTTP_CLIENT_INVALID; }
+    }
+    if (!http_client_headers_valid(request.headers)) { return HTTP_CLIENT_INVALID; }
+    if (equals(request.method, "HEAD") && request.body_length != 0) { return HTTP_CLIENT_INVALID; }
+    response.status = 0;
+    response.length = 0;
+    return http_https_call_platform(response, request);
+}

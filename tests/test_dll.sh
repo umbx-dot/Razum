@@ -39,4 +39,38 @@ if command -v gcc > /dev/null; then
         failures=$((failures + 1))
     fi
 fi
+
+if "$rzc" "$root/tests/dll/lifecycle/plugin.rz" --dll -O -o "$work/lifecycle.dll" &&
+   "$rzc" "$root/tests/dll/reject/plugin.rz" --dll -o "$work/reject_load.dll"; then
+    if command -v gcc > /dev/null; then
+        if gcc -Wall -Wextra -Werror "$root/tests/dll/lifecycle_client.c" -o "$work/lifecycle_dynamic.exe" &&
+           (cd "$work" && ./lifecycle_dynamic.exe); then
+            echo "ok   DLL process and thread notifications and failed attach"
+        else
+            echo "FAIL DLL lifecycle"
+            failures=$((failures + 1))
+        fi
+    fi
+    if command -v g++ > /dev/null && command -v dlltool > /dev/null; then
+        if dlltool -d "$work/lifecycle.def" -l "$work/lifecycle.a" &&
+           g++ -Wall -Wextra -Werror -DLINK_LIFECYCLE -I"$work" "$root/tests/dll/lifecycle_client.c" "$work/lifecycle.a" -o "$work/lifecycle_static.exe" &&
+           (cd "$work" && ./lifecycle_static.exe); then
+            echo "ok   C++ imports DLL data and callbacks through a generated import library"
+        else
+            echo "FAIL C++ DLL import library"
+            failures=$((failures + 1))
+        fi
+    fi
+else
+    echo "FAIL lifecycle DLL compilation"
+    failures=$((failures + 1))
+fi
+
+if output="$(printf '%s\n' 'int DllMain() { return 1; }' | "$rzc" "$work/bad.rz" --stdin --dll --check 2>&1)" ||
+   [[ "$output" != *'DllMain must be declared as'* ]]; then
+    echo "FAIL invalid DLL entry point: $output"
+    failures=$((failures + 1))
+else
+    echo "ok   invalid DllMain signature is rejected"
+fi
 exit $failures

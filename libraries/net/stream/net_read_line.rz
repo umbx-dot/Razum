@@ -1,0 +1,80 @@
+import net.socket;
+import net.types;
+
+int net_read_line(NetStream *stream, char line[], int timeout_ms) {
+    if (line.length < 1) {
+        return NET_INVALID;
+    }
+    line[0] = "\0";
+    if (stream == null || !stream.attached) {
+        return NET_INVALID;
+    }
+    long deadline = net_stream_deadline(timeout_ms);
+    if (deadline < -1) {
+        return (int)deadline;
+    }
+    int start = stream.first;
+    int scan = start;
+    while (true) {
+        while (scan < stream.end && stream.input[scan] != 10) {
+            scan++;
+        }
+        bool ended = scan < stream.end;
+        if (ended || (stream.read_status == NET_EOF && scan > start)) {
+            int count = scan - start;
+            if (ended && count > 0 && stream.input[scan - 1] == 13) {
+                count--;
+            }
+            stream.first = ended ? scan + 1 : scan;
+            if (count >= line.length) {
+                stream.read_status = NET_LINE_TOO_LONG;
+                stream.first = stream.end;
+                return NET_LINE_TOO_LONG;
+            }
+            for (int index = 0; index < count; index++) {
+                line[index] = (char)stream.input[start + index];
+            }
+            line[count] = "\0";
+            return count;
+        }
+        if (stream.read_status != 0) {
+            return stream.read_status;
+        }
+        int available = stream.end - start;
+        if (available == stream.input.length || available > line.length ||
+            (available == line.length && stream.input[stream.end - 1] != 13)) {
+            stream.read_status = NET_LINE_TOO_LONG;
+            return NET_LINE_TOO_LONG;
+        }
+        int remaining = net_stream_remaining(deadline);
+        if (remaining < -1) {
+            return remaining;
+        }
+        if (start != 0 && (available == 0 || stream.end == stream.input.length)) {
+            for (int index = 0; index < available; index++) {
+                stream.input[index] = stream.input[start + index];
+            }
+            stream.first = 0;
+            stream.end = available;
+            start = 0;
+            scan = available;
+        }
+        int count = net_receive(stream.socket, &stream.input[stream.end], (int)stream.input.length - stream.end);
+        if (count > 0) {
+            stream.end += count;
+        } else if (count == 0) {
+            stream.read_status = NET_EOF;
+        } else if (net_would_block(count)) {
+            if (deadline == 0) {
+                return NET_WOULD_BLOCK;
+            }
+            int waited = net_stream_wait(stream.socket, NET_READ, deadline);
+            if (waited < 0) {
+                return waited;
+            }
+        } else if (!net_was_interrupted(count)) {
+            stream.read_status = count;
+            return count;
+        }
+    }
+}

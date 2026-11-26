@@ -11,7 +11,7 @@ static void emit_padding(TextBuffer *output, int bytes) {
 
 static void emit_scalar(TextBuffer *output, ProgramContext *program, ValueType type, const Expression *value) {
     if (value->kind == EXPRESSION_FUNCTION) {
-        text_line(output, "%s dq pe@base + $%s", relocation_label(program), value->function_value->name);
+        text_line(output, "%s dq pe@base + %s%s", relocation_label(program), function_label_prefix(program), value->function_value->name);
         return;
     }
     if (type == TYPE_STRING) {

@@ -1,0 +1,43 @@
+import net.dns.codec;
+import net.socket;
+import net.transfer;
+import net.types;
+
+int net_dns_tcp(NetAddress *server, int family, byte *query, int size, byte *reply, int capacity, int timeout_ms) {
+    long socket = net_open(family, NET_STREAM, NET_TCP);
+    if (socket < 0) {
+        return (int)socket;
+    }
+    int result = net_set_timeout(socket, NET_READ, timeout_ms);
+    if (result == 0) {
+        result = net_set_timeout(socket, NET_WRITE, timeout_ms);
+    }
+    if (result == 0) {
+        result = net_connect_for(socket, server, timeout_ms);
+    }
+    byte prefix[2] = {(byte)(size >> 8), (byte)size};
+    if (result == 0) {
+        result = net_send_all(socket, prefix, 2);
+    }
+    if (result == 0) {
+        result = net_send_all(socket, query, size);
+    }
+    if (result == 0) {
+        result = net_receive_exact(socket, prefix, 2);
+        if (result == 2) {
+            int length = net_dns_u16(prefix);
+            if (length < 12 || length > capacity) {
+                result = NET_DNS_REPLY;
+            } else {
+                result = net_receive_exact(socket, reply, length);
+                if (result >= 0 && result != length) {
+                    result = NET_DNS_REPLY;
+                }
+            }
+        } else if (result >= 0) {
+            result = NET_DNS_REPLY;
+        }
+    }
+    net_close(socket);
+    return result;
+}

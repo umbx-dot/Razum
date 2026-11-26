@@ -1,0 +1,23 @@
+void http_win_ws_callback(long handle, long context, uint status, byte *details, uint size) {
+    if (context == 0) { return; }
+    HttpWinWsState *state = (HttpWinWsState *)context;
+    if (status == HTTP_WIN_HANDLE_CLOSING) {
+        SetEvent(state.closed);
+    } else if (status == HTTP_WIN_READ_COMPLETE && details != null && size >= 8) {
+        uint *read = (uint *)details;
+        state.received = read[0];
+        state.kind = read[1];
+        SetEvent(state.read_ready);
+    } else if (status == HTTP_WIN_WRITE_COMPLETE) {
+        SetEvent(state.write_ready);
+    } else if (status == HTTP_WIN_REQUEST_ERROR && details != null && size >= 20) {
+        uint *error = (uint *)details;
+        if (error[4] == 1) {
+            state.read_error = error[2];
+            SetEvent(state.read_ready);
+        } else if (error[4] == 0) {
+            state.write_error = error[2];
+            SetEvent(state.write_ready);
+        }
+    }
+}

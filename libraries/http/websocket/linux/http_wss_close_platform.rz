@@ -1,0 +1,3 @@
+void http_wss_close_platform(HttpWebSocket *socket) {
+    http_backend_stop(socket.socket, socket.native_one);
+}

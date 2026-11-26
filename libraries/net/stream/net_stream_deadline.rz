@@ -1,0 +1,13 @@
+import net.types;
+import time;
+
+long net_stream_deadline(int timeout_ms) {
+    if (timeout_ms < -1) {
+        return NET_INVALID;
+    }
+    if (timeout_ms <= 0) {
+        return timeout_ms;
+    }
+    long now = time_monotonic_ns();
+    return now >= 0 ? now + (long)timeout_ms * 1000000 : NET_CLOCK_ERROR;
+}

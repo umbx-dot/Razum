@@ -1,0 +1,3 @@
+long net_tcp_connect(string host, int port) {
+    return net_tcp_dial(host, port, -1);
+}

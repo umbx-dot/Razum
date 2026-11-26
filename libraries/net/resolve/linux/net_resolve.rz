@@ -1,0 +1,53 @@
+import filesystem;
+import net.address;
+import net.config;
+import net.dns;
+import net.types;
+import text;
+
+int net_resolve(string host, int port, int family, NetAddress *result) {
+    if (result == null || port < 0 || port > 65535 || (family != NET_IPV4 && family != NET_IPV6)) {
+        return NET_INVALID;
+    }
+    if (family == NET_IPV6 && equals_ignore_case(host, "localhost")) {
+        net_ip(result, "::1", port);
+        return 0;
+    }
+    if (net_ip(result, host, port)) {
+        if (net_address_family(result) == family) {
+            return 0;
+        }
+        result.length = 0;
+        return NET_NOT_FOUND;
+    }
+    if (net_hosts_lookup(host, port, family, result)) {
+        return 0;
+    }
+    File file;
+    if (!open(file, "/etc/resolv.conf", "r")) {
+        return NET_NOT_FOUND;
+    }
+    char line[512];
+    char token[64];
+    const int limit = 3;
+    int queried = 0;
+    int status = NET_NOT_FOUND;
+    while (queried < limit && read_line(file, line)) {
+        int cursor = 0;
+        NetAddress server;
+        if (net_config_word(line, &cursor, token) && equals(token, "nameserver") &&
+            net_config_word(line, &cursor, token) && net_ip(&server, token, 53)) {
+            queried++;
+            status = net_dns_lookup(host, family, &server, result, 1500);
+            if (status == 0 || status == NET_INVALID || status == NET_NOT_FOUND) {
+                break;
+            }
+        }
+    }
+    close(file);
+    if (status == 0) {
+        result.bytes[2] = (byte)(port >> 8);
+        result.bytes[3] = (byte)port;
+    }
+    return status;
+}

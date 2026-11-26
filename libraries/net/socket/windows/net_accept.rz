@@ -1,0 +1,29 @@
+import net.types;
+import windows;
+import winsock;
+
+long net_accept(long socket, NetAddress *peer) {
+    byte *bytes = null;
+    int *length = null;
+    if (peer != null) {
+        peer.length = (int)peer.bytes.length;
+        bytes = &peer.bytes[0];
+        length = &peer.length;
+    }
+    long accepted = accept(socket, bytes, length);
+    if (accepted == INVALID_SOCKET) {
+        if (peer != null) {
+            peer.length = 0;
+        }
+        return -WSAGetLastError();
+    }
+    if (SetHandleInformation(accepted, HANDLE_FLAG_INHERIT, 0) == 0) {
+        uint error = GetLastError();
+        closesocket(accepted);
+        if (peer != null) {
+            peer.length = 0;
+        }
+        return -(long)error;
+    }
+    return accepted;
+}

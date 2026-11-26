@@ -1,0 +1,21 @@
+manifest_version = 1
+
+[project]
+name = "mixed-project"
+
+[profile.release]
+optimize = true
+keep_asm = true
+
+[[target]]
+name = "fastmath"
+kind = "shared"
+source = "razum/fastmath.rz"
+
+[[target]]
+name = "report"
+kind = "exe"
+source = "razum/report.rz"
+platforms = ["windows"]
+depends_on = ["fastmath"]
+subsystem = "console"

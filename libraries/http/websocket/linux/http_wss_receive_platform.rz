@@ -1,0 +1,19 @@
+import process;
+
+int http_wss_receive_platform(HttpWebSocket *socket, byte *data, int timeout_ms) {
+    int command[3] = {1, 0, timeout_ms};
+    long deadline = process_clock() + (long)timeout_ms + 100;
+    int result = http_backend_transfer(socket.socket, (long)&command[0], 12, true, deadline);
+    int reply[2];
+    if (result == 0) { result = http_backend_transfer(socket.socket, (long)&reply[0], 8, false, deadline); }
+    if (result != 0) { return result == HTTP_CLIENT_TIMEOUT ? HTTP_CLIENT_TRANSFER : result; }
+    if (reply[0] < 0) {
+        if (reply[0] == HTTP_WSS_CLOSED) { socket.close_code = reply[1]; }
+        return reply[0];
+    }
+    if (reply[0] > socket.max_message || reply[1] < 0 || reply[1] > 1) { return HTTP_CLIENT_PROTOCOL; }
+    result = http_backend_transfer(socket.socket, (long)data, reply[0], false, deadline);
+    if (result != 0) { return result == HTTP_CLIENT_TIMEOUT ? HTTP_CLIENT_TRANSFER : result; }
+    socket.binary = reply[1] != 0;
+    return reply[0];
+}

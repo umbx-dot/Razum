@@ -1,0 +1,3 @@
+int net_dns_u16(byte *data) {
+    return ((int)data[0] << 8) | data[1];
+}

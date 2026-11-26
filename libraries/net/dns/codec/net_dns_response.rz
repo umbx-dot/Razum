@@ -1,0 +1,72 @@
+import net.address;
+import net.types;
+
+int net_dns_response(byte *reply, int size, byte *query, int question_size, int family, NetAddress *result) {
+    if (size < question_size || reply[0] != query[0] || reply[1] != query[1] ||
+        (reply[2] & 0xf8) != 0x80 || net_dns_u16(&reply[4]) != 1 ||
+        !net_dns_equal(&reply[12], &query[12], question_size - 12)) {
+        return NET_DNS_REPLY;
+    }
+    if ((reply[2] & 2) != 0) {
+        return NET_DNS_TRUNCATED;
+    }
+    if ((reply[3] & 15) == 3) {
+        return NET_NOT_FOUND;
+    }
+    if ((reply[3] & 15) != 0) {
+        return NET_DNS_REPLY;
+    }
+    int answer_count = net_dns_u16(&reply[6]);
+    byte owner[256];
+    byte alias[256];
+    byte expected[256];
+    int expected_size = question_size - 16;
+    for (int index = 0; index < expected_size; index++) {
+        expected[index] = query[12 + index];
+    }
+    int wanted = family == NET_IPV4 ? 1 : 28;
+    int ip_size = family == NET_IPV4 ? 4 : 16;
+    for (int chain = 0; chain < 16; chain++) {
+        int cursor = question_size;
+        int alias_size = 0;
+        for (int answer = 0; answer < answer_count; answer++) {
+            int owner_size = net_dns_name(reply, size, &cursor, owner);
+            if (owner_size == 0 || cursor > size - 10) {
+                return NET_DNS_REPLY;
+            }
+            int record_type = net_dns_u16(&reply[cursor]);
+            int record_class = net_dns_u16(&reply[cursor + 2]);
+            int record_size = net_dns_u16(&reply[cursor + 8]);
+            cursor += 10;
+            if (record_size > size - cursor) {
+                return NET_DNS_REPLY;
+            }
+            if (record_class == 1 && owner_size == expected_size && net_dns_equal(owner, expected, owner_size)) {
+                if (record_type == wanted && record_size == ip_size) {
+                    net_ip(result, family == NET_IPV4 ? "0.0.0.0" : "::", 0);
+                    int offset = family == NET_IPV4 ? 4 : 8;
+                    for (int index = 0; index < ip_size; index++) {
+                        result.bytes[offset + index] = reply[cursor + index];
+                    }
+                    return 0;
+                }
+                if (record_type == 5 && alias_size == 0) {
+                    int alias_at = cursor;
+                    alias_size = net_dns_name(reply, size, &alias_at, alias);
+                    if (alias_size == 0 || alias_at != cursor + record_size) {
+                        return NET_DNS_REPLY;
+                    }
+                }
+            }
+            cursor += record_size;
+        }
+        if (alias_size == 0) {
+            return NET_NOT_FOUND;
+        }
+        expected_size = alias_size;
+        for (int index = 0; index < alias_size; index++) {
+            expected[index] = alias[index];
+        }
+    }
+    return NET_DNS_REPLY;
+}

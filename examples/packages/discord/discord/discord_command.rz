@@ -1,0 +1,15 @@
+import discord.discord_request;
+import discord.discord_snowflake;
+import text;
+
+int discord_command(DiscordBot *bot, HttpClientResponse *response, string application, string guild, string definition) {
+    if (!discord_snowflake(application) || (length(guild) != 0 && !discord_snowflake(guild))) { return DISCORD_INVALID; }
+    char route[256] = "/applications/";
+    concat(route, application);
+    if (length(guild) != 0) {
+        concat(route, "/guilds/");
+        concat(route, guild);
+    }
+    concat(route, "/commands");
+    return discord_request(bot, response, "POST", route, definition);
+}

@@ -15,7 +15,7 @@ Builds rzc into ./build (or $RZ_BUILD) with CMake.
 
   --test               run the test suite afterwards (tests/run_all.sh)
   --installer          also build build/razum-setup.sh, the self-extracting Linux installer
-  --install [PREFIX]   copy rzc to PREFIX/bin; PREFIX defaults to ~/.local
+  --install [PREFIX]   install rzc and rz in PREFIX/bin; PREFIX defaults to ~/.local
   -h, --help           show this text
 
 Needs a C17 compiler (gcc or clang), CMake 3.20+, NASM, and Ninja or make.

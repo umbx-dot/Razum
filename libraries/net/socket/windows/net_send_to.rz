@@ -1,0 +1,10 @@
+import net.address;
+import net.types;
+import winsock;
+
+int net_send_to(long socket, byte *data, int length, NetAddress *address) {
+    if (length < 0 || (length > 0 && data == null) || !net_valid_address(address)) {
+        return NET_INVALID;
+    }
+    return net_wsa_result(sendto(socket, (char *)data, length, 0, &address.bytes[0], address.length));
+}

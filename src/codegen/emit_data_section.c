@@ -12,7 +12,7 @@ static void emit_global(TextBuffer *output, ProgramContext *program, const Globa
     }
     if (initial != NULL && initial->kind == EXPRESSION_FUNCTION) {
         text_line(output, "%s:", variable->symbol->label);
-        text_line(output, "%s dq pe@base + $%s", relocation_label(program), initial->function_value->name);
+        text_line(output, "%s dq pe@base + %s%s", relocation_label(program), function_label_prefix(program), initial->function_value->name);
         return;
     }
     if (variable->type == TYPE_STRING) {

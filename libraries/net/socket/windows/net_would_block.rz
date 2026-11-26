@@ -1,0 +1,6 @@
+import winsock;
+import net.types;
+
+bool net_would_block(int result) {
+    return result == -WSAEWOULDBLOCK || result == NET_WOULD_BLOCK;
+}

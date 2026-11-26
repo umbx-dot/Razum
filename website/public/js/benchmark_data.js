@@ -62,9 +62,16 @@ export function libraryBenchmarks(report) {
     return table(report, "Library performance").flatMap((row) => {
         const platforms = ["Windows", "WSL"].flatMap((name) => {
             const [before, after] = (row[`${name} before → after`] ?? "").split("→").map((cell) => cell.trim());
-            const bars = timings([["Before", before], ["After", after]]);
+            const bars = timings(before === "new" ? [["Current", after]] : [["Before", before], ["After", after]]);
             return complete(bars) ? [{ name, bars }] : [];
         });
         return row.Workload && platforms.length ? [{ name: row.Workload, platforms }] : [];
+    });
+}
+
+export function projectBenchmarks(report) {
+    return table(report, "Project build performance").flatMap((row) => {
+        const bars = timings([["Windows", row.Windows], ["WSL", row.WSL]]).filter(([, value]) => value !== undefined);
+        return / (cold|warm) build$/.test(row.Workload) && bars.length ? [{ name: row.Workload, bars }] : [];
     });
 }

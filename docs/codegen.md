@@ -190,8 +190,8 @@ With `--dll` the same file layout is used with these differences:
 | Preferred base (`pe@base`) | `0x140000000` | `0x180000000` |
 | File characteristics | `0x0022` | `0x2022` (adds "DLL") |
 | DLL characteristics | `0` | `0x0060`: relocatable with high-entropy addresses, so Windows usually loads it elsewhere |
-| Entry `rz@entry` | calls `main` and `ExitProcess` | `DllMain`: returns 1; on unload sends buffered output |
-| Export directory | empty | `pe@exports`: sorted names, ordinals and the `$name` addresses of every `export` function |
+| Entry `rz@entry` | calls `main` and `ExitProcess` | Forwards the Windows arguments to `DllMain` when defined. Preserves its process attach return value and flushes buffered output on process detach. Without a hook it returns 1. |
+| Export directory | empty | `pe@exports`: sorted names, ordinals and the `$name` addresses of exported functions and mutable globals |
 | Relocation directory | empty | one block per absolute address: each string pointer in data is `pe@reloc@N: dq pe@base + str@M`, and Windows adds the load offset to it |
 
 An exported function stores its narrow integer and `bool` parameters again after the usual home-slot spill (`movsxd rax, dword [rsp + 8]` / `mov qword [rsp + 8], rax`), because C callers leave the upper register bits undefined while razum code expects every slot extended to 64 bits.

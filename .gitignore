@@ -3,6 +3,7 @@ build/
 *.asm
 !libraries/**/*.asm
 !tests/**/*.asm
+!examples/mixed_static/asm/step.asm
 
 website/*.exe
 website/*.asm

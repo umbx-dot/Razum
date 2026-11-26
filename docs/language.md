@@ -680,6 +680,8 @@ A struct parameter in a function type is passed by reference, as everywhere in r
 
 `import name;` makes the declarations in a library or project module available. Call the functions by their plain names, for example `print("hello")` after `import stdio;`.
 
+Use [the project manifest](projects.md) to declare named build targets, compiler profiles and locked Git dependencies. `rz build` resolves package directories and passes them to `rzc` as import roots.
+
 ```c
 import stdio;           // the built-in stdio library
 import math.integer;    // only the integer part of math
@@ -742,13 +744,15 @@ int main() {
 
 ## Making a DLL
 
-Mark the functions a DLL offers with `export` and build with `--dll`:
+Mark the functions or mutable globals a Windows DLL offers with `export` and build with `--dll`:
 
 ```c
 struct Point {
     int x;
     int y;
 }
+
+export int answer = 42;
 
 export long add(long a, long b) {
     return a + b;
@@ -764,7 +768,7 @@ export void move_point(Point p, int dx, int dy) {
 rzc mathlib.rz --dll
 ```
 
-This writes `mathlib.dll`, `mathlib.def` (the export list, for making an import library) and `mathlib.h` (C declarations of the exported functions and of the structs, with the same layout). The file needs no `main`; it may import libraries and modules like a program.
+This writes `mathlib.dll`, `mathlib.def` (the export list, for making an import library) and `mathlib.h` (C and C++ declarations for the public interface). The `.def` marks shared variables as `DATA`. Each DLL has its own globals and its own output buffer. The source may import libraries and modules like a program.
 
 | Using the DLL from | How |
 |---|---|
@@ -780,10 +784,32 @@ How razum types appear in C:
 | `bool`, `char`, `byte`, `short`, `int`, `long`, `ulong`, `float`, `double`, ... | `bool`, `char`, `uint8_t`, `int16_t`, `int32_t`, `int64_t`, `uint64_t`, `float`, `double`, ... |
 | `string` | `const char *` |
 | `T *` | `T *` |
+| `fn(int) -> int` | `int32_t (*)(int32_t)` |
 | a struct parameter `Point p` | `Point *p` (passed by reference, as in razum) |
 | an array parameter `int values[]` | two parameters: `int32_t *values, int64_t values_length` |
 
-A DLL has its own globals and its own output buffer; buffered output is sent when the DLL is unloaded or at each line end on a console. To load a DLL by name while the program runs, cast the result of `GetProcAddress` to a [function type](#function-values-and-callbacks).
+`LoadLibraryA`, `GetProcAddress` and `FreeLibrary` are available through `import windows;`. Cast the result of `GetProcAddress` to a [function type](#function-values-and-callbacks) for a function or a typed pointer for a data export. Check the returned address before using it. Keep the DLL loaded while any of those addresses are in use.
+
+### Run code when Windows loads a DLL
+
+```c
+import windows.dll;
+
+export int ready = 0;
+
+int DllMain(long module, uint reason, void *reserved) {
+    if (reason == DLL_PROCESS_ATTACH) {
+        ready = 1;
+    }
+    return 1;
+}
+```
+
+`DllMain` is optional and uses the signature shown above. A DLL with just `DllMain` may omit exports. Windows supplies the module handle, a reason code and a reserved pointer. `DLL_PROCESS_ATTACH` (1) and `DLL_PROCESS_DETACH` (0) report load and unload. `DLL_THREAD_ATTACH` (2) and `DLL_THREAD_DETACH` (3) report thread startup and exit when Windows sends those notifications.
+
+Return `0` from process attach to refuse the load, or a nonzero value to accept it. Windows ignores the return value for the other reasons. On process attach `reserved` is null for `LoadLibrary` and non-null for load-time linking. On process detach it is non-null when the process is terminating.
+
+The Windows loader holds its lock while calling the hook. Keep the hook to simple local initialization and put work that loads DLLs or waits on other threads in an exported initializer called after loading. Any linked Razum output buffer is flushed after the process detach hook. [Windows DLL entry-point guidance](https://learn.microsoft.com/en-us/windows/win32/dlls/dllmain)
 
 ## asm blocks
 

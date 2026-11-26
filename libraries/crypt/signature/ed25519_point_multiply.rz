@@ -1,0 +1,13 @@
+
+void ed25519_point_multiply(Ed25519Point *result, Ed25519Point *point, byte *scalar) {
+    Ed25519Point identity;
+    identity.y[0] = 1;
+    identity.z[0] = 1;
+    *result = identity;
+    for (int bit = 255; bit >= 0; bit--) {
+        ed25519_point_add(result, result, result);
+        if (((scalar[bit >> 3] >> (bit & 7)) & 1) != 0) {
+            ed25519_point_add(result, result, point);
+        }
+    }
+}

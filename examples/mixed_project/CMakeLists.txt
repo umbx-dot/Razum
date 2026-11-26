@@ -11,9 +11,11 @@ target_compile_definitions(textutils PRIVATE TEXTUTILS_BUILD)
 target_include_directories(textutils PUBLIC c)
 set_target_properties(textutils PROPERTIES PREFIX "")
 
-add_razum_library(fastmath razum/fastmath.rz)
+add_razum_library(fastmath razum/fastmath.rz MANIFEST razum.toml PROFILE release)
 
 add_executable(app cpp/main.cpp)
 target_link_libraries(app PRIVATE fastmath textutils)
 
-add_razum_executable(report razum/report.rz DEPENDS textutils fastmath)
+if(WIN32)
+    add_razum_executable(report razum/report.rz MANIFEST razum.toml PROFILE release DEPENDS textutils fastmath)
+endif()

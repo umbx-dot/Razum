@@ -16,10 +16,18 @@ if ! cmake -S "$root/examples/mixed_project" -B "$work" -G Ninja -DCMAKE_C_COMPI
     tail -20 "$work.log"
     exit 1
 fi
-output="$("$work/app.exe"; "$work/report.exe")"
+output="$("$work/app$exe")"
+extra_assembly="$work/fastmath.asm"
+if [ "$host" = windows ]; then
+    output+=$'\n'"$("$work/report$exe")"
+    extra_assembly="$work/report.asm"
+fi
 output="${output//$'\r'/}"
 expected="$(cat "$root/examples/mixed_project/expected_output.txt")"
-if [ "$output" == "$expected" ]; then
+if [ "$host" != windows ]; then
+    expected="$(head -n 3 "$root/examples/mixed_project/expected_output.txt")"
+fi
+if [ "$output" == "$expected" ] && [ -s "$work/fastmath.asm" ] && [ -s "$extra_assembly" ]; then
     echo "ok   mixed C/C++/razum CMake project"
     exit 0
 fi

@@ -1,0 +1,9 @@
+import net.types;
+import winsock;
+
+int net_get_option(long socket, int level, int option, byte *data, int *length) {
+    if (length == null || *length < 0 || (*length > 0 && data == null)) {
+        return NET_INVALID;
+    }
+    return net_wsa_result(getsockopt(socket, level, option, data, length));
+}

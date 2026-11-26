@@ -1,0 +1,20 @@
+import text;
+
+int http_windows_request(HttpClientResponse *response, HttpClientCall *call, bool capture_headers) {
+    if (length(call.ca_file) != 0) { return HTTP_CLIENT_UNSUPPORTED; }
+    ushort headers[8193];
+    if (length(call.headers) > 0 && to_utf16(headers, call.headers) < 0) { return HTTP_CLIENT_INVALID; }
+    ushort method[17];
+    if (to_utf16(method, call.method) < 0) { return HTTP_CLIENT_INVALID; }
+    ushort agent[6];
+    to_utf16(agent, "Razum");
+    long session = WinHttpOpen(agent, HTTP_WIN_AUTO_PROXY, 0, 0, HTTP_WIN_ASYNC);
+    if (session == 0) { return HTTP_CLIENT_BACKEND; }
+    long connection = 0;
+    long request = 0;
+    int opened = http_win_open_handles(session, call.url, &method[0], &connection, &request);
+    int result = opened == 0 ? http_win_fetch(request, response, call, length(call.headers) != 0 ? (long)&headers[0] : 0, capture_headers) : opened;
+    if (connection != 0) { WinHttpCloseHandle(connection); }
+    WinHttpCloseHandle(session);
+    return result;
+}

@@ -1,0 +1,11 @@
+import windows;
+
+int http_wss_send_platform(HttpWebSocket *socket, byte *data, int length, bool binary, int timeout_ms) {
+    HttpWinWsState *state = (HttpWinWsState *)socket.state;
+    state.write_error = 0;
+    uint code = WinHttpWebSocketSend(socket.socket, (uint)(binary ? 0 : 2), data, (uint)length);
+    if (code != 0 && code != 997) { return http_win_error(code); }
+    uint waited = WaitForSingleObject(state.write_ready, (uint)timeout_ms);
+    if (waited != WAIT_OBJECT_0) { return waited == WAIT_TIMEOUT ? HTTP_CLIENT_TIMEOUT : HTTP_CLIENT_TRANSFER; }
+    return state.write_error == 0 ? 0 : http_win_error(state.write_error);
+}

@@ -1,0 +1,10 @@
+import net.types;
+
+bool net_ipv6_scope(NetAddress *address, uint interface_index) {
+    if (net_address_family(address) != NET_IPV6) {
+        return false;
+    }
+    uint *scope = (uint *)&address.bytes[24];
+    *scope = interface_index;
+    return true;
+}

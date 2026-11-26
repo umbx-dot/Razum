@@ -1,0 +1,71 @@
+import http;
+import json;
+
+const int DISCORD_INVALID = -32000;
+const int DISCORD_GATEWAY_PROTOCOL = -32001;
+const int DISCORD_GATEWAY_FATAL = -32002;
+const int DISCORD_GATEWAY_LIMIT = -32003;
+const int DISCORD_GATEWAY_MESSAGE = 1;
+const int DISCORD_GATEWAY_TIMEOUT = 0;
+const int DISCORD_MAX_PAYLOAD = 4194304;
+
+const long DISCORD_GUILDS = 1;
+const long DISCORD_GUILD_MEMBERS = 2;
+const long DISCORD_GUILD_MODERATION = 4;
+const long DISCORD_GUILD_EXPRESSIONS = 8;
+const long DISCORD_GUILD_INTEGRATIONS = 16;
+const long DISCORD_GUILD_WEBHOOKS = 32;
+const long DISCORD_GUILD_INVITES = 64;
+const long DISCORD_GUILD_VOICE_STATES = 128;
+const long DISCORD_GUILD_PRESENCES = 256;
+const long DISCORD_GUILD_MESSAGES = 512;
+const long DISCORD_GUILD_MESSAGE_REACTIONS = 1024;
+const long DISCORD_GUILD_MESSAGE_TYPING = 2048;
+const long DISCORD_DIRECT_MESSAGES = 4096;
+const long DISCORD_DIRECT_MESSAGE_REACTIONS = 8192;
+const long DISCORD_DIRECT_MESSAGE_TYPING = 16384;
+const long DISCORD_MESSAGE_CONTENT = 32768;
+const long DISCORD_GUILD_SCHEDULED_EVENTS = 65536;
+const long DISCORD_AUTO_MODERATION_CONFIGURATION = 1048576;
+const long DISCORD_AUTO_MODERATION_EXECUTION = 2097152;
+const long DISCORD_GUILD_MESSAGE_POLLS = 16777216;
+const long DISCORD_DIRECT_MESSAGE_POLLS = 33554432;
+
+struct DiscordLimit {
+    ulong route;
+    long until;
+}
+
+struct DiscordBot {
+    char token[256];
+    HttpWebSocket websocket;
+    char *payload;
+    JsonToken *tokens;
+    int token_capacity;
+    int shard;
+    int shards;
+    long intents;
+    long sequence;
+    long heartbeat_interval;
+    long heartbeat_at;
+    long reconnect_at;
+    int reconnect_count;
+    int close_code;
+    bool awaiting_ack;
+    bool running;
+    char session_id[128];
+    char resume_url[512];
+    DiscordLimit limits[64];
+    long global_limit;
+    long retry_after_ms;
+}
+
+struct DiscordEvent {
+    char name[96];
+    string source;
+    JsonToken *tokens;
+    int used;
+    int data;
+    long sequence;
+    int shard;
+}

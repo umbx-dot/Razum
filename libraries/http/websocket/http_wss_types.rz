@@ -1,0 +1,15 @@
+import http.client;
+import http.memory;
+
+const int HTTP_WSS_CLOSED = -31100;
+
+struct HttpWebSocket {
+    bool open;
+    bool binary;
+    int close_code;
+    int max_message;
+    long socket;
+    long native_one;
+    long native_two;
+    void *state;
+}

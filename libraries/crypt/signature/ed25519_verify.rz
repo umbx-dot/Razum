@@ -1,0 +1,4 @@
+
+bool ed25519_verify(byte public_key[], byte signature[], byte *message, long length) {
+    return ed25519_verify_parts(public_key, signature, message, length, null, 0);
+}

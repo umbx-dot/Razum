@@ -1,0 +1,56 @@
+struct HttpWinUrl {
+    uint size;
+    ushort *scheme;
+    uint scheme_length;
+    int scheme_kind;
+    ushort *host;
+    uint host_length;
+    ushort port;
+    ushort *user;
+    uint user_length;
+    ushort *password;
+    uint password_length;
+    ushort *path;
+    uint path_length;
+    ushort *extra;
+    uint extra_length;
+}
+
+struct HttpWinState {
+    long ready;
+    long closed;
+    uint count;
+    uint error;
+    ulong deadline;
+}
+
+const uint HTTP_WIN_AUTO_PROXY = 4;
+const uint HTTP_WIN_ASYNC = 0x10000000;
+const uint HTTP_WIN_SECURE = 0x00800000;
+const uint HTTP_WIN_REJECT_CREDENTIALS = 0x4000;
+const uint HTTP_WIN_TLS_PROTOCOLS = 84;
+const uint HTTP_WIN_TLS_12 = 0x0800;
+const uint HTTP_WIN_TLS_13 = 0x2000;
+const uint HTTP_WIN_DISABLED_FEATURES = 63;
+const uint HTTP_WIN_NO_COOKIES_REDIRECTS_OR_AUTH = 7;
+const uint HTTP_WIN_CONTEXT = 45;
+const uint HTTP_WIN_NUMERIC_STATUS = 0x20000013;
+const uint HTTP_WIN_HANDLE_CLOSING = 0x00000800;
+const uint HTTP_WIN_HEADERS_AVAILABLE = 0x00020000;
+const uint HTTP_WIN_READ_COMPLETE = 0x00080000;
+const uint HTTP_WIN_REQUEST_ERROR = 0x00200000;
+const uint HTTP_WIN_SEND_COMPLETE = 0x00400000;
+
+extern "winhttp" int WinHttpCrackUrl(ushort *url, uint length, uint flags, HttpWinUrl *parts);
+extern "winhttp" long WinHttpOpen(ushort *agent, uint access, long proxy, long bypass, uint flags);
+extern "winhttp" long WinHttpConnect(long session, ushort *host, ushort port, uint reserved);
+extern "winhttp" long WinHttpOpenRequest(long connection, ushort *method, ushort *path, long version, long referrer, long accept_types, uint flags);
+extern "winhttp" int WinHttpSetOption(long handle, uint option, void *value, uint size);
+extern "winhttp" long WinHttpSetStatusCallback(long handle, fn(long, long, uint, byte *, uint) callback, uint flags, ulong reserved);
+extern "winhttp" int WinHttpSendRequest(long request, long headers, uint headers_length, long optional, uint optional_length, uint total, long context);
+extern "winhttp" int WinHttpReceiveResponse(long request, long reserved);
+extern "winhttp" int WinHttpQueryHeaders(long request, uint query, long name, void *buffer, uint *size, long index);
+extern "winhttp" int WinHttpReadData(long request, byte *buffer, uint capacity, uint *read);
+extern "winhttp" int WinHttpCloseHandle(long handle);
+extern "kernel32" long CreateEventW(long security, int manual, int initial, long name);
+extern "kernel32" int SetEvent(long event);

@@ -1,0 +1,132 @@
+import net;
+import threads;
+
+struct DnsFixture {
+    long udp;
+    long tcp;
+    int mode;
+    int status;
+}
+
+int dns_answer(byte *reply, int length, int mode) {
+    reply[2] = 0x81;
+    reply[3] = 0x80;
+    if (mode == 1) {
+        reply[1] ^= 1;
+        return length;
+    }
+    if (mode == 3) {
+        reply[3] = 0x83;
+        return length;
+    }
+    if (mode == 4) {
+        reply[7] = 1;
+        net_write_u16(&reply[length], 0xc000 | length);
+        return length + 2;
+    }
+    byte alias[19] = {0xc0, 0x0c, 0, 5, 0, 1, 0, 0, 0, 1, 0, 7, 4, 114, 101, 97, 108, 0xc0, 0x12};
+    byte address[16] = {0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 4, 192, 0, 2, 42};
+    reply[7] = 2;
+    for (int index = 0; index < alias.length; index++) {
+        reply[length + index] = alias[index];
+    }
+    int record = length + (int)alias.length;
+    for (int index = 0; index < address.length; index++) {
+        reply[record + index] = address[index];
+    }
+    net_write_u16(&reply[record], 0xc000 | (length + 12));
+    return record + (int)address.length;
+}
+
+void dns_fixture(long input) {
+    DnsFixture *fixture = (DnsFixture *)input;
+    byte query[512];
+    NetAddress source;
+    if (net_wait(fixture.udp, NET_READ, 1500) != 1) {
+        return;
+    }
+    int size = net_receive_from(fixture.udp, query, 512, &source);
+    if (size < 24) {
+        return;
+    }
+    if (fixture.mode != 2) {
+        int length = dns_answer(query, size, fixture.mode);
+        fixture.status = net_send_to(fixture.udp, query, length, &source) == length ? 0 : 1;
+        return;
+    }
+    query[2] = 0x83;
+    query[3] = 0x80;
+    if (net_send_to(fixture.udp, query, size, &source) != size || net_wait(fixture.tcp, NET_READ, 1500) != 1) {
+        return;
+    }
+    long connection = net_accept(fixture.tcp, null);
+    if (connection < 0) {
+        return;
+    }
+    byte prefix[2];
+    if (net_set_timeout(connection, NET_READ, 1000) == 0 &&
+        net_receive_exact(connection, prefix, 2) == 2 &&
+        ((int)prefix[0] << 8 | prefix[1]) == size &&
+        net_receive_exact(connection, query, size) == size) {
+        int length = dns_answer(query, size, 0);
+        net_write_u16(prefix, length);
+        fixture.status = net_send_all(connection, prefix, 2) == 0 &&
+                         net_send_all(connection, query, length) == 0 ? 0 : 1;
+    }
+    net_close(connection);
+}
+
+int check_dns(int mode) {
+    DnsFixture fixture;
+    fixture.status = 1;
+    fixture.mode = mode;
+    fixture.tcp = net_tcp_listen("127.0.0.1", 0, 8);
+    NetAddress endpoint;
+    NetAddress answer;
+    if (fixture.tcp < 0 || net_local_address(fixture.tcp, &endpoint) != 0) {
+        return 1;
+    }
+    fixture.udp = net_udp_bind("127.0.0.1", net_port(&endpoint));
+    if (fixture.udp < 0) {
+        return 2;
+    }
+    long worker = thread_start(dns_fixture, (long)&fixture);
+    if (worker == 0) {
+        return 3;
+    }
+    int code = net_dns_lookup("alias.test", NET_IPV4, &endpoint, &answer, 1000);
+    thread_join(worker);
+    net_close(fixture.udp);
+    net_close(fixture.tcp);
+    if (fixture.status != 0) {
+        return 4;
+    }
+    if (mode == 1 || mode == 4) {
+        return code == NET_DNS_REPLY && answer.length == 0 ? 0 : 5;
+    }
+    if (mode == 3) {
+        return code == NET_NOT_FOUND && answer.length == 0 ? 0 : 6;
+    }
+    return code == 0 && net_address_family(&answer) == NET_IPV4 && answer.bytes[4] == 192 &&
+           answer.bytes[5] == 0 && answer.bytes[6] == 2 && answer.bytes[7] == 42 ? 0 : 7;
+}
+
+int main() {
+    if (net_startup() != 0) {
+        return 1;
+    }
+    NetAddress address;
+    if (net_resolve("LOCALHOST", 23, NET_IPV4, &address) != 0 || net_port(&address) != 23 || address.bytes[4] != 127) {
+        return 4;
+    }
+    if (net_resolve("LOCALHOST", 22, NET_IPV6, &address) != 0 || net_port(&address) != 22 || address.bytes[23] != 1) {
+        return 2;
+    }
+    for (int mode = 0; mode < 5; mode++) {
+        int result = check_dns(mode);
+        if (result != 0) {
+            return (mode + 1) * 10 + result;
+        }
+    }
+    return net_cleanup() == 0 ? 0 : 3;
+}

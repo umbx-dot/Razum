@@ -1,0 +1,21 @@
+import net.socket;
+import net.types;
+
+int net_stream_wait(long socket, int events, long deadline) {
+    for (;;) {
+        int remaining = net_stream_remaining(deadline);
+        if (remaining < -1) {
+            return remaining;
+        }
+        int result = net_wait(socket, events, remaining);
+        if (result > 0) {
+            return 0;
+        }
+        if (result == 0) {
+            return NET_TIMEOUT;
+        }
+        if (!net_was_interrupted(result)) {
+            return result;
+        }
+    }
+}

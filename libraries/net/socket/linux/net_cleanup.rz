@@ -1,0 +1,3 @@
+int net_cleanup() {
+    return 0;
+}

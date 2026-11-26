@@ -1,0 +1,5 @@
+import winsock;
+
+int net_wsa_result(int result) {
+    return result < 0 ? -WSAGetLastError() : result;
+}

@@ -1,0 +1,5 @@
+export int plugin_increment = 1;
+
+export int plugin_value(int value) {
+    return value + plugin_increment;
+}

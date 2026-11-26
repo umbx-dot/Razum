@@ -1,0 +1,6 @@
+void http_wss_close(HttpWebSocket *socket) {
+    if (socket != null && socket.open) {
+        http_wss_close_platform(socket);
+        socket.open = false;
+    }
+}

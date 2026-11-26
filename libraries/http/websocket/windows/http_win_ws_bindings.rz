@@ -1,0 +1,22 @@
+struct HttpWinWsState {
+    long read_ready;
+    long closed;
+    long write_ready;
+    byte *data;
+    uint read_error;
+    uint write_error;
+    uint received;
+    uint kind;
+    int used;
+    bool pending;
+    bool callback;
+}
+
+const uint HTTP_WIN_UPGRADE_WEBSOCKET = 114;
+const uint HTTP_WIN_WRITE_COMPLETE = 0x00100000;
+
+extern "winhttp" int WinHttpSetTimeouts(long handle, int resolve_ms, int connect_ms, int send_ms, int receive_ms);
+extern "winhttp" long WinHttpWebSocketCompleteUpgrade(long request, long context);
+extern "winhttp" uint WinHttpWebSocketSend(long socket, uint kind, byte *data, uint size);
+extern "winhttp" uint WinHttpWebSocketReceive(long socket, byte *data, uint size, uint *read, uint *kind);
+extern "winhttp" uint WinHttpWebSocketQueryCloseStatus(long socket, ushort *status, void *reason, uint capacity, uint *received);

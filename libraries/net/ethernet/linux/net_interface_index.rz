@@ -1,0 +1,25 @@
+import linux;
+import net.socket;
+import net.types;
+import text;
+
+struct NetInterfaceQuery {
+    char name[16];
+    int index;
+    byte remainder[20];
+}
+
+int net_interface_index(string name) {
+    NetInterfaceQuery query;
+    if (length(name) == 0 || length(name) >= query.name.length) {
+        return NET_INVALID;
+    }
+    copy(query.name, name);
+    long socket = net_open(NET_IPV4, NET_DATAGRAM, NET_UDP);
+    if (socket < 0) {
+        return (int)socket;
+    }
+    long result = system_call(SYS_IOCTL, socket, 0x8933, (long)&query, 0);
+    net_close(socket);
+    return result < 0 ? (int)result : query.index;
+}

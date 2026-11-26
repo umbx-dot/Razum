@@ -1,0 +1,52 @@
+import crypt.random;
+import discord.types;
+import discord.discord_multipart_append;
+import text;
+
+int discord_multipart(DiscordMultipart *multipart, string json, DiscordAttachment attachments[]) {
+    long json_size = length(json);
+    if (multipart == null || multipart.body != null || attachments.length < 1 || attachments.length > 10 ||
+        json_size == 0 || json_size > 4194304) { return DISCORD_INVALID; }
+    long total = 256 + json_size;
+    for (int index = 0; index < attachments.length; index++) {
+        long name_size = length(attachments[index].filename);
+        if (name_size == 0 || name_size > 128 || attachments[index].size < 0 ||
+            (attachments[index].size > 0 && attachments[index].data == null)) { return DISCORD_INVALID; }
+        for (long at = 0; at < name_size; at++) {
+            char ch = attachments[index].filename[at];
+            if ((byte)ch < 32 || (byte)ch > 126 || ch == "\"" || ch == "\\" || ch == "/") { return DISCORD_INVALID; }
+        }
+        total += name_size + 192 + attachments[index].size;
+        if (total > 67108864) { return HTTP_CLIENT_LIMIT; }
+    }
+    char boundary[40];
+    if (token_urlsafe(boundary, 24) != 32) { return HTTP_CLIENT_BACKEND; }
+    multipart.body = new byte[total];
+    if (multipart.body == null) { return HTTP_CLIENT_BACKEND; }
+    multipart.size = 0;
+    copy(multipart.content_type, "multipart/form-data; boundary=");
+    concat(multipart.content_type, boundary);
+    discord_multipart_append(multipart, "--");
+    discord_multipart_append(multipart, boundary);
+    discord_multipart_append(multipart, "\r\nContent-Disposition: form-data; name=\"payload_json\"\r\nContent-Type: application/json\r\n\r\n");
+    discord_multipart_append(multipart, json);
+    for (int index = 0; index < attachments.length; index++) {
+        char number[8];
+        int_to_text(number, index);
+        discord_multipart_append(multipart, "\r\n--");
+        discord_multipart_append(multipart, boundary);
+        discord_multipart_append(multipart, "\r\nContent-Disposition: form-data; name=\"files[");
+        discord_multipart_append(multipart, number);
+        discord_multipart_append(multipart, "]\"; filename=\"");
+        discord_multipart_append(multipart, attachments[index].filename);
+        discord_multipart_append(multipart, "\"\r\nContent-Type: application/octet-stream\r\n\r\n");
+        if (attachments[index].size > 0) {
+            http_copy((char *)&multipart.body[multipart.size], (char *)attachments[index].data, attachments[index].size);
+            multipart.size += attachments[index].size;
+        }
+    }
+    discord_multipart_append(multipart, "\r\n--");
+    discord_multipart_append(multipart, boundary);
+    discord_multipart_append(multipart, "--\r\n");
+    return 0;
+}

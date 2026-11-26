@@ -1,0 +1,3 @@
+byte net_dns_lower(byte value) {
+    return value >= 65 && value <= 90 ? (byte)(value + 32) : value;
+}

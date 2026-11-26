@@ -1,0 +1,14 @@
+import net.address;
+import net.types;
+
+extern "iphlpapi" uint SendARP(uint destination, uint source, byte *mac, uint *length);
+
+int net_arp_lookup(NetAddress *target, byte mac[]) {
+    if (mac.length < 6 || net_address_family(target) != NET_IPV4) {
+        return NET_INVALID;
+    }
+    uint size = (uint)mac.length;
+    uint *destination = (uint *)&target.bytes[4];
+    uint result = SendARP(*destination, 0, mac, &size);
+    return result != 0 ? -(int)result : (int)size;
+}

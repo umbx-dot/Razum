@@ -1,0 +1,23 @@
+import linux;
+import text;
+
+bool process_getenv(string key, char output[]) {
+    if (output.length == 0) { return false; }
+    output[0] = "\0";
+    char **entries = (char **)process_environment();
+    long key_size = length(key);
+    if (entries == null || key_size == 0) { return false; }
+    for (long index = 0; entries[index] != null; index++) {
+        string value = (string)entries[index];
+        long position = 0;
+        while (position < key_size && value[position] != "\0" && value[position] == key[position]) { position++; }
+        if (position == key_size && value[position] == "=") {
+            string found = (string)&value[position + 1];
+            long size = length(found);
+            if (size <= 0 || size >= output.length) { return false; }
+            copy(output, found);
+            return true;
+        }
+    }
+    return false;
+}

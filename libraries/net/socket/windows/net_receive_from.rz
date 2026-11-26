@@ -1,0 +1,14 @@
+import net.types;
+import winsock;
+
+int net_receive_from(long socket, byte *data, int capacity, NetAddress *source) {
+    if (capacity < 0 || (capacity > 0 && data == null) || source == null) {
+        return NET_INVALID;
+    }
+    source.length = (int)source.bytes.length;
+    int count = net_wsa_result(recvfrom(socket, (char *)data, capacity, 0, &source.bytes[0], &source.length));
+    if (count < 0) {
+        source.length = 0;
+    }
+    return count;
+}

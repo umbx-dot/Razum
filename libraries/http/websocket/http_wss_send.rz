@@ -1,0 +1,8 @@
+int http_wss_send(HttpWebSocket *socket, byte *data, int length, bool binary, int timeout_ms) {
+    if (socket == null || !socket.open || data == null || length < 0 || length > 16777216 || timeout_ms <= 0) {
+        return HTTP_CLIENT_INVALID;
+    }
+    int result = http_wss_send_platform(socket, data, length, binary, timeout_ms);
+    if (result != 0) { http_wss_close(socket); }
+    return result;
+}

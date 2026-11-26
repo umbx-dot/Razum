@@ -1,16 +1,17 @@
-import { compilerBenchmarks, libraryBenchmarks } from "./benchmark_data.js";
+import { compilerBenchmarks, libraryBenchmarks, projectBenchmarks } from "./benchmark_data.js";
 import { escapeHtml } from "./highlight.js";
 import { renderMarkdown } from "./markdown.js";
 
 const header = `<header class="benchmarks-intro">
     <h1>Benchmarks</h1>
-    <p>Median runtime · Shorter bars are faster</p>
+    <p>Elapsed time · Shorter bars are faster</p>
 </header>`;
 
 const commands = `<section aria-labelledby="reproduce-the-results">
     <h2 id="reproduce-the-results">Reproduce the results</h2>
     <p>From the repository root:</p>
     <pre class="code-block"><code>python benchmarks/run_libraries.py
+python benchmarks/run_projects.py build/rz --native
 python benchmarks/run.py --compare c --compare cpp --compare rust --cpu znver3 -- -O -march=znver3</code></pre>
     <p>Use <code>--baseline PATH</code> for the library before/after comparison and <code>python3</code> if needed. See <a href="/docs/optimizer.md">target flags and comparison options</a>.</p>
 </section>`;
@@ -18,7 +19,7 @@ python benchmarks/run.py --compare c --compare cpp --compare rust --cpu znver3 -
 function chart(bars, maximum = Math.max(...bars.map(([, value]) => Number(value)))) {
     return `<dl class="benchmark-bars">${bars.map(([label, value]) => {
         const width = maximum ? (100 * (Number(value) / maximum)).toFixed(3) : 0;
-        const highlight = label === "Razum" || label === "After";
+        const highlight = label === "Razum" || label === "After" || label === "Current";
         return `<div class="benchmark-bar${highlight ? " benchmark-bar-accent" : ""}">
             <dt>${label}</dt>
             <dd><span class="benchmark-track" aria-hidden="true"><span style="width:${width}%"></span></span><span>${value} ms</span></dd>
@@ -56,14 +57,28 @@ function librarySection(workloads) {
         return "";
     }
     const savings = workloads.map(({ platforms }) => Math.max(...platforms.map(({ bars }) =>
-        Number(bars[0][1]) - Number(bars[1][1]))));
+        bars.length === 2 ? Number(bars[0][1]) - Number(bars[1][1]) : 0)));
     const initial = Math.max(0, savings.indexOf(Math.max(0, ...savings)));
     return `<section class="benchmark-section" aria-labelledby="library-charts">
-        <div class="benchmark-section-heading"><h2 id="library-charts">Standard libraries</h2><p>Portable <code>-O</code> · Before and after</p></div>
+        <div class="benchmark-section-heading"><h2 id="library-charts">Standard libraries</h2><p>Portable <code>-O</code></p></div>
         <label class="benchmark-workload" for="benchmark-workload">Workload</label>
         <select id="benchmark-workload">${workloads.map(({ name }, index) =>
             `<option${index === initial ? " selected" : ""}>${escapeHtml(name)}</option>`).join("")}</select>
         <div class="benchmark-library-grid" aria-live="polite">${libraryCharts(workloads[initial])}</div>
+    </section>`;
+}
+
+function projectSection(workloads) {
+    if (!workloads.length) {
+        return "";
+    }
+    return `<section class="benchmark-section" aria-labelledby="project-charts">
+        <div class="benchmark-section-heading"><h2 id="project-charts">Project builds</h2></div>
+        <div class="benchmark-compiler-grid">
+            ${workloads.map(({ name, bars }) => `<article class="benchmark-card">
+                <h3>${escapeHtml(name)}</h3>${chart(bars)}
+            </article>`).join("")}
+        </div>
     </section>`;
 }
 
@@ -87,11 +102,13 @@ export async function renderBenchmarks(root, anchor) {
         const workloads = libraryBenchmarks(markdown);
         const compilers = compilerCharts(compilerBenchmarks(markdown));
         const libraries = librarySection(workloads);
+        const projects = projectSection(projectBenchmarks(markdown));
         root.innerHTML = `${header}<nav class="benchmark-jumps" aria-label="Benchmark sections">
             ${compilers ? '<a href="#/benchmarks#compiler-performance">Compiler</a>' : ""}
             ${libraries ? '<a href="#/benchmarks#library-performance">Libraries</a>' : ""}
+            ${projects ? '<a href="#/benchmarks#project-charts">Project builds</a>' : ""}
             <a href="#/benchmarks#benchmark-report">Full results</a>
-        </nav>${compilers}${libraries}<details class="benchmark-details" id="benchmark-report">
+        </nav>${compilers}${libraries}${projects}<details class="benchmark-details" id="benchmark-report">
             <summary>Full results, methodology and commands</summary>
             <div class="lesson-body">${html}${commands}</div>
         </details>`;

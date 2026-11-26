@@ -1,0 +1,5 @@
+manifest_version = 1
+
+[project]
+name = "csv"
+version = "0.1.0"

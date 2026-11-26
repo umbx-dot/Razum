@@ -1,0 +1,92 @@
+import net;
+
+int check_tcp(string host, int family) {
+    NetAddress address;
+    NetAddress peer;
+    long listener = net_tcp_listen(host, 0, 8);
+    if (listener < 0 || net_local_address(listener, &address) < 0) {
+        return 10;
+    }
+    int port = net_port(&address);
+    long client = net_tcp_connect_for(host, port, 1000);
+    if (port <= 0 || client < 0 || net_wait(listener, NET_READ, 1000) != 1) {
+        return 11;
+    }
+    long server = net_accept(listener, &peer);
+    if (server < 0 || net_address_family(&peer) != family ||
+        net_peer_address(client, &address) < 0 || net_port(&address) != port ||
+        net_set_timeout(server, NET_READ, 1000) < 0 || net_set_timeout(client, NET_WRITE, 1000) < 0 || net_tcp_nodelay(client, true) != 0) {
+        return 12;
+    }
+    byte data[4] = {0, 1, 254, 255};
+    if (net_wait(server, NET_READ, 0) != 0 || net_set_blocking(server, false) < 0 ||
+        !net_would_block(net_receive(server, data, 4)) || net_set_blocking(server, true) < 0 ||
+        net_send_all(client, data, 4) != 0 || net_shutdown(client, NET_SHUT_WRITE) != 0) {
+        return 13;
+    }
+    byte received[5];
+    if (net_receive_exact(server, received, 5) != 4) {
+        return 14;
+    }
+    if (received[0] != 0 || received[1] != 1 || received[2] != 254 || received[3] != 255 || net_receive(server, received, 4) != 0) {
+        return 15;
+    }
+    if (net_close(client) != 0 || net_close(server) != 0 || net_close(listener) != 0) {
+        return 16;
+    }
+    return 0;
+}
+
+int check_udp(string host, int family) {
+    NetAddress address;
+    NetAddress source;
+    long receiver = net_udp_bind(host, 0);
+    long sender = net_udp_bind(host, 0);
+    if (receiver < 0 || sender < 0 || net_local_address(receiver, &address) != 0 ||
+        net_set_timeout(receiver, NET_READ, 1000) != 0 || net_port(&address) <= 0) {
+        return 20;
+    }
+    byte payload[5] = {7, 0, 9, 4, 8};
+    if (net_send_to(sender, payload, 5, &address) != 5 || net_wait(receiver, NET_READ, 1000) != 1) {
+        return 21;
+    }
+    byte data[8];
+    if (net_receive_from(receiver, data, 8, &source) != 5 || data[0] != 7 || data[1] != 0 || data[4] != 8 ||
+        net_address_family(&source) != family || net_local_address(sender, &address) != 0 || net_port(&source) != net_port(&address)) {
+        return 22;
+    }
+    if (net_send_to(receiver, payload, 5, &source) != 5 || net_wait(sender, NET_READ, 1000) != 1 ||
+        net_receive_from(sender, data, 2, &source) >= 0 || source.length != 0) {
+        return 23;
+    }
+    if (net_local_address(receiver, &address) != 0 || net_send_to(sender, payload, 0, &address) != 0 ||
+        net_wait(receiver, NET_READ, 1000) != 1 || net_receive_from(receiver, data, 8, &source) != 0) {
+        return 24;
+    }
+    return net_close(receiver) == 0 && net_close(sender) == 0 ? 0 : 25;
+}
+
+int main() {
+    NetAddress address;
+    if (net_ip(&address, "127.0.0.01", 1) || net_ip(&address, "1:2:3:4:5:6:7:8:", 1) ||
+        net_ip(&address, "127.0.0.1", 65536) || net_ip(&address, "fe80::1::2", 20) ||
+        !net_ip(&address, "[::ffff:127.0.0.1]", 65535) || net_port(&address) != 65535 ||
+        address.bytes[18] != 255 || address.bytes[19] != 255 || address.bytes[20] != 127 || address.bytes[23] != 1 ||
+        net_startup() != 0) {
+        return 1;
+    }
+    int result = check_tcp("127.0.0.1", NET_IPV4);
+    if (result == 0) {
+        result = check_udp("127.0.0.1", NET_IPV4);
+    }
+    if (result == 0) {
+        result = check_tcp("::1", NET_IPV6);
+    }
+    if (result == 0) {
+        result = check_udp("::1", NET_IPV6);
+    }
+    if (net_cleanup() != 0) {
+        return 2;
+    }
+    return result;
+}

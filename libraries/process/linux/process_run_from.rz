@@ -1,0 +1,111 @@
+import linux;
+import text;
+
+bool process_run_from(ProcessResult result, string command, string input, string directory, ProcessLimits limits, long executable_fd) {
+    result.output = new char[limits.max_output + 1];
+    result.output_length = 0;
+    result.exit_code = -1;
+    result.started = false;
+    result.timed_out = false;
+    result.truncated = false;
+    if (result.output == null) {
+        return false;
+    }
+    long ignore[4];
+    ignore[0] = SIG_IGN;
+    system_call(SYS_RT_SIGACTION, SIGPIPE, (long)&ignore[0], 0, 8);
+    int output_pipe[2];
+    int input_pipe[2];
+    if (system_call(SYS_PIPE2, (long)&output_pipe[0], O_CLOEXEC, 0, 0) != 0) {
+        return false;
+    }
+    if (system_call(SYS_PIPE2, (long)&input_pipe[0], O_CLOEXEC, 0, 0) != 0) {
+        system_call(SYS_CLOSE, (long)output_pipe[0], 0, 0, 0);
+        system_call(SYS_CLOSE, (long)output_pipe[1], 0, 0, 0);
+        return false;
+    }
+    int report_pipe[2];
+    if (system_call(SYS_PIPE2, (long)&report_pipe[0], O_CLOEXEC, 0, 0) != 0) {
+        system_call(SYS_CLOSE, (long)output_pipe[0], 0, 0, 0);
+        system_call(SYS_CLOSE, (long)output_pipe[1], 0, 0, 0);
+        system_call(SYS_CLOSE, (long)input_pipe[0], 0, 0, 0);
+        system_call(SYS_CLOSE, (long)input_pipe[1], 0, 0, 0);
+        return false;
+    }
+    long tasks = limits.max_processes > 0 ? process_task_count() : 0;
+    long started_at = process_clock();
+    long child = system_call(SYS_FORK, 0, 0, 0, 0);
+    if (child == 0) {
+        process_child(command, directory, limits, input_pipe[0], output_pipe[1], report_pipe[1], tasks, executable_fd);
+    }
+    system_call(SYS_CLOSE, (long)input_pipe[0], 0, 0, 0);
+    system_call(SYS_CLOSE, (long)output_pipe[1], 0, 0, 0);
+    system_call(SYS_CLOSE, (long)report_pipe[1], 0, 0, 0);
+    int failure = 0;
+    long reported = child < 0 ? 0 : system_call(SYS_READ, (long)report_pipe[0], (long)&failure, 4, 0);
+    system_call(SYS_CLOSE, (long)report_pipe[0], 0, 0, 0);
+    if (child < 0 || reported > 0) {
+        system_call(SYS_CLOSE, (long)input_pipe[1], 0, 0, 0);
+        system_call(SYS_CLOSE, (long)output_pipe[0], 0, 0, 0);
+        if (child > 0) {
+            long ended[1];
+            system_call(SYS_WAIT4, child, (long)&ended[0], 0, 0);
+        }
+        return false;
+    }
+    result.started = true;
+    long remaining = length(input) < 65536 ? length(input) : 65536;
+    long sent = 0;
+    while (sent < remaining) {
+        long wrote = system_call(SYS_WRITE, (long)input_pipe[1], (long)input + sent, remaining - sent, 0);
+        if (wrote == EINTR) {
+            continue;
+        }
+        if (wrote <= 0) {
+            break;
+        }
+        sent += wrote;
+    }
+    system_call(SYS_CLOSE, (long)input_pipe[1], 0, 0, 0);
+    long status[1];
+    status[0] = 0;
+    bool reading = true;
+    bool reaped = false;
+    while (!reaped) {
+        if (reading) {
+            int state = process_collect(result, output_pipe[0], limits.max_output, 5);
+            if (state == 1) {
+                break;
+            }
+            reading = state != 2;
+        }
+        if (system_call(SYS_WAIT4, child, (long)&status[0], WNOHANG, 0) == child) {
+            reaped = true;
+        } else if (process_clock() - started_at > (long)limits.timeout_milliseconds) {
+            result.timed_out = true;
+            break;
+        } else if (!reading) {
+            long pause[2];
+            pause[0] = 0;
+            pause[1] = 5000000;
+            system_call(SYS_NANOSLEEP, (long)&pause[0], 0, 0, 0);
+        }
+    }
+    if (!reaped) {
+        system_call(SYS_KILL, -child, SIGKILL, 0, 0);
+        system_call(SYS_KILL, child, SIGKILL, 0, 0);
+        while (system_call(SYS_WAIT4, child, (long)&status[0], 0, 0) == EINTR) {
+        }
+    }
+    if (reading) {
+        process_collect(result, output_pipe[0], limits.max_output, 0);
+    }
+    system_call(SYS_CLOSE, (long)output_pipe[0], 0, 0, 0);
+    long code = status[0] & 65535;
+    result.exit_code = (code & 127) == 0 ? (int)((code >> 8) & 255) : 128 + (int)(code & 127);
+    if (!reaped) {
+        result.exit_code = 1;
+    }
+    result.milliseconds = process_clock() - started_at;
+    return true;
+}

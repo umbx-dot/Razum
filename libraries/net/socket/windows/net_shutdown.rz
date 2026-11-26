@@ -1,0 +1,5 @@
+import winsock;
+
+int net_shutdown(long socket, int how) {
+    return net_wsa_result(shutdown(socket, how));
+}

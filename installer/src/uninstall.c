@@ -40,6 +40,7 @@ void uninstall(void) {
         run_hidden(command);
     }
     delete_installed(paths.bin, L"rzc.exe");
+    delete_installed(paths.bin, L"rz.exe");
     delete_installed(paths.bin, L"nasm.exe");
     delete_installed(paths.bin, L"nasm-LICENSE.txt");
     RemoveDirectoryW(paths.bin);
@@ -48,6 +49,7 @@ void uninstall(void) {
     delete_installed(paths.root, L"rz.ico");
     delete_installed(paths.root, L"rz-icon-LICENSE.txt");
     delete_installed(paths.root, L"LICENSE.txt");
+    delete_installed(paths.root, L"tomlc17-LICENSE.txt");
     delete_installed(paths.root, L"linux-gui-NOTICES.txt");
     delete_installed(paths.root, L"razum.vsix");
     wchar_t message[MESSAGE_SIZE];

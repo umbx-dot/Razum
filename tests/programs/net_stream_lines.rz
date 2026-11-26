@@ -1,0 +1,85 @@
+import net;
+import text;
+import threads;
+import time;
+
+void trickle(long socket) {
+    byte data[1] = {120};
+    for (int i = 0; i < 8; i++) {
+        if (net_send(socket, data, 1) != 1) {
+            return;
+        }
+        thread_sleep(25);
+    }
+    data[0] = 10;
+    net_send(socket, data, 1);
+}
+
+int main() {
+    if (net_startup() != 0) {
+        return 1;
+    }
+    long listener = net_tcp_listen("127.0.0.1", 0, 8);
+    NetAddress address;
+    if (listener < 0 || net_local_address(listener, &address) != 0) {
+        return 2;
+    }
+    long sender = net_tcp_connect_address(&address);
+    long receiver = net_accept(listener, null);
+    if (sender < 0 || receiver < 0 || net_tcp_nodelay(sender, true) != 0) {
+        return 3;
+    }
+    NetStream input;
+    NetStream output;
+    if (net_stream_attach(&input, receiver) != 0 || net_stream_attach(&output, sender) != 0) {
+        return 4;
+    }
+    char line[32];
+    string first = "one\r\n\npartial";
+    if (net_send_all(sender, (byte *)first, (int)length(first)) != 0 ||
+        net_read_line(&input, line, 1000) != 3 || !equals(line, "one") ||
+        net_read_line(&input, line, 1000) != 0 ||
+        net_read_line(&input, line, 0) != NET_WOULD_BLOCK ||
+        net_read_line(&input, line, 20) != NET_TIMEOUT ||
+        net_write_line(&output, " line", 1000) != 0 ||
+        net_read_line(&input, line, 1000) != 12 || !equals(line, "partial line")) {
+        return 5;
+    }
+    long worker = thread_start(trickle, sender);
+    if (worker == 0) {
+        return 6;
+    }
+    long start = time_monotonic_ns();
+    int result = net_read_line(&input, line, 80);
+    long elapsed = time_monotonic_ns() - start;
+    thread_join(worker);
+    if (result != NET_TIMEOUT || elapsed > 180000000 ||
+        net_read_line(&input, line, 1000) != 8 || !equals(line, "xxxxxxxx")) {
+        return 7;
+    }
+    string final = "last";
+    if (net_send_all(sender, (byte *)final, 4) != 0 || net_shutdown(sender, NET_SHUT_WRITE) != 0 ||
+        net_read_line(&input, line, 1000) != 4 || !equals(line, "last") ||
+        net_read_line(&input, line, 1000) != NET_EOF) {
+        return 8;
+    }
+    net_close(receiver);
+    net_close(sender);
+
+    sender = net_tcp_connect_address(&address);
+    receiver = net_accept(listener, null);
+    if (sender < 0 || receiver < 0 ||
+        net_stream_attach(&input, receiver) != 0 || net_stream_attach(&output, sender) != 0) {
+        return 9;
+    }
+    char short_line[4];
+    if (net_write_line(&output, "too long", 1000) != 0 ||
+        net_read_line(&input, short_line, 1000) != NET_LINE_TOO_LONG ||
+        net_read_line(&input, line, 0) != NET_LINE_TOO_LONG) {
+        return 10;
+    }
+    net_close(receiver);
+    net_close(sender);
+    net_close(listener);
+    return net_cleanup() == 0 ? 0 : 11;
+}

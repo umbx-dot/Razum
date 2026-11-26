@@ -1,0 +1,9 @@
+import discord.discord_request_raw;
+import text;
+
+int discord_request(DiscordBot *bot, HttpClientResponse *response, string method, string route, string json) {
+    long bytes = length(json);
+    if (bytes > 67108864) { return HTTP_CLIENT_LIMIT; }
+    return discord_request_raw(bot, response, method, route, (byte *)json, (int)bytes,
+                               bytes > 0 ? "application/json" : "", "", true);
+}

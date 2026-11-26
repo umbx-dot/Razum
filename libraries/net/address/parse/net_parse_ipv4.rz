@@ -1,0 +1,17 @@
+bool net_parse_ipv4(char text[], long at, byte target[], long offset) {
+    for (int part = 0; part < 4; part++) {
+        long value = 0;
+        long digits = 0;
+        while (text[at] >= "0" && text[at] <= "9" && digits < 3) {
+            value = value * 10 + (text[at] - "0");
+            at++;
+            digits++;
+        }
+        if (digits == 0 || value > 255 || (digits > 1 && text[at - digits] == "0") || (part < 3 && text[at] != ".")) {
+            return false;
+        }
+        target[offset + part] = (byte)value;
+        at += part < 3 ? 1 : 0;
+    }
+    return text[at] == "\0";
+}

@@ -1,0 +1,55 @@
+import filesystem;
+import net.address;
+import net.address.parse;
+import net.config;
+import net.types;
+import text;
+
+int net_arp_lookup(NetAddress *target, byte mac[]) {
+    if (mac.length < 6 || net_address_family(target) != NET_IPV4) {
+        return NET_INVALID;
+    }
+    File file;
+    if (!open(file, "/proc/net/arp", "r")) {
+        return NET_NOT_FOUND;
+    }
+    char line[256];
+    char token[48];
+    int result = NET_NOT_FOUND;
+    while (read_line(file, line)) {
+        int cursor = 0;
+        byte address[4];
+        if (!net_config_word(line, &cursor, token) || !net_parse_ipv4(token, 0, address, 0) ||
+            address[0] != target.bytes[4] || address[1] != target.bytes[5] ||
+            address[2] != target.bytes[6] || address[3] != target.bytes[7] ||
+            !net_config_word(line, &cursor, token) || !net_config_word(line, &cursor, token)) {
+            continue;
+        }
+        long digits = length(token);
+        long flags = digits >= 3 ? net_hex_digit(token[digits - 1]) : -1;
+        if (flags < 0 || (flags & 2) == 0 ||
+            !net_config_word(line, &cursor, token) || length(token) != 17) {
+            continue;
+        }
+        byte decoded[6];
+        bool valid = true;
+        for (int index = 0; index < 6; index++) {
+            long high = net_hex_digit(token[index * 3]);
+            long low = net_hex_digit(token[index * 3 + 1]);
+            if (high < 0 || low < 0 || (index < 5 && token[index * 3 + 2] != ":")) {
+                valid = false;
+                break;
+            }
+            decoded[index] = (byte)((high << 4) | low);
+        }
+        if (valid) {
+            for (int index = 0; index < 6; index++) {
+                mac[index] = decoded[index];
+            }
+            result = 6;
+            break;
+        }
+    }
+    close(file);
+    return result;
+}

@@ -1,0 +1,39 @@
+import net;
+
+int main() {
+    int first = net_interface_index("raz0");
+    int second = net_interface_index("raz1");
+    long output = net_ethernet_open(first, NET_ETHERTYPE_ARP);
+    long input = net_ethernet_open(second, NET_ETHERTYPE_ARP);
+    if (output < 0 || input < 0 || net_set_timeout(input, NET_READ, 1000) != 0) {
+        return 1;
+    }
+    byte mac[6] = {2, 0, 0, 0, 0, 10};
+    byte broadcast[6] = {255, 255, 255, 255, 255, 255};
+    byte payload[42];
+    NetAddress source;
+    NetAddress target;
+    NetAddress ethernet;
+    if (!net_ip(&source, "192.0.2.10", 0) || !net_ip(&target, "192.0.2.20", 0) ||
+        !net_ethernet_address(&ethernet, first, NET_ETHERTYPE_ARP, broadcast) ||
+        net_arp_request(payload, 42, mac, &source, &target) != 42 ||
+        net_send_to(output, payload, 42, &ethernet) != 42) {
+        return 2;
+    }
+    byte received[64];
+    int length = net_receive_from(input, received, 64, &ethernet);
+    if (length < 42 || net_address_family(&ethernet) != NET_ETHERNET) {
+        return 3;
+    }
+    for (int index = 0; index < 42; index++) {
+        if (received[index] != payload[index]) {
+            return 4;
+        }
+    }
+    if (net_arp_lookup(&target, mac) != 6 || mac[0] != 2 || mac[5] != 20) {
+        return 5;
+    }
+    net_close(input);
+    net_close(output);
+    return 0;
+}

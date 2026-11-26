@@ -1,0 +1,39 @@
+import discord.types;
+import discord.discord_millis;
+import text;
+
+void discord_rate_update(DiscordBot *bot, HttpClientResponse *response, ulong route) {
+    char value[96];
+    long wait = 0;
+    if (response.status == 429) {
+        if (http_client_header(response, "Retry-After", value)) {
+            double seconds = parse_double(value);
+            wait = seconds > 86400.0 ? 86400000 : seconds > 0.0 ? (long)(seconds * 1000.0) + 1 : 0;
+        }
+        if (wait == 0) {
+            JsonToken error_tokens[32];
+            string input = (string)response.body;
+            int used = json_parse(input, response.length, &error_tokens[0], 32);
+            int retry = used > 0 ? json_member(input, &error_tokens[0], used, 0, "retry_after") : -1;
+            if (retry >= 0 && json_copy_raw(input, error_tokens[retry], value) > 0) {
+                double seconds = parse_double(value);
+                if (seconds > 0.0) { wait = seconds > 86400.0 ? 86400000 : (long)(seconds * 1000.0) + 1; }
+            }
+        }
+        if (wait == 0) { wait = 1000; }
+        bot.retry_after_ms = wait;
+        if ((http_client_header(response, "X-RateLimit-Global", value) && equals_ignore_case(value, "true")) ||
+            (http_client_header(response, "X-RateLimit-Scope", value) && equals_ignore_case(value, "global"))) {
+            bot.global_limit = discord_millis() + wait;
+        }
+    } else if (http_client_header(response, "X-RateLimit-Remaining", value) && equals(value, "0") &&
+               http_client_header(response, "X-RateLimit-Reset-After", value)) {
+        double seconds = parse_double(value);
+        if (seconds > 0.0) { wait = seconds > 86400.0 ? 86400000 : (long)(seconds * 1000.0) + 1; }
+    }
+    if (wait > 0) {
+        int index = (int)(route % (ulong)bot.limits.length);
+        bot.limits[index].route = route;
+        bot.limits[index].until = discord_millis() + wait;
+    }
+}

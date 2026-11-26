@@ -1,0 +1,19 @@
+import net.raw.net_ip_header;
+import net.socket;
+import net.types;
+
+long net_raw_ip(int family, int protocol, bool include_header) {
+    if ((family != NET_IPV4 && family != NET_IPV6) || protocol < 0 || protocol > 255) {
+        return NET_INVALID;
+    }
+    long socket = net_open(family, NET_RAW, protocol);
+    if (socket < 0 || !include_header) {
+        return socket;
+    }
+    int result = net_set_ip_header(socket, family);
+    if (result < 0) {
+        net_close(socket);
+        return result;
+    }
+    return socket;
+}

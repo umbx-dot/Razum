@@ -1,0 +1,39 @@
+import net;
+
+int main() {
+    if (net_startup() != 0) {
+        return 1;
+    }
+    NetAddress destination;
+    if (!net_ip(&destination, "127.0.0.1", 0)) {
+        return 2;
+    }
+    long socket = net_raw_ip(NET_IPV4, NET_ICMP, false);
+    if (socket < 0 || net_set_timeout(socket, NET_READ, 1000) != 0) {
+        return 3;
+    }
+    byte request[13];
+    byte payload[5] = {82, 97, 122, 117, 109};
+    int length = net_icmp_echo(request, 13, 0x4a35, 1, payload, 5);
+    if (length != 13 || net_send_to(socket, request, length, &destination) != length) {
+        return 4;
+    }
+    bool matched = false;
+    for (int attempt = 0; attempt < 8; attempt++) {
+        NetAddress source;
+        byte reply[128];
+        int size = net_receive_from(socket, reply, 128, &source);
+        if (size < 0) {
+            break;
+        }
+        int header = ((int)reply[0] & 15) * 4;
+        if (size >= header + 13 && header >= 20 && reply[header] == 0 && reply[header + 4] == 0x4a &&
+            reply[header + 5] == 0x35 && reply[header + 12] == 109 && net_checksum(&reply[header], size - header) == 0) {
+            matched = true;
+            break;
+        }
+    }
+    net_close(socket);
+    net_cleanup();
+    return matched ? 0 : 5;
+}

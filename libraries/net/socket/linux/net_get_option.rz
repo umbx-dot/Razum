@@ -1,0 +1,9 @@
+import net.types;
+import linux;
+
+int net_get_option(long socket, int level, int option, byte *data, int *length) {
+    if (length == null || *length < 0 || (*length > 0 && data == null)) {
+        return NET_INVALID;
+    }
+    return (int)system_call6(SYS_GETSOCKOPT, socket, level, option, (long)data, (long)length, 0);
+}

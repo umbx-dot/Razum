@@ -1,0 +1,29 @@
+import windows;
+
+struct DllState {
+    uint attaches;
+    uint detaches;
+    uint module_seen;
+    uint loaded_dynamically;
+}
+
+export DllState dll_state;
+export fn(uint) detach_observer;
+
+int DllMain(long module, uint reason, void *reserved) {
+    if (reason == DLL_PROCESS_ATTACH) {
+        dll_state.module_seen = (uint)(module != 0);
+        dll_state.loaded_dynamically = (uint)(reserved == null);
+    } else if (reason == DLL_THREAD_ATTACH) {
+        dll_state.attaches++;
+    } else if (reason == DLL_THREAD_DETACH) {
+        dll_state.detaches++;
+    } else if (reason == DLL_PROCESS_DETACH && detach_observer != null) {
+        detach_observer(reason);
+    }
+    return 1;
+}
+
+export int apply_callback(fn(int) -> int callback, int value) {
+    return callback(value);
+}

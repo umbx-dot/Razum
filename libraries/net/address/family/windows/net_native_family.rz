@@ -1,0 +1,12 @@
+import net.types;
+import winsock;
+
+int net_native_family(int family) {
+    if (family == NET_IPV4) {
+        return AF_INET;
+    }
+    if (family == NET_IPV6) {
+        return AF_INET6;
+    }
+    return NET_UNSUPPORTED;
+}

@@ -1,0 +1,14 @@
+import net.types;
+import winsock;
+
+int net_local_address(long socket, NetAddress *address) {
+    if (address == null) {
+        return NET_INVALID;
+    }
+    address.length = (int)address.bytes.length;
+    int result = net_wsa_result(getsockname(socket, &address.bytes[0], &address.length));
+    if (result < 0) {
+        address.length = 0;
+    }
+    return result;
+}

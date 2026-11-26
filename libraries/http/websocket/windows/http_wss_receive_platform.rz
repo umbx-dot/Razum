@@ -1,0 +1,38 @@
+import windows;
+
+int http_wss_receive_platform(HttpWebSocket *socket, byte *data, int timeout_ms) {
+    HttpWinWsState *state = (HttpWinWsState *)socket.state;
+    ulong deadline = GetTickCount64() + (ulong)timeout_ms;
+    while (true) {
+        if (!state.pending) {
+            state.read_error = 0;
+            uint code = WinHttpWebSocketReceive(socket.socket, &state.data[state.used],
+                                                (uint)(socket.max_message + 1 - state.used), null, null);
+            if (code != 0 && code != 997) { return http_win_error(code); }
+            state.pending = true;
+        }
+        ulong now = GetTickCount64();
+        uint waited = WaitForSingleObject(state.read_ready, now < deadline ? (uint)(deadline - now) : 0);
+        if (waited != WAIT_OBJECT_0) { return waited == WAIT_TIMEOUT ? HTTP_CLIENT_TIMEOUT : HTTP_CLIENT_TRANSFER; }
+        state.pending = false;
+        if (state.read_error != 0) { return HTTP_CLIENT_TRANSFER; }
+        if (state.kind == 4) {
+            ushort close_code = 0;
+            uint size = 0;
+            byte reason[123];
+            WinHttpWebSocketQueryCloseStatus(socket.socket, &close_code, (void *)&reason[0], 123, &size);
+            socket.close_code = (int)close_code;
+            return HTTP_WSS_CLOSED;
+        }
+        if (state.received > (uint)(socket.max_message - state.used)) { return HTTP_CLIENT_LIMIT; }
+        state.used += (int)state.received;
+        if (state.kind == 0 || state.kind == 2) {
+            socket.binary = state.kind == 0;
+            int size = state.used;
+            http_copy((char *)data, (char *)state.data, size);
+            state.used = 0;
+            return size;
+        }
+        if (GetTickCount64() >= deadline) { return HTTP_CLIENT_TIMEOUT; }
+    }
+}

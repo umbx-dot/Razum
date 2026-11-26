@@ -1,0 +1,20 @@
+
+void ed25519_scalar_reduce(byte *reduced, byte *wide) {
+    for (int index = 0; index < 32; index++) { reduced[index] = 0; }
+    for (int bit = 511; bit >= 0; bit--) {
+        int carry = (wide[bit >> 3] >> (bit & 7)) & 1;
+        for (int index = 0; index < 32; index++) {
+            int next = (int)reduced[index] * 2 + carry;
+            reduced[index] = (byte)next;
+            carry = next >> 8;
+        }
+        if (ed25519_scalar_compare(reduced) >= 0) {
+            int borrow = 0;
+            for (int index = 0; index < 32; index++) {
+                int next = (int)reduced[index] - (int)ed25519_order[index] - borrow;
+                reduced[index] = (byte)next;
+                borrow = next < 0 ? 1 : 0;
+            }
+        }
+    }
+}

@@ -1,0 +1,82 @@
+import net;
+
+const int IDLE_PEERS = 192;
+
+int main() {
+    if (net_startup() != 0) {
+        return 1;
+    }
+    long listener = net_tcp_listen("127.0.0.1", 0, 8);
+    NetAddress address;
+    if (listener < 0 || net_local_address(listener, &address) != 0) {
+        return 2;
+    }
+    long client[IDLE_PEERS];
+    long server[IDLE_PEERS];
+    NetPollState polls[IDLE_PEERS + 1];
+    for (int index = 0; index < IDLE_PEERS; index++) {
+        client[index] = net_tcp_connect_address(&address);
+        if (client[index] < 0) {
+            return 3;
+        }
+        server[index] = net_accept(listener, null);
+        if (server[index] < 0 || net_poll_set(&polls[index], server[index], NET_READ) != 0) {
+            return 4;
+        }
+    }
+    if (net_wait_many(polls, IDLE_PEERS, 0) != 0 || net_set_blocking(server[0], false) != 0) {
+        return 5;
+    }
+    byte data[8192];
+    bool blocked = false;
+    for (int attempt = 0; attempt < 8192; attempt++) {
+        int sent = net_send(server[0], data, 8192);
+        if (net_would_block(sent)) {
+            blocked = true;
+            break;
+        }
+        if (sent <= 0) {
+            return 6;
+        }
+    }
+    if (!blocked || net_poll_set(&polls[IDLE_PEERS], server[0], NET_WRITE) != 0) {
+        return 7;
+    }
+    data[0] = 65;
+    int active = IDLE_PEERS - 1;
+    if (net_send(client[active], data, 1) != 1) {
+        return 8;
+    }
+    bool readable = false;
+    for (int attempt = 0; attempt < 4; attempt++) {
+        if (net_wait_many(polls, IDLE_PEERS + 1, 1000) < 1) {
+            return 9;
+        }
+        if ((net_poll_events(&polls[active]) & NET_READ) != 0) {
+            readable = true;
+            break;
+        }
+    }
+    if (!readable || net_receive(server[active], data, 1) != 1 || data[0] != 65) {
+        return 10;
+    }
+    for (int index = 1; index < active; index++) {
+        if (net_poll_events(&polls[index]) != 0) {
+            return 11;
+        }
+    }
+    net_close(client[active]);
+    if (net_wait_many(polls, IDLE_PEERS, 1000) != 1 ||
+        (net_poll_events(&polls[active]) & (NET_READ | NET_HANGUP)) == 0 ||
+        net_receive(server[active], data, 1) != 0) {
+        return 12;
+    }
+    for (int index = 0; index < IDLE_PEERS; index++) {
+        net_close(server[index]);
+        if (index != active) {
+            net_close(client[index]);
+        }
+    }
+    net_close(listener);
+    return net_cleanup() == 0 ? 0 : 13;
+}

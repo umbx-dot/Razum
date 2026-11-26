@@ -13,7 +13,7 @@ while [ $# -gt 0 ]; do
         --prefix) shift; prefix="${1:?--prefix needs a folder}" ;;
         -h | --help)
             echo "razum-setup.sh [--quiet] [--prefix FOLDER] [--no-vscode] [--uninstall]"
-            echo "Installs razum for this user into FOLDER (default ~/.local): rzc, NASM if the system has none,"
+            echo "Installs razum for this user into FOLDER (default ~/.local): rzc, rz, NASM if the system has none,"
             echo "the CMake package and, with a native VS Code, the editor extension. No root needed."
             exit 0
             ;;
@@ -85,12 +85,16 @@ fi
 mkdir -p "$data/bin" "$data/cmake" "$bin"
 : > "$data/installed"
 cp "$work/rzc" "$data/bin/rzc"
+cp "$work/rz" "$data/bin/rz"
+cp "$work/tomlc17-LICENSE.txt" "$data/tomlc17-LICENSE.txt"
 cp "$work/RazumConfig.cmake" "$data/cmake/RazumConfig.cmake"
 cp "$work/LICENSE.txt" "$data/LICENSE.txt"
 cp "$work/linux-gui-NOTICES.txt" "$data/linux-gui-NOTICES.txt"
-chmod 755 "$data/bin/rzc"
+chmod 755 "$data/bin/rzc" "$data/bin/rz"
 ln -sf "$data/bin/rzc" "$bin/rzc"
+ln -sf "$data/bin/rz" "$bin/rz"
 echo "link:$bin/rzc" >> "$data/installed"
+echo "link:$bin/rz" >> "$data/installed"
 if ! command -v nasm > /dev/null 2>&1 && [ -f "$work/nasm" ]; then
     cp "$work/nasm" "$data/bin/nasm"
     cp "$work/nasm-LICENSE" "$data/bin/nasm-LICENSE"

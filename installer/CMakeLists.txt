@@ -40,6 +40,8 @@ file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/setup.rc CONTENT
 "#include \"${CMAKE_CURRENT_SOURCE_DIR}/src/resource_ids.h\"
 RESOURCE_APP_ICON ICON \"${FILE_ICON}\"
 RESOURCE_RZC RCDATA \"$<TARGET_FILE:rzc>\"
+RESOURCE_RZ RCDATA \"$<TARGET_FILE:rz>\"
+RESOURCE_TOML_LICENSE RCDATA \"${PROJECT_SOURCE_DIR}/rz/vendor/tomlc17/LICENSE\"
 RESOURCE_NASM RCDATA \"${NASM_EXECUTABLE}\"
 RESOURCE_NASM_LICENSE RCDATA \"${NASM_LICENSE}\"
 RESOURCE_VSIX RCDATA \"${VSIX}\"
@@ -50,7 +52,7 @@ RESOURCE_GUI_NOTICES RCDATA \"${GUI_NOTICES}\"
 RESOURCE_CMAKE_PACKAGE RCDATA \"${PROJECT_SOURCE_DIR}/cmake/package/RazumConfig.cmake\"
 ")
 set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/setup.rc PROPERTIES
-    OBJECT_DEPENDS "${VSIX};${FILE_ICON};${CMAKE_CURRENT_SOURCE_DIR}/rz-icon-LICENSE.txt;${PROJECT_SOURCE_DIR}/cmake/package/RazumConfig.cmake;${NASM_EXECUTABLE};${NASM_LICENSE};${RAZUM_LICENSE};${GUI_NOTICES}")
+    OBJECT_DEPENDS "${VSIX};${FILE_ICON};${CMAKE_CURRENT_SOURCE_DIR}/rz-icon-LICENSE.txt;${PROJECT_SOURCE_DIR}/cmake/package/RazumConfig.cmake;${NASM_EXECUTABLE};${NASM_LICENSE};${RAZUM_LICENSE};${GUI_NOTICES};${CMAKE_BINARY_DIR}/rz.exe;${PROJECT_SOURCE_DIR}/rz/vendor/tomlc17/LICENSE")
 
 file(GLOB SETUP_SOURCES CONFIGURE_DEPENDS src/*.c)
 add_executable(razum-setup WIN32 EXCLUDE_FROM_ALL ${SETUP_SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/setup.rc)
@@ -58,7 +60,7 @@ target_include_directories(razum-setup PRIVATE src)
 target_compile_definitions(razum-setup PRIVATE UNICODE _UNICODE $<$<C_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS> $<$<COMPILE_LANGUAGE:C>:RAZUM_VERSION=L"${PROJECT_VERSION}">)
 target_compile_options(razum-setup PRIVATE $<$<COMPILE_LANGUAGE:C>:${INSTALLER_WARNINGS}>)
 target_link_libraries(razum-setup PRIVATE shell32 advapi32 user32)
-add_dependencies(razum-setup rzc)
+add_dependencies(razum-setup rzc rz)
 if(MINGW)
     target_link_options(razum-setup PRIVATE -municode)
 endif()

@@ -1,0 +1,20 @@
+import net.address;
+import net.socket;
+import net.types;
+
+long net_tcp_connect_address_for(NetAddress *address, int timeout_ms) {
+    int family = net_address_family(address);
+    if ((family != NET_IPV4 && family != NET_IPV6) || timeout_ms < -1) {
+        return NET_INVALID;
+    }
+    long socket = net_open(family, NET_STREAM, NET_TCP);
+    if (socket < 0) {
+        return socket;
+    }
+    int result = timeout_ms < 0 ? net_connect(socket, address) : net_connect_for(socket, address, timeout_ms);
+    if (result < 0) {
+        net_close(socket);
+        return result;
+    }
+    return socket;
+}

@@ -1,0 +1,9 @@
+import http;
+import text;
+import discord.discord_verify_signature;
+
+bool discord_verify_request(HttpRequest *request, string public_key_hex) {
+    if (request == null || !equals(request.method, "POST")) { return false; }
+    return discord_verify_signature(public_key_hex, http_header(request, "x-signature-ed25519"),
+                                    http_header(request, "x-signature-timestamp"), (byte *)request.body, request.body_length);
+}

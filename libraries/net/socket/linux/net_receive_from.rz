@@ -1,0 +1,17 @@
+import net.types;
+import linux;
+
+int net_receive_from(long socket, byte *data, int capacity, NetAddress *source) {
+    if (capacity < 0 || (capacity > 0 && data == null) || source == null) {
+        return NET_INVALID;
+    }
+    source.length = (int)source.bytes.length;
+    long count = system_call6(SYS_RECVFROM, socket, (long)data, capacity, MSG_TRUNC, (long)&source.bytes[0], (long)&source.length);
+    if (count > capacity) {
+        count = EMSGSIZE;
+    }
+    if (count < 0) {
+        source.length = 0;
+    }
+    return (int)count;
+}

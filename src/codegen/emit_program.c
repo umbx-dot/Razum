@@ -68,13 +68,16 @@ static char *finish_linux_program(const Program *program, ProgramContext *contex
     text_append_bytes(&output, functions->data, functions->length);
     emit_units(&output, &link->units);
     emit_data_section(&output, context, program);
+    if (links(&link->units, "rz@http_https_image")) {
+        emit_elf_https_backend(&output);
+    }
     text_line(&output, "");
     text_line(&output, "    align 8, db 0");
     text_line(&output, "elf@end:");
     return output.data;
 }
 
-char *emit_program(const Program *program, const PointerList *units, const char *dll_name) {
+char *emit_program(const Program *program, const PointerList *units, const char *dll_name, bool has_dll_main, bool object) {
     bool is_dll = dll_name != NULL;
     bool is_linux = program->target == TARGET_LINUX;
     if (is_linux) {
@@ -83,6 +86,7 @@ char *emit_program(const Program *program, const PointerList *units, const char 
     ProgramContext context = {0};
     context.optimize = program->optimize;
     context.zen3 = program->zen3;
+    context.elf_object = is_linux && object;
     TextBuffer functions = {0};
     for (int index = 0; index < program->functions.count; index++) {
         Function *function = LIST_AT(program->functions, Function, index);
@@ -91,26 +95,44 @@ char *emit_program(const Program *program, const PointerList *units, const char 
         }
     }
     reserve_global_strings(&context, program);
-    bool takes_arguments = !is_dll && main_takes_arguments(program);
+    bool takes_arguments = !is_dll && !object && main_takes_arguments(program);
     TextBuffer scanned = {0};
     text_line(&scanned, takes_arguments ? "    call rz@arguments" : "");
     text_append_bytes(&scanned, functions.data, functions.length);
     PointerList available = {0};
     static const AsmUnit NO_LOCK = {"<rzc>/one thread", "rz@lock_output:\nrz@unlock_output:\n    ret\n"};
-    if (runs_on_one_thread(program, is_dll)) {
+    if (runs_on_one_thread(program, is_dll || object)) {
         list_push(&available, (void *)&NO_LOCK);
     }
     for (int index = 0; index < units->count; index++) {
         list_push(&available, units->items[index]);
     }
-    LinkResult link = link_units(scanned.data, &available, !is_linux);
-    if (is_linux) {
+    LinkResult link = link_units(scanned.data, &available, !is_linux && !object);
+    if (is_linux && !object) {
         return finish_linux_program(program, &context, &functions, &link, takes_arguments);
     }
     TextBuffer output = {0};
+    if (object) {
+        if (link.imports.count > 0) {
+            fatal_error("--object cannot use Windows imports: %s; call OS functions in the native host", LIST_AT(link.imports, const char, 0));
+        }
+        if (context.elf_object) {
+            if (links(&link.units, "rz@environment") || links(&link.units, "rz@http_https_image")) {
+                fatal_error("this library requires the standalone Linux runtime entry point");
+            }
+            emit_elf_object_header(&output, program);
+        } else {
+            emit_coff_header(&output, program);
+        }
+        text_append_bytes(&output, functions.data, functions.length);
+        emit_units(&output, &link.units);
+        text_line(&output, "section .data align=8");
+        emit_data_section(&output, &context, program);
+        return output.data;
+    }
     emit_pe_header(&output, is_dll, program->is_window_program);
     if (is_dll) {
-        emit_dll_entry_point(&output, links(&link.units, "rz@flush"));
+        emit_dll_entry_point(&output, links(&link.units, "rz@flush"), has_dll_main);
     } else {
         emit_entry_point(&output, links(&link.units, "rz@flush"), takes_arguments);
     }

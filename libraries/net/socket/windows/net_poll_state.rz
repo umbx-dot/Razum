@@ -1,0 +1,7 @@
+struct NetPollState {
+    long socket;
+    short requested;
+    short returned;
+}
+
+extern "ws2_32" int WSAPoll(NetPollState *descriptors, uint count, int timeout_ms);

@@ -1,0 +1,18 @@
+bool net_config_word(char line[], int *cursor, char word[]) {
+    int index = *cursor;
+    while (line[index] == " " || line[index] == "\t") {
+        index++;
+    }
+    int count = 0;
+    while (line[index] != "\0" && line[index] != "#" && line[index] != " " &&
+           line[index] != "\t" && line[index] != "\r") {
+        if (count < word.length - 1) {
+            word[count] = line[index];
+        }
+        count++;
+        index++;
+    }
+    *cursor = index;
+    word[count < word.length ? count : 0] = "\0";
+    return count > 0;
+}

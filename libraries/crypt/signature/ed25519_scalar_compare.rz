@@ -1,0 +1,8 @@
+
+int ed25519_scalar_compare(byte *scalar) {
+    for (int index = 31; index >= 0; index--) {
+        if (scalar[index] < ed25519_order[index]) { return -1; }
+        if (scalar[index] > ed25519_order[index]) { return 1; }
+    }
+    return 0;
+}

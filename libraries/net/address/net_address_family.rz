@@ -1,0 +1,17 @@
+import net.address.family;
+import net.types;
+
+int net_address_family(NetAddress *address) {
+    if (address != null) {
+        if (address.length == 16 && address.bytes[0] == net_native_family(NET_IPV4)) {
+            return NET_IPV4;
+        }
+        if (address.length == 28 && address.bytes[0] == net_native_family(NET_IPV6)) {
+            return NET_IPV6;
+        }
+        if (address.length == 20 && address.bytes[0] == net_native_family(NET_ETHERNET)) {
+            return NET_ETHERNET;
+        }
+    }
+    return 0;
+}

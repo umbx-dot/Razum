@@ -118,6 +118,7 @@ Each `.c` file holds one public function (plus `static` helpers it alone uses), 
 | `check_initial_value.c` | `{ }` lists, text for `char` arrays, and whole-array or whole-struct copies |
 | `check_globals.c` | Global names, constants, and initial values known when compiling |
 | `check_signatures.c` | Duplicate functions (including clashes with library functions), parameters, `main` |
+| `check_dll_main.c` | Check the optional Windows DLL lifecycle hook against the loader's argument types |
 | `check_array_method.c` | `values.sort()` and the other array methods become calls to `array_<method>_<type>(values, ...)` |
 | `rewrite_end_element.c` | `values.first` and `values.last` become `values[0]` and `values[values.length - 1]` |
 | `text_as_char.c` | Turns a one-byte text literal into a `char` literal where a `char` is expected (stores, arguments, returns, `case` values, operations with an integer) |
@@ -147,9 +148,12 @@ Each `.c` file holds one public function (plus `static` helpers it alone uses), 
 | `codegen.h` | `ProgramContext`, `FunctionContext`, `Operand` and emitter functions |
 | `emit_program.c` | Whole file: header, entry, used functions, linked units, data, imports |
 | `emit_pe_header.c`, `emit_entry_point.c`, `emit_data_section.c` | One file part each |
+| `emit_dll_entry_point.c` | Forward loader notifications to the optional `DllMain` and flush output on process detach |
 | `emit_export_section.c` | The export directory of a DLL |
 | `emit_relocations.c` | `pe@reloc@N` labels for absolute addresses and the relocation directory of a DLL |
-| `emit_def_file.c`, `emit_c_header.c` | The `.def` export list and the C header (types, struct layouts, prototypes) written next to a DLL |
+| `emit_def_file.c`, `emit_c_header.c` | The `.def` export list and the C/C++ header for the DLL's exported functions and variables |
+| `emit_coff_header.c`, `emit_elf_object_header.c` | Emit native object sections and exports. ELF exports adapt System V arguments to the internal calling convention. |
+| `function_label_prefix.c` | Keep internal ELF function labels distinct from public native ABI entry points. |
 | `emit_import_section.c` | Import tables grouped by DLL from `iat@Name` / `iat@dll@Name` references |
 | `emit_function.c` | Frame layout (sized locals, argument positions, save slots for registers used with `-O`), parameter spills, prologue with stack probe, register saves and parameter loads |
 | `emit_statement.c` | Statement dispatch, `return`, `break`, `continue`, epilogue |
@@ -208,16 +212,18 @@ Each `.c` file holds one public function (plus `static` helpers it alone uses), 
 | `driver/load_program.c` | Parse the main file and resolve every `import`: a file or folder next to the importing file first, then the embedded libraries; gather `.asm` units. With `--check`, a file without `main` is a module: its folder's other `.rz` files (without their own `main`) are loaded too. Library files below a `windows/` folder are never loaded on Linux, and those below `linux/` never on Windows; importing a Windows-only library on Linux is an error |
 | `driver/compile_source.c` | Load, check, mark, emit; for `--dll` also the `.def` and the header |
 | `driver/assemble_file.c` | Find and run NASM |
+| `driver/link_shared_object.c` | Invoke the C linker to produce a Linux shared object from relocatable ELF. |
 | `driver/replace_extension.c` | `x.rz` to `x.exe` / `x.asm` |
 | `platform/process.h` | Run a program; find a program on `PATH` |
 | `platform/filesystem.h` | Is a path a file or folder; list files by extension |
 | `platform/windows/run_process.c`, `find_program.c` | `CreateProcessA` (full path, inherited handles), `SearchPathA` |
 | `platform/windows/rzc.rc`, `rzc.manifest` | Set the compiler process code page to UTF-8 |
 | `platform/windows/run_assembler.c` | Stage Unicode input and output paths under ASCII temporary basenames for NASM |
+| `platform/linux/run_assembler.c` | Feed ELF assembly through standard input to keep the object file symbol identical across builds. |
 | `platform/{windows,linux}/same_file.c` | Compare file identity so output aliases cannot clobber inputs or other outputs |
 | `platform/windows/path_kind.c`, `list_files.c` | `GetFileAttributesA`; sorted `FindFirstFileA`, recursive or one folder |
 | `platform/windows/make_executable.c`, `host_target.c` | Nothing to do (an `.exe` runs as it is); `TARGET_WINDOWS` |
-| `platform/linux/run_process.c`, `find_program.c` | `fork` and `execv`, waiting for the exit status; a search of `PATH` with `access(X_OK)` |
+| `platform/linux/run_process.c`, `find_program.c` | `fork` and `execv`, optional stdout capture, exit status and a search of `PATH` with `access(X_OK)` |
 | `platform/linux/path_kind.c`, `list_files.c` | `stat`; sorted `opendir`/`readdir`, recursive or one folder |
 | `platform/linux/make_executable.c`, `host_target.c` | `chmod +x` on the new program; `TARGET_LINUX` |
 | `common/target.h` | `Target` (Windows or Linux) and `host_target()` |
@@ -250,6 +256,12 @@ A Windows GUI program in C (wide-character Win32 API), built only on request (`-
 
 | Path | Job |
 |---|---|
+| `rz/cli/`, `rz/manifest/` | Select project commands, translate validated TOML into typed targets and compiler profiles, and map parser positions back to manifest text for package edits. |
+| `rz/targets/` | Build targets in dependency order, reuse current Razum artifacts, stage results before publication and coordinate local CMake targets. |
+| `rz/packages/` | Select stable or exact Git tags, resolve them to locked commits, materialize them in a shared source cache and stage manifest edits with the lockfile. |
+| `rz/support/`, `rz/vendor/tomlc17/` | Thin program and filesystem helpers and the pinned MIT-licensed TOML parser. The parser records string coordinates at the opening delimiter. |
+| `examples/packages/discord/` | Installable Razum package and slash-command example. The package maps relative REST routes, processes Gateway JSON, and verifies signed HTTP deliveries. |
+| `examples/project_build/`, `examples/packages/csv/`, `examples/mixed_static/` | Portable manifest example, publishable CSV example and a Windows native link with Go, Rust, C, C++, Razum, NASM and Lua. |
 | `libraries/array/` | Array methods: `each/` (templates for every number type: reverse, fill, contains, index_of, min, max, sum, sort_descending), `integers/` (templates for integer types: sort, introsort, insertion sort, heapsort, radix sort), `sort_double.rz` and `sort_float.rz` (ordered integer keys) |
 | `libraries/stdio/assembly/windows/`, `linux/` | The runtime routines that talk to the system (`rz@write`, `rz@write_to`, `rz@write_newline`, `rz@write_error`, `rz@read_line`, the output lock); the same names on both |
 | `libraries/program/assembly/windows/`, `linux/` | `rz@allocate`, `rz@release`, `rz@arguments`: `HeapAlloc` and the command line on Windows, an `mmap` allocator with size classes and `argv` on Linux |
@@ -285,6 +297,12 @@ A Windows GUI program in C (wide-character Win32 API), built only on request (`-
 | `tests/programs/json_library.rz`, `time_library.rz` | Portable tests and their `.expected` fixtures for JSON round trips, parser errors, clocks, and UTC dates |
 | `libraries/filesystem/` | `file/` (buffered `File`, binary, seek), `paths/` (exists, delete, rename, copy, folders, whole-file text), `directory/` (listing); plain razum on `windows` |
 | `libraries/windows/` | `extern` declarations per DLL (`kernel32.rz`, `user32.rz`, `gdi32.rz`, `gdiplus.rz`, `dwmapi.rz`, `shell32.rz`, `advapi32.rz`, `bcrypt.rz` with its CNG struct and constants, `secur32.rz` and `crypt32.rz` for TLS), `structs.rz`, `constants.rz`, `rgb.rz` |
+| `libraries/net/types.rz`, `address/` | Socket/address constants, native address storage and portable IPv4/IPv6 parsing. Linux HTTP shares the numeric parser. |
+| `libraries/net/socket/`, `transfer/`, `transport/` | Winsock or direct Linux syscalls under portable socket operations. Connect/listen/bind and exact byte transfers use these primitives. |
+| `libraries/net/stream/` | Buffered line reads and nonblocking writes against a monotonic deadline, with unread bytes retained across timeouts. |
+| `libraries/net/socket/*/net_poll_*.rz`, `net_wait_many.rz` | Portable event flags on a caller-owned native poll array, with one wait syscall or Winsock call. |
+| `libraries/net/config/`, `resolve/`, `dns/` | Hostname lookup with the Windows resolver or Linux configuration files. The explicit DNS client uses UDP plus TCP fallback and bounded wire decoding. |
+| `libraries/net/raw/`, `icmp/`, `ethernet/` | Packet byte helpers, native raw IP, system echo, and Linux `AF_PACKET` with IPv4 neighbor lookup on either host. |
 | `libraries/winsock/` | `ws2_32.rz`: Winsock declarations, kept out of `windows` so their short names (`send`, `recv`, `bind`) stay free for programs that import `windows` |
 | `libraries/http/state/` | `http_types.rz`: server, worker, connection, accept, request, response, route and listener structs; limits; the two `Date` buffers |
 | `libraries/http/memory/` | `http_copy` (`rep movsb`) and `http_find` (SSE2 byte search), the two hot loops, in `asm` blocks |
@@ -293,6 +311,11 @@ A Windows GUI program in C (wide-character Win32 API), built only on request (`-
 | `libraries/http/respond/` | The response API for handlers, status texts, serializing a response, error responses |
 | `libraries/http/routing/` | Route registration and matching, static files, content types by extension |
 | `libraries/http/connection/` | Per-connection state machine: accept, read and answer (`http_serve`), send with overlapped fallback, the zero-byte wait, close, the connection table |
+| `libraries/http/client/` | Bounded HTTPS GET API. Windows uses asynchronous WinHTTP with a cancellation event and platform trust. Linux writes the embedded backend to sealed memory and launches the descriptor directly. |
+| `http-backend/linux/main.c`, `src/codegen/emit_elf_https_backend.c` | Native libcurl client and compiler emission of its image when an ELF program calls the client. |
+| `http-backend/linux/http_backend_call.c`, `http_backend_websocket.c`, `transport.c` | Verified HTTPS and WSS over a bounded local binary protocol. Linux opens the embedded backend from sealed memory. |
+| `libraries/http/websocket/` | Portable message API with WinHTTP on Windows and the embedded transport on Linux. |
+| `libraries/crypt/signature/` | Ed25519 verification using the existing Curve25519 field routines and streamed SHA-512. |
 | `libraries/http/tls/` | SChannel: loading a `.pfx` and acquiring credentials, the handshake loop, decrypting records into the plaintext buffer, sealing responses into records, closing the context |
 | `libraries/http/server/` | Creating, listening (address parsing, `AcceptEx` loading), starting workers and the timeout thread, stopping, waiting, Ctrl+C |
 | `libraries/threads/thread/` | Starting (a trampoline frees the start block and calls `fn(long)`), joining, detaching, sleeping, `cpu_count` |
@@ -336,8 +359,8 @@ A Windows GUI program in C (wide-character Win32 API), built only on request (`-
 | `tests/website/test_benchmarks.js` | Node checks for comparable chart data, workload switching, report anchors, refresh and load errors |
 | `tests/errors_multiple/`, `tests/editor/` | Files with several errors and their whole expected output; the VS Code lookup test (`test_extension.js` with a `vscode` stub in `stubs/`), run by `tests/test_editor.sh` when Node is installed |
 | `examples/` | Example programs |
-| `KNOWLEDGE.md` | Benchmark measurements and run notes used by the website |
-| `LICENSE` | The MIT License for Razum |
+| `PLAN.md` | The roadmap and work in progress, for whoever continues |
+| `RULES.md`, `PLAN.md`, `PROGRESS.md`, `KNOWLEDGE.md`, `LICENSE` | Contributor rules, roadmap, dated log, benchmark notes, and the MIT License |
 | `installer/linux/` | The Linux installer: `setup.sh` (the installing script, also `--uninstall`), `make_setup.sh` (appends the payload: `rzc`, NASM and its licence, `RazumConfig.cmake`, the `.vsix`), `CMakeLists.txt` (target `razum-setup`, output `build/razum-setup.sh`) |
 | `editors/vscode/package.sh` | Builds the `.vsix` on Linux with `zip`, carrying the Linux `rzc` (`package.ps1` does it on Windows) |
 | `build.sh`, `build.ps1` | Build scripts for Linux and Windows: check the tools, configure and build with CMake, optionally test and install |

@@ -1,0 +1,10 @@
+import net.address;
+import net.types;
+import linux;
+
+int net_send_to(long socket, byte *data, int length, NetAddress *address) {
+    if (length < 0 || (length > 0 && data == null) || !net_valid_address(address)) {
+        return NET_INVALID;
+    }
+    return (int)system_call6(SYS_SENDTO, socket, (long)data, length, MSG_NOSIGNAL, (long)&address.bytes[0], address.length);
+}

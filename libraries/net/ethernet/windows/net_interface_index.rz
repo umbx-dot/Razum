@@ -1,0 +1,8 @@
+import net.types;
+
+extern "iphlpapi" uint if_nametoindex(string name);
+
+int net_interface_index(string name) {
+    uint index = if_nametoindex(name);
+    return index == 0 ? NET_INVALID : (int)index;
+}

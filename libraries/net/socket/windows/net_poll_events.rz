@@ -1,0 +1,11 @@
+import net.types;
+
+int net_poll_events(NetPollState *item) {
+    if (item == null) {
+        return NET_INVALID;
+    }
+    int flags = item.returned;
+    return ((flags & 0x0300) != 0 ? NET_READ : 0) | ((flags & 0x0010) != 0 ? NET_WRITE : 0) |
+           ((flags & 2) != 0 ? NET_HANGUP : 0) | ((flags & 1) != 0 ? NET_POLL_ERROR : 0) |
+           ((flags & 4) != 0 ? NET_BAD_SOCKET : 0);
+}

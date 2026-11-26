@@ -1,0 +1,51 @@
+import crypt.bytes;
+import crypt.exchange.x25519_field;
+
+bool ed25519_point_decode(Ed25519Point *point, byte *packed) {
+    long one[16] = {1};
+    long zero[16];
+    long u[16]; long v[16]; long uv3[16]; long uv7[16]; long power[16]; long check[16];
+    byte encoded[32];
+    field_unpack(point.y, packed);
+    field_pack(&encoded[0], point.y);
+    encoded[31] = (byte)(encoded[31] | (packed[31] & 128));
+    if (!compare_digest(&encoded[0], 32, packed, 32)) { return false; }
+    field_multiply(u, point.y, point.y);
+    field_multiply(v, u, ed25519_d);
+    field_subtract(u, u, one);
+    field_add(v, v, one);
+    field_multiply(uv3, v, v);
+    field_multiply(uv3, uv3, v);
+    field_multiply(uv7, uv3, uv3);
+    field_multiply(uv7, uv7, v);
+    field_multiply(uv3, uv3, u);
+    field_multiply(uv7, uv7, u);
+    power[0] = 1;
+    for (int bit = 251; bit >= 0; bit--) {
+        field_multiply(power, power, power);
+        if (bit != 1) { field_multiply(power, power, uv7); }
+    }
+    field_multiply(point.x, uv3, power);
+    byte expected[32];
+    field_pack(&expected[0], u);
+    field_multiply(check, point.x, point.x);
+    field_multiply(check, check, v);
+    field_pack(&encoded[0], check);
+    if (!compare_digest(&encoded[0], 32, &expected[0], 32)) {
+        field_multiply(point.x, point.x, ed25519_root_neg_one);
+        field_multiply(check, point.x, point.x);
+        field_multiply(check, check, v);
+        field_pack(&encoded[0], check);
+        if (!compare_digest(&encoded[0], 32, &expected[0], 32)) { return false; }
+    }
+    field_pack(&encoded[0], point.x);
+    int sign = (packed[31] >> 7) & 1;
+    if ((encoded[0] & 1) != sign) {
+        field_subtract(point.x, zero, point.x);
+        field_pack(&encoded[0], point.x);
+        if ((encoded[0] & 1) != sign) { return false; }
+    }
+    for (int index = 0; index < 16; index++) { point.z[index] = one[index]; }
+    field_multiply(point.t, point.x, point.y);
+    return true;
+}

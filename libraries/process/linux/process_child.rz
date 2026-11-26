@@ -1,7 +1,7 @@
 import linux;
 import text;
 
-void process_child(string command, string directory, ProcessLimits limits, int input, int output, int report, long tasks) {
+void process_child(string command, string directory, ProcessLimits limits, int input, int output, int report, long tasks, long executable_fd) {
     system_call(SYS_SETPGID, 0, 0, 0, 0);
     system_call(SYS_DUP2, (long)input, 0, 0, 0);
     system_call(SYS_DUP2, (long)output, 1, 0, 0);
@@ -28,7 +28,9 @@ void process_child(string command, string directory, ProcessLimits limits, int i
     }
     if (error == 0) {
         string program = (string)&storage[0];
-        if (find_char(program, "/") >= 0) {
+        if (executable_fd >= 0) {
+            error = (int)system_call6(SYS_EXECVEAT, executable_fd, (long)"", (long)&arguments[0], process_environment(), AT_EMPTY_PATH, 0);
+        } else if (find_char(program, "/") >= 0) {
             error = (int)system_call(SYS_EXECVE, arguments[0], (long)&arguments[0], process_environment(), 0);
         } else {
             char search[4096];

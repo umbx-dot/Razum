@@ -1,0 +1,9 @@
+import net.types;
+
+int net_port(NetAddress *address) {
+    int family = net_address_family(address);
+    if (family == NET_IPV4 || family == NET_IPV6) {
+        return ((int)address.bytes[2] << 8) | address.bytes[3];
+    }
+    return NET_INVALID;
+}

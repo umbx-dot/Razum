@@ -1,0 +1,40 @@
+import net.address;
+import net.socket;
+import net.types;
+import time;
+
+int net_ping(NetAddress *target, int timeout_ms) {
+    int family = net_address_family(target);
+    if ((family != NET_IPV4 && family != NET_IPV6) || timeout_ms <= 0) {
+        return NET_INVALID;
+    }
+    long socket = net_open(family, NET_DATAGRAM, family == NET_IPV4 ? NET_ICMP : NET_ICMPV6);
+    if (socket < 0) {
+        return (int)socket;
+    }
+    int result = net_connect(socket, target);
+    if (result == 0) {
+        result = net_set_timeout(socket, NET_READ, timeout_ms);
+    }
+    if (result == 0) {
+        byte packet[12] = {0, 0, 0, 0, 0, 0, 0, 1, 82, 90, 0, 1};
+        packet[0] = (byte)(family == NET_IPV4 ? 8 : 128);
+        long start = time_monotonic_ns();
+        result = net_send(socket, packet, 12);
+        if (result == 12) {
+            byte reply[13];
+            result = net_receive(socket, reply, 13);
+            if (result >= 0) {
+                int reply_type = family == NET_IPV4 ? 0 : 129;
+                bool matches = result == 12 && reply[0] == reply_type && reply[1] == 0 && reply[7] == 1 &&
+                               reply[8] == 82 && reply[9] == 90 && reply[10] == 0 && reply[11] == 1;
+                long end = time_monotonic_ns();
+                result = !matches || start < 0 || end < start ? NET_INVALID : (int)((end - start) / 1000000);
+            }
+        } else if (result >= 0) {
+            result = NET_INVALID;
+        }
+    }
+    net_close(socket);
+    return result;
+}

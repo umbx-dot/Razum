@@ -10,8 +10,10 @@ static const char USAGE[] =
     "  --asm      build the executable and keep the .asm file next to it\n"
     "  --run      run the program after building and exit with its exit code\n"
     "  --check    only report errors; write nothing\n"
-    "  --dll      build a DLL from the functions marked export; also writes <name>.def\n"
-    "             and <name>.h for C and C++ (default output: the source name with .dll)\n"
+    "  --dll      build a Windows DLL with optional DllMain and export declarations;\n"
+    "             also writes <name>.def and <name>.h for C and C++\n"
+    "  --object   build a native x64 object and a C ABI header\n"
+    "  --shared   build a Windows DLL or Linux shared object and a C ABI header\n"
     "  --stdin    read the source text from standard input; <file.rz> still names it\n"
     "             for error messages and for finding imported modules\n"
     "  -O         optimize: keep local variables in registers (see docs/optimizer.md)\n"
@@ -58,6 +60,10 @@ bool parse_options(int argc, char **argv, Options *options) {
             options->read_stdin = true;
         } else if (strcmp(argument, "--dll") == 0) {
             options->dll = true;
+        } else if (strcmp(argument, "--object") == 0) {
+            options->object = true;
+        } else if (strcmp(argument, "--shared") == 0) {
+            options->shared = true;
         } else if (strcmp(argument, "--run") == 0) {
             options->run = true;
         } else if (strcmp(argument, "--gui") == 0) {
@@ -88,6 +94,12 @@ bool parse_options(int argc, char **argv, Options *options) {
     }
     if (options->dll && options->run) {
         return usage_error("--run cannot run a DLL", "");
+    }
+    if (options->object && (options->dll || options->run || options->window_program != 0)) {
+        return usage_error("--object cannot be combined with --dll, --run, --gui or --console", "");
+    }
+    if (options->shared && (options->dll || options->object || options->run || options->window_program != 0)) {
+        return usage_error("--shared cannot be combined with --dll, --object, --run, --gui or --console", "");
     }
     return true;
 }

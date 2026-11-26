@@ -7,9 +7,9 @@ if [ ! -f "$build/CMakeCache.txt" ]; then
 fi
 cmake --build "$build" > /dev/null || { cmake --build "$build"; exit 101; }
 
-suites="test_programs test_errors test_codegen test_module_checks test_editor test_website test_cli test_parallel_print test_https"
+suites="test_programs test_errors test_codegen test_module_checks test_editor test_website test_cli test_projects test_cmake test_parallel_print test_https test_https_client test_discord"
 if [ "$host" == windows ]; then
-    suites="$suites test_unicode test_dll test_cmake"
+    suites="$suites test_unicode test_dll"
 else
     suites="$suites test_gui test_filesystem"
 fi

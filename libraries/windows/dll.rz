@@ -1,0 +1,4 @@
+const uint DLL_PROCESS_DETACH = 0;
+const uint DLL_PROCESS_ATTACH = 1;
+const uint DLL_THREAD_ATTACH = 2;
+const uint DLL_THREAD_DETACH = 3;

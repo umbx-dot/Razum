@@ -1,41 +1,77 @@
-# Benchmarks and implementation notes
+# Knowledge
 
-The tables include development measurements from before the first release. Baseline identifiers refer to the original measurement runs.
+## Package version selection
+
+`rz add` and `rz update` query Git tags only when selecting a stable version. An explicit tag skips that query. The lockfile records the exact tag and commit, so `rz fetch --locked` and `rz build --offline` keep working after a tag moves. Stable selection compares three unsigned 64-bit numeric components. Use an explicit tag for prereleases or packages with another version scheme. Tag selection and resolution finish before the manifest and lockfile are staged. [Package guide](docs/projects.md#install-a-source-package)
+
+## Project build performance
+
+Measured on a Ryzen 7 5700X with Windows 11 and Fedora 45 under WSL 2. The manifest example builds a report and shared library on both systems, plus a DLL client on Windows. The cold build fetches a tagged CSV package from a local Git repository into an empty cache, and the warm build reuses the outputs with `--offline`. The first four rows are medians of five runs. The mixed-language example uses one fresh build directory and one offline repeat. The native link time comes from Ninja. The initial native total includes downloading and building Lua.
+
+| Workload | Windows | WSL |
+|---|---:|---:|
+| Project cold build | 262.08 ms | 251.78 ms |
+| Cold dependency resolution | 193.40 ms | 16.30 ms |
+| Cold Razum targets | 59.80 ms | 229.40 ms |
+| Project warm build | 10.38 ms | 5.30 ms |
+| Mixed-language cold build | 3988.22 ms | 7206.36 ms |
+| Mixed-language Razum object | 23.30 ms | 6.00 ms |
+| Mixed-language native link | 92.00 ms | 483.00 ms |
+| Mixed-language warm build | 177.32 ms | 47.99 ms |
+
+Ninja skipped the final link on both warm runs. The wrapper object has identical bytes across staging directories. Linux NASM reads the emitted assembly on standard input so the ELF file symbol has a stable name. Windows NASM uses `--reproducible` to remove COFF timestamp and file-name variation.
+
+Run `python benchmarks/run_projects.py build/rz.exe --native` on Windows or `python3 benchmarks/run_projects.py build/rz --native` on Linux. Omit `--native` to measure the project driver without the Rust, Go and Lua integration. [Project guide](docs/projects.md)
 
 ## Library performance
 
-Use `benchmarks/run_libraries.py` with `--baseline PATH` to run the previous and current portable `-O` builds in alternating order. It discards a warm-up and checks each run's result. The suite covers all 16 bundled modules across Windows and Linux. The `linux` API runs on Linux. The `windows` and `winsock` API probes run on Windows.
+Use `benchmarks/run_libraries.py` with `--baseline PATH` to run the previous and current portable `-O` builds in alternating order. It discards a warm-up and checks each run's result. The suite covers all 17 bundled modules across Windows and Linux. The `linux` API runs on Linux. The `windows` and `winsock` API probes run on Windows. A baseline that predates `net` skips its two workloads.
 
-The probes measure representative workloads. Most times include process startup. The two `text` probes time the search loop in the program. The `http` probe times one local connection carrying 25,600 pipelined plain HTTP requests and includes the driver's response parsing. Filesystem tests use each host's temporary directory. GUI tests render offscreen.
+The probes measure representative workloads. Most times include process startup. The two `text` probes time the search loop in the program. The `http` probe times one local connection carrying 25,600 pipelined plain HTTP requests and includes the driver's response parsing. The two `net` probes each run 20,000 loopback request/reply pairs with 32-byte messages and check the echoed bytes. Filesystem tests use each host's temporary directory. GUI tests render offscreen.
 
 ### Windows and Linux baseline
 
-Ryzen 7 5700X, Windows 11 and Fedora under WSL 2 on November 24, 2026. Times are five-run medians in milliseconds using portable `-O`. The baseline is `ed157b2`. The candidate includes Linux condition wakeup filtering and loop-weighted register placement. Every measured run passed its workload's result check.
+Ryzen 7 5700X, Windows 11 and Fedora under WSL 2 on November 24, 2026. Times are five-run medians in milliseconds using portable `-O`. The baseline is `77565be`. The candidate adds buffered TCP lines, native multi-socket waits, and HTTPS GET. Every measured run passed its output check. The legacy `http` and `process` probe binaries changed on both platforms. The remaining legacy probe binaries matched byte for byte.
 
 | Workload | Windows before → after | WSL before → after |
 |---|---:|---:|
-| `array`, 900 integer sorts | **35.773 → 31.674** | **33.675 → 25.324** |
-| `crypt.sha256`, 23.4 MiB | 14.918 → 14.398 | 295.063 → 278.239 |
-| `crypt.aes_gcm`, 8 MiB | 4.410 → 4.552 | 36.782 → 34.656 |
-| `filesystem`, 32 MiB written and read back | 72.991 → 69.424 | 32.102 → 32.362 |
-| `gui`, 400 offscreen frames | 48.870 → 48.224 | 9.255 → 9.253 |
-| `http`, 25,600 loopback responses | 55.789 → 55.092 | 66.615 → 67.149 |
-| `json`, 300,000 parse and lookup cycles | 88.004 → 88.263 | 88.674 → 90.381 |
-| `linux`, 500,000 environment lookups | Linux only | 36.181 → 36.583 |
-| `math`, 1.5 million square root, sine and log groups | 83.594 → 83.855 | 83.549 → 84.007 |
-| `process`, 25 child launches with captured output | 221.100 → 232.058 | 63.007 → 67.857 |
-| `program`, 25,000 small allocations and frees | 3.610 → 3.616 | 3.206 → 3.275 |
-| `stdio`, 120,000 numbered lines written to a pipe | 12.727 → 12.473 | 9.450 → 9.602 |
-| `text.early`, 65,000 searches with the match at byte 7 | 0.199 → 0.203 | 0.182 → 0.252 |
-| `text.late`, 65,000 searches with the match at byte 8,191 | 120.076 → 120.268 | 120.103 → 119.256 |
-| `threads`, 250,000 channel handoffs | 15.664 → 15.596 | **479.074 → 215.237** |
-| `time`, 200,000 UTC formats | 21.313 → 21.291 | 19.249 → 18.807 |
-| `windows`, 10 million process ID calls | 24.742 → 24.574 | Windows only |
-| `winsock`, 750,000 IPv4 address round trips | 86.036 → 85.981 | Windows only |
+| `array`, 900 integer sorts | 26.520 → 27.562 | 26.717 → 25.609 |
+| `crypt.sha256`, 23.4 MiB | 16.662 → 15.528 | 289.170 → 281.518 |
+| `crypt.aes_gcm`, 8 MiB | 5.041 → 4.926 | 34.346 → 35.468 |
+| `filesystem`, 32 MiB written and read back | 74.903 → 73.862 | 34.180 → 33.579 |
+| `gui`, 400 offscreen frames | 50.960 → 50.494 | 10.481 → 9.374 |
+| `http`, 25,600 loopback responses | 60.776 → 60.493 | 72.635 → 73.071 |
+| `json`, 300,000 parse and lookup cycles | 88.984 → 90.721 | 91.204 → 91.077 |
+| `linux`, 500,000 environment lookups | linux only | 38.602 → 38.473 |
+| `math`, 1.5 million square root, sine and log groups | 87.806 → 87.368 | 82.673 → 83.013 |
+| `net.tcp`, 20,000 loopback round trips | 204.070 → 197.474 | 180.182 → 182.528 |
+| `net.udp`, 20,000 loopback round trips | 191.757 → 187.920 | 137.355 → 135.290 |
+| `process`, 25 child launches with captured output | 258.067 → 258.365 | 78.460 → 68.015 |
+| `program`, 25,000 small allocations and frees | 4.454 → 4.222 | 3.997 → 3.577 |
+| `stdio`, 120,000 numbered lines written to a pipe | 14.601 → 14.637 | 10.409 → 9.859 |
+| `text.early`, 65,000 searches with the match at byte 7 | 0.268 → 0.245 | 0.228 → 0.182 |
+| `text.late`, 65,000 searches with the match at byte 8,191 | 128.468 → 127.676 | 125.555 → 120.326 |
+| `threads`, 250,000 channel handoffs | 17.140 → 16.873 | 165.106 → 180.219 |
+| `time`, 200,000 UTC formats | 23.565 → 23.564 | 19.784 → 19.864 |
+| `windows`, 10 million process ID calls | 26.194 → 25.272 | windows only |
+| `winsock`, 750,000 IPv4 address round trips | 91.924 → 91.506 | windows only |
 
 The earlier chunked binary I/O change took the 32 MiB workload from 175 → 58 ms on Windows and 147 → 33 ms on WSL against `bf6f416`. Only the filesystem probe executable changed in that run. A separate probe measured two million one-byte calls in each direction. Writes went from 14.67 → 9.32 ms on Windows and 8.07 → 7.73 ms on WSL. Reads went from 6.85 → 6.42 ms and 6.49 → 6.47 ms. The one-byte path accesses the buffer directly to avoid the bulk copy call.
 
 The earlier `find_char` change took the early-match probe from 116 ms to 0.20 ms on Windows and from 119 ms to 0.23 ms on WSL. A match at the end took 346 → 123 ms on Windows and 475 → 119 ms on WSL.
+
+### Discord transport regression
+
+Ran the existing library benchmarks against `9c1d76f` on Windows 11 and Fedora 45 under WSL 2. Values are five-run medians in milliseconds. The HTTP workload measures the existing pipelined loopback server. The crypt workloads check the existing digest and AES-GCM paths after adding Ed25519 verification.
+
+| Workload | Windows before → after | WSL before → after |
+|---|---:|---:|
+| HTTP loopback | 51.643 → 52.067 | 66.445 → 66.802 |
+| SHA-256 | 14.288 → 14.518 | 276.947 → 276.368 |
+| AES-GCM | 4.350 → 4.349 | 34.103 → 34.536 |
+| Process capture | 209.908 → 210.250 | 78.164 → 68.266 |
+
+The Discord transport fixture uses a generated local TLS certificate and checks a binary PATCH request, WebSocket framing, and Gateway messages. The public Discord Gateway Hello was verified separately on both hosts. Linux requires a libcurl build with WSS enabled. [Discord package](docs/discord.md) · [WebSocket transport](docs/libraries.md#secure-websocket-client)
 
 ### Linux AES-GCM phase timings
 
@@ -241,6 +277,7 @@ Measured 2026-11-21.
 | Test cases | 29 programs (28 + modules), 61 errors, a parallel print check, 11 HTTPS checks with curl, 2 multi-error files, 11 editor lookups, a Unicode console self-test, 7 code shapes, 306 module checks, a razum DLL used from razum and C, a mixed C/C++/razum CMake project, installer path-list unit test | `bash tests/run_all.sh` |
 | Printing 200,000 lines to a file (`write_string` + `print` per line) | 0.97 s unbuffered, 0.017 s buffered (57× faster); identical output | `build/m/bench.rz`, best of 3 with PowerShell `Measure-Command`, 2026-11-21 |
 | Cost of buffered output | +388 bytes per program that prints | 728 → 1,116 bytes for the benchmark |
+| Loop speed vs C (benchmark by another tool) | faster than `gcc -O0`, slower than `gcc -O2` | `C:\Users\idom\Desktop\test` |
 
 
 ### Benchmarks against C (`python benchmarks/run.py`)
@@ -376,6 +413,7 @@ The SSE2 path helps long ASCII strings. Short records are dominated by token han
 - `crypt` naming: `secure_int` and `secure_bytes` instead of `random_*`, because `math.random` already owns `random_int` and both libraries may be imported together.
 - `crypt` speed limits: AES-CTR runs at a tenth of GCM because the counter blocks and the xor are built byte by byte in razum; building them 8 bytes at a time or in an `asm` block is the upgrade when CTR is needed above about 300 MB/s. Base85 decoding was 23 MB/s with a linear alphabet search and 77 MB/s with range checks.
 - MSVC links a razum DLL through `lib /def:x.def /machine:x64 /out:x.lib`; GCC (MinGW) links the `.dll` directly.
+- The PE export directory includes mutable data alongside functions. The generated `.def` marks those exports `DATA`, and the header declares them with `dllimport`. `DllMain` accepts Windows load and thread notifications on x86-64. PE unwind metadata and native static TLS are separate compiler and loader work.
 - CMake with MinGW names a shared library `libname.dll`; razum's `extern "name"` looks for `name.dll`, so C DLLs used from razum set `PREFIX ""`.
 - An imported target's `INTERFACE_INCLUDE_DIRECTORIES` must exist at configure time; `add_razum_library` creates the output folder before the header exists.
 - `&function` must not go through the address-of-a-place path: a function value is already an address (the first callbacks test crashed `rzc` there).

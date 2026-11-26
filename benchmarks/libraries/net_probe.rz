@@ -1,0 +1,54 @@
+import net;
+import text;
+
+int net_echo_rounds(long sender, long receiver, NetAddress *destination) {
+    byte packet[32];
+    byte reply[32];
+    NetAddress source;
+    for (int round = 0; round < 20000; round++) {
+        packet[0] = (byte)round;
+        packet[31] = (byte)(round >> 8);
+        if (destination == null) {
+            if (net_send_all(sender, packet, 32) != 0 || net_receive_exact(receiver, reply, 32) != 32 ||
+                net_send_all(receiver, reply, 32) != 0 || net_receive_exact(sender, reply, 32) != 32) {
+                return 4;
+            }
+        } else if (net_send_to(sender, packet, 32, destination) != 32 || net_receive_from(receiver, reply, 32, &source) != 32 ||
+                   net_send_to(receiver, reply, 32, &source) != 32 || net_receive_from(sender, reply, 32, &source) != 32) {
+            return 5;
+        }
+        if (reply[0] != packet[0] || reply[31] != packet[31]) {
+            return 6;
+        }
+    }
+    return 0;
+}
+
+int main(string args[]) {
+    if (args.length != 2 || net_startup() != 0) {
+        return 1;
+    }
+    bool udp = equals(args[1], "udp");
+    long listener = udp ? net_udp_bind("127.0.0.1", 0) : net_tcp_listen("127.0.0.1", 0, 8);
+    NetAddress destination;
+    if (listener < 0 || net_local_address(listener, &destination) != 0) {
+        return 2;
+    }
+    long sender = udp ? net_udp_bind("127.0.0.1", 0) : net_tcp_connect_address(&destination);
+    if (sender < 0) {
+        return 3;
+    }
+    long receiver = listener;
+    if (!udp) {
+        receiver = net_accept(listener, null);
+        net_close(listener);
+        if (receiver < 0 || net_tcp_nodelay(sender, true) != 0 || net_tcp_nodelay(receiver, true) != 0) {
+            return 7;
+        }
+    }
+    int result = net_echo_rounds(sender, receiver, udp ? &destination : null);
+    net_close(sender);
+    net_close(receiver);
+    net_cleanup();
+    return result;
+}

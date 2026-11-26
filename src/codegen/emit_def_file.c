@@ -10,5 +10,11 @@ char *emit_def_file(const Program *program, const char *dll_name) {
             text_line(&output, "    %s", function->name);
         }
     }
+    for (int index = 0; index < program->globals.count; index++) {
+        const GlobalVariable *variable = LIST_AT(program->globals, GlobalVariable, index);
+        if (variable->is_exported) {
+            text_line(&output, "    %s DATA", variable->name);
+        }
+    }
     return output.data;
 }

@@ -1,0 +1,9 @@
+bool http_client_argument(string value) {
+    for (int index = 0; value[index] != "\0"; index++) {
+        byte ch = (byte)value[index];
+        if (index >= 4096 || ch < 32 || ch == 127) {
+            return false;
+        }
+    }
+    return true;
+}

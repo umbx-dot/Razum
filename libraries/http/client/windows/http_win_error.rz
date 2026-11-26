@@ -1,0 +1,9 @@
+int http_win_error(uint code) {
+    if (code == 12002) {
+        return HTTP_CLIENT_TIMEOUT;
+    }
+    if (code == 12037 || code == 12038 || code == 12045 || code == 12057 || code == 12175 || code == 12179) {
+        return HTTP_CLIENT_TLS;
+    }
+    return HTTP_CLIENT_TRANSFER;
+}

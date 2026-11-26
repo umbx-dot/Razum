@@ -1,0 +1,28 @@
+export int shift = 5;
+string message = "Razum";
+
+int add_shift(int value) {
+    return value + shift;
+}
+
+export int razum_step(int value, byte *marker) {
+    *marker = (byte)value;
+    return add_shift(value);
+}
+
+export string razum_name() {
+    return message;
+}
+
+export double razum_abi(int a, double b, int values[], float c, int d, int e, int f, int g, int h,
+                        double i, double j, double k, double l, double m, double n, double o) {
+    if (d != 4 || e != 5 || f != 6 || g != 7 || h != 8 || i != 9.0 || j != 10.0 || k != 11.0 ||
+        l != 12.0 || m != 13.0 || n != 14.0 || o != 15.0) {
+        return 0.0;
+    }
+    return a + b + values.length + values[0] + c + d + e + f + g + h + i + j + k + l + m + n + o;
+}
+
+export int razum_invoke(fn(int, int) -> int callback, int value) {
+    return callback(value, shift);
+}

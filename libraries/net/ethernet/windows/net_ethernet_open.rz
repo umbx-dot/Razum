@@ -1,0 +1,5 @@
+import net.types;
+
+long net_ethernet_open(int interface_index, int ethertype) {
+    return NET_UNSUPPORTED;
+}

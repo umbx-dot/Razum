@@ -188,7 +188,7 @@ void emit_function(ProgramContext *program, Function *function, TextBuffer *outp
         emit_epilogue(&context);
     }
     emit_signature(output, function);
-    text_line(output, "$%s:", function->name);
+    text_line(output, "%s%s:", function_label_prefix(program), function->name);
     int size = emit_frame(output, function, &context);
     emit_fast_return(&context, output);
     emit_parameter_spills(output, function);

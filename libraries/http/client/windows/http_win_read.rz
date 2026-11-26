@@ -1,0 +1,37 @@
+int http_win_read(long request, HttpWinState *state, HttpClientResponse *response, byte *body, HttpClientCall *call, long headers) {
+    uint bytes = (uint)call.body_length;
+    int max_body = call.max_body;
+    int result = http_win_wait(state, WinHttpSendRequest(request, headers, (uint)(headers != 0 ? 0xffffffff : 0),
+                                                       (long)call.body, bytes, bytes, (long)state));
+    if (result == 0) {
+        result = http_win_wait(state, WinHttpReceiveResponse(request, 0));
+    }
+    if (result != 0) {
+        return result;
+    }
+    uint status = 0;
+    uint size = 4;
+    if (WinHttpQueryHeaders(request, HTTP_WIN_NUMERIC_STATUS, 0, (void *)&status, &size, 0) == 0 || status < 100 || status > 599) {
+        return HTTP_CLIENT_PROTOCOL;
+    }
+    int used = 0;
+    while (true) {
+        int room = max_body + 1 - used;
+        uint wanted = (uint)(room < 8192 ? room : 8192);
+        result = http_win_wait(state, WinHttpReadData(request, &body[used], wanted, null));
+        if (result != 0) {
+            return result;
+        }
+        if (state.count == 0) {
+            body[used] = 0;
+            response.body = body;
+            response.length = used;
+            response.status = (int)status;
+            return 0;
+        }
+        if (state.count > wanted || state.count > (uint)(max_body - used)) {
+            return HTTP_CLIENT_LIMIT;
+        }
+        used += (int)state.count;
+    }
+}

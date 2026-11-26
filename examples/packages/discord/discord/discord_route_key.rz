@@ -1,0 +1,35 @@
+import text;
+
+ulong discord_route_key(string method, string route) {
+    ulong hash = 0xcbf29ce484222325;
+    for (long index = 0; method[index] != "\0"; index++) {
+        hash = (hash ^ (ulong)(byte)method[index]) * 0x100000001b3;
+    }
+    long index = 0;
+    int segment = 0;
+    bool has_major = starts_with(route, "/channels/") || starts_with(route, "/guilds/") || starts_with(route, "/webhooks/");
+    bool webhook = starts_with(route, "/webhooks/");
+    while (route[index] != "\0" && route[index] != "?") {
+        if (route[index] == "/") {
+            segment++;
+            hash = (hash ^ (ulong)(byte)"/") * 0x100000001b3;
+            index++;
+            continue;
+        }
+        long end = index;
+        bool numeric = true;
+        while (route[end] != "\0" && route[end] != "/" && route[end] != "?") {
+            if (route[end] < "0" || route[end] > "9") { numeric = false; }
+            end++;
+        }
+        if (numeric && !(segment == 2 && has_major) && !(webhook && segment == 3)) {
+            hash = (hash ^ (ulong)(byte)"#") * 0x100000001b3;
+        } else {
+            for (long byte_index = index; byte_index < end; byte_index++) {
+                hash = (hash ^ (ulong)(byte)route[byte_index]) * 0x100000001b3;
+            }
+        }
+        index = end;
+    }
+    return hash == 0 ? (ulong)1 : hash;
+}

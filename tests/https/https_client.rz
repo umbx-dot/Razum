@@ -1,0 +1,42 @@
+import http;
+import stdio;
+import text;
+
+int main(string args[]) {
+    if (args.length != 5 && args.length != 6) {
+        return 1;
+    }
+    HttpClientResponse response;
+    int timeout = (int)parse_int(args[2]);
+    int limit = (int)parse_int(args[3]);
+    int expected = (int)parse_int(args[4]);
+    int result = args.length == 6 ? http_https_get_ca(&response, args[1], timeout, limit, args[5]) :
+                                   http_https_get(&response, args[1], timeout, limit);
+    if (expected < 0) {
+        if (result != expected || response.body != null || response.length != 0 || response.status != 0) {
+            print(result);
+            http_client_free(&response);
+            return 2;
+        }
+        return 0;
+    }
+    if (result != 0 || response.status != expected || response.body == null ||
+        response.body[response.length] != 0) {
+        print(result);
+        print(response.status);
+        http_client_free(&response);
+        return 3;
+    }
+    if (expected == 201 && (response.length != 4 || response.body[0] != 65 ||
+                            response.body[1] != 0 || response.body[2] != 66 || response.body[3] != 255)) {
+        http_client_free(&response);
+        return 4;
+    }
+    if (args.length == 6 && expected == 200 && !equals((string)response.body, "Hello over TLS")) {
+        http_client_free(&response);
+        return 5;
+    }
+    print(response.length);
+    http_client_free(&response);
+    return 0;
+}

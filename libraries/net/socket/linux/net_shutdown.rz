@@ -1,0 +1,5 @@
+import linux;
+
+int net_shutdown(long socket, int how) {
+    return (int)system_call(SYS_SHUTDOWN, socket, how, 0, 0);
+}

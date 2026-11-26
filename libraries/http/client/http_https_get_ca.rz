@@ -1,0 +1,14 @@
+import text;
+
+int http_https_get_ca(HttpClientResponse *response, string url, int timeout_ms, int max_body, string ca_file) {
+    if (response == null || response.body != null || timeout_ms <= 0 ||
+        max_body < 0 || max_body > 16777216 || !starts_with(url, "https://")) {
+        return HTTP_CLIENT_INVALID;
+    }
+    response.length = 0;
+    response.status = 0;
+    if (!http_client_argument(url) || !http_client_argument(ca_file)) {
+        return HTTP_CLIENT_INVALID;
+    }
+    return http_https_request(response, url, timeout_ms, max_body, ca_file);
+}

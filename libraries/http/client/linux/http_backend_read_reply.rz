@@ -1,0 +1,26 @@
+int http_backend_read_reply(long socket, HttpClientResponse *response, long deadline, int max_body) {
+    int sizes[3];
+    int result = http_backend_transfer(socket, (long)&sizes[0], 12, false, deadline);
+    if (result != 0) { return result; }
+    if (sizes[0] < 0) { return sizes[0]; }
+    if (sizes[0] < 100 || sizes[0] > 599 || sizes[1] < 0 || sizes[1] > max_body || sizes[2] < 0 || sizes[2] > 65536) {
+        return HTTP_CLIENT_PROTOCOL;
+    }
+    byte *body = new byte[sizes[1] + 1];
+    char *headers = new char[sizes[2] + 1];
+    if (body == null || headers == null) { result = HTTP_CLIENT_BACKEND; }
+    if (result == 0) { result = http_backend_transfer(socket, (long)body, sizes[1], false, deadline); }
+    if (result == 0) { result = http_backend_transfer(socket, (long)headers, sizes[2], false, deadline); }
+    if (result != 0) {
+        free(body);
+        free(headers);
+        return result;
+    }
+    body[sizes[1]] = 0;
+    headers[sizes[2]] = "\0";
+    response.body = body;
+    response.headers = headers;
+    response.length = sizes[1];
+    response.status = sizes[0];
+    return 0;
+}

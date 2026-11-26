@@ -1,0 +1,29 @@
+import net.socket;
+import net.types;
+
+int net_write_until(long socket, byte *data, int length, long deadline) {
+    int sent = 0;
+    while (sent < length) {
+        int remaining = net_stream_remaining(deadline);
+        if (remaining < -1) {
+            return remaining;
+        }
+        int count = net_send(socket, &data[sent], length - sent);
+        if (count > 0) {
+            sent += count;
+        } else if (count == 0) {
+            return NET_EOF;
+        } else if (net_would_block(count)) {
+            if (deadline == 0) {
+                return NET_WOULD_BLOCK;
+            }
+            int waited = net_stream_wait(socket, NET_WRITE, deadline);
+            if (waited < 0) {
+                return waited;
+            }
+        } else if (!net_was_interrupted(count)) {
+            return count;
+        }
+    }
+    return 0;
+}

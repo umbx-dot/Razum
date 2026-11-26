@@ -1,0 +1,15 @@
+import discord.discord_multipart;
+import discord.discord_multipart_free;
+import discord.discord_request_raw;
+
+int discord_upload(DiscordBot *bot, HttpClientResponse *response, string method, string route, string json,
+                   DiscordAttachment attachments[], bool authenticate) {
+    DiscordMultipart multipart;
+    int result = discord_multipart(&multipart, json, attachments);
+    if (result == 0) {
+        result = discord_request_raw(bot, response, method, route, multipart.body, multipart.size,
+                                     multipart.content_type, "", authenticate);
+    }
+    discord_multipart_free(&multipart);
+    return result;
+}

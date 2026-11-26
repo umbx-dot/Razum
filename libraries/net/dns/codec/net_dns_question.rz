@@ -1,0 +1,46 @@
+import net.types;
+
+int net_dns_question(byte *query, string host, int family) {
+    int label_at = 12;
+    int cursor = 13;
+    int label_length = 0;
+    int index = 0;
+    while (host[index] != "\0") {
+        if (cursor >= 266) {
+            return NET_INVALID;
+        }
+        char value = host[index];
+        index++;
+        if (value == ".") {
+            if (label_length == 0) {
+                return NET_INVALID;
+            }
+            query[label_at] = (byte)label_length;
+            if (host[index] == "\0") {
+                break;
+            }
+            label_at = cursor;
+            cursor++;
+            label_length = 0;
+        } else {
+            bool allowed = (value >= "a" && value <= "z") || (value >= "A" && value <= "Z") ||
+                           (value >= "0" && value <= "9") || value == "-" || value == "_";
+            if (!allowed || label_length >= 63) {
+                return NET_INVALID;
+            }
+            query[cursor] = (byte)value;
+            cursor++;
+            label_length++;
+        }
+    }
+    if (label_length == 0 || cursor > 266) {
+        return NET_INVALID;
+    }
+    query[label_at] = (byte)label_length;
+    query[cursor] = 0;
+    query[cursor + 1] = 0;
+    query[cursor + 2] = (byte)(family == NET_IPV4 ? 1 : 28);
+    query[cursor + 3] = 0;
+    query[cursor + 4] = 1;
+    return cursor + 5;
+}

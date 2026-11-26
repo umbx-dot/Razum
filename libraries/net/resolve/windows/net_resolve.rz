@@ -1,0 +1,60 @@
+import net.address;
+import net.address.family;
+import net.types;
+import text;
+
+struct NetAddrInfo {
+    int flags;
+    int family;
+    int kind;
+    int protocol;
+    ulong size;
+    long canonname;
+    byte *address;
+    NetAddrInfo *next;
+}
+
+extern "ws2_32" int getaddrinfo(string host, void *service, NetAddrInfo *hints, NetAddrInfo **result);
+extern "ws2_32" void freeaddrinfo(NetAddrInfo *result);
+
+int net_resolve(string host, int port, int family, NetAddress *result) {
+    if (result == null || port < 0 || port > 65535 || (family != NET_IPV4 && family != NET_IPV6)) {
+        return NET_INVALID;
+    }
+    if (family == NET_IPV6 && equals_ignore_case(host, "localhost")) {
+        net_ip(result, "::1", port);
+        return 0;
+    }
+    if (net_ip(result, host, port)) {
+        if (net_address_family(result) == family) {
+            return 0;
+        }
+        result.length = 0;
+        return NET_NOT_FOUND;
+    }
+    NetAddrInfo hints;
+    hints.family = net_native_family(family);
+    hints.kind = NET_STREAM;
+    NetAddrInfo *entries = null;
+    int error = getaddrinfo(host, null, &hints, &entries);
+    if (error != 0) {
+        return -error;
+    }
+    int status = NET_NOT_FOUND;
+    NetAddrInfo *entry = entries;
+    while (entry != null) {
+        if (entry.family == hints.family && entry.size == (ulong)(family == NET_IPV4 ? 16 : 28)) {
+            result.length = (int)entry.size;
+            for (int index = 0; index < result.length; index++) {
+                result.bytes[index] = entry.address[index];
+            }
+            result.bytes[2] = (byte)(port >> 8);
+            result.bytes[3] = (byte)port;
+            status = 0;
+            break;
+        }
+        entry = entry.next;
+    }
+    freeaddrinfo(entries);
+    return status;
+}

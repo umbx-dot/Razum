@@ -1,0 +1,10 @@
+import net.address.family;
+import linux;
+
+long net_open(int family, int kind, int protocol) {
+    int native = net_native_family(family);
+    if (native < 0) {
+        return native;
+    }
+    return system_call(SYS_SOCKET, native, kind | SOCK_CLOEXEC, protocol, 0);
+}

@@ -1,0 +1,3 @@
+bool net_was_interrupted(int result) {
+    return result == -10004;
+}

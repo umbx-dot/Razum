@@ -52,6 +52,7 @@ ValueType check_expression(Checker *checker, Expression *expression);
 ValueType check_any_expression(Checker *checker, Expression *expression);
 ValueType check_call(Checker *checker, Expression *call);
 Function *find_function(const Program *program, const char *name);
+bool check_dll_main(const Program *program);
 
 void scopes_push(Scopes *scopes);
 void scopes_pop(Scopes *scopes);

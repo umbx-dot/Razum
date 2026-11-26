@@ -38,7 +38,7 @@ static void append_quoted(TextBuffer *line, const char *argument) {
     text_append(line, "\"");
 }
 
-int run_process(const char *const *arguments, const char *directory) {
+int run_process_output(const char *const *arguments, const char *directory, const char *output) {
     TextBuffer line = {0};
     for (int index = 0; arguments[index] != NULL; index++) {
         if (index > 0) {
@@ -58,9 +58,22 @@ int run_process(const char *const *arguments, const char *directory) {
         free(line.data);
         return -1;
     }
+    HANDLE capture = INVALID_HANDLE_VALUE;
+    if (output != NULL) {
+        SECURITY_ATTRIBUTES inheritable = {sizeof inheritable, NULL, TRUE};
+        capture = CreateFileA(output, GENERIC_WRITE, FILE_SHARE_READ, &inheritable, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+        if (capture == INVALID_HANDLE_VALUE) {
+            free(line.data);
+            return -1;
+        }
+        startup.hStdOutput = capture;
+    }
     PROCESS_INFORMATION process = {0};
     BOOL started = CreateProcessA(application, line.data, NULL, NULL, TRUE, 0, NULL, directory, &startup, &process);
     free(line.data);
+    if (capture != INVALID_HANDLE_VALUE) {
+        CloseHandle(capture);
+    }
     if (!started) {
         return -1;
     }
@@ -70,4 +83,8 @@ int run_process(const char *const *arguments, const char *directory) {
     CloseHandle(process.hThread);
     CloseHandle(process.hProcess);
     return (int)exit_code;
+}
+
+int run_process(const char *const *arguments, const char *directory) {
+    return run_process_output(arguments, directory, NULL);
 }

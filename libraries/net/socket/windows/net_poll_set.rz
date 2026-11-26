@@ -1,0 +1,11 @@
+import net.types;
+
+int net_poll_set(NetPollState *item, long socket, int events) {
+    if (item == null || socket < 0 || events <= 0 || events > (NET_READ | NET_WRITE)) {
+        return NET_INVALID;
+    }
+    item.socket = socket;
+    item.requested = (short)(((events & NET_READ) != 0 ? 0x0300 : 0) | ((events & NET_WRITE) != 0 ? 0x0010 : 0));
+    item.returned = 0;
+    return 0;
+}

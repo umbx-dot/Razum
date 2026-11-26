@@ -1,0 +1,17 @@
+manifest_version = 1
+
+[project]
+name = "mixed-static"
+version = "0.1.0"
+
+[[target]]
+name = "parts"
+kind = "object"
+source = "razum/parts.rz"
+
+[[target]]
+name = "integration"
+kind = "cmake"
+source = "."
+preset = "native-x64"
+depends_on = ["parts"]

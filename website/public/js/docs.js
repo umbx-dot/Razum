@@ -16,6 +16,20 @@ const SOURCES = [
         file: "libraries.md",
         blurb: "Imports, API signatures, examples and platform support for the libraries that ship with razum.",
     },
+    {
+        id: "projects",
+        title: "Projects and packages",
+        group: "Projects",
+        file: "projects.md",
+        blurb: "Define build targets, install source packages and link Razum with C, C++, Rust and Go.",
+    },
+    {
+        id: "discord",
+        title: "Discord bots",
+        group: "Projects",
+        file: "discord.md",
+        blurb: "Build a Discord bot with slash commands, Gateway events, file uploads and signed interactions.",
+    },
 ];
 
 let loading = null;
@@ -34,7 +48,7 @@ const SUMMARY = {
         "statements": "Declarations, assignments, calls, control flow, asm blocks and scoped blocks.",
         "control-flow": "if / else, while, for, do / while, switch, break, continue and return.",
         "constants-and-enums": "const values folded into the code, and enums with scoped members and checked switch cases.",
-        "making-a-dll": "Build a Windows DLL and export functions to call from other programs.",
+        "making-a-dll": "Build a Windows DLL, run code on load and export functions or shared data.",
         "asm-blocks": "Use inline x86-64 assembly and follow the calling convention.",
     },
     libraries: {
@@ -50,7 +64,8 @@ const SUMMARY = {
         linux: "Call the Linux kernel and read the process environment.",
         gui: "Make windows, draw graphics and use widgets on Windows, Wayland or X11.",
         threads: "Start workers and coordinate them with synchronization and atomic operations.",
-        http: "Serve routes, static files, HTTP and HTTPS on Windows and Linux.",
+        net: "Use buffered TCP streams, wait on multiple sockets, send datagrams and work with raw packets.",
+        http: "Serve routes and static files or fetch HTTPS responses with certificate verification.",
         crypt: "Hash, authenticate and encrypt data and work with keys and certificates.",
         process: "Run programs with input, output and resource limits.",
         program: "Receive command-line arguments and manage memory with the bundled program runtime.",
@@ -205,7 +220,7 @@ function linkResolver(source, docs) {
         }
         const targetSource = docs.sources.find((item) => item.file === file);
         if (!targetSource) {
-            return null;
+            return file === "cmake.md" ? `/docs/${url}` : null;
         }
         if (!anchor) {
             return `#/docs/${targetSource.id}`;

@@ -1,0 +1,42 @@
+import crypt.hash;
+import crypt.bytes;
+import crypt.exchange.x25519_field;
+
+bool ed25519_verify_parts(byte public_key[], byte signature[], byte *first, long first_length, byte *second, long second_length) {
+    if (public_key.length != 32 || signature.length != 64 || first_length < 0 || second_length < 0 ||
+        (first == null && first_length != 0) || (second == null && second_length != 0) ||
+        ed25519_scalar_compare(&signature[32]) >= 0) { return false; }
+    Ed25519Point public_point;
+    if (!ed25519_point_decode(&public_point, &public_key[0])) { return false; }
+    byte identity[32] = {1};
+    if (compare_digest(&identity[0], 32, &public_key[0], 32)) { return false; }
+    Ed25519Point order_check;
+    ed25519_point_multiply(&order_check, &public_point, &ed25519_order[0]);
+    byte check[32];
+    ed25519_point_encode(&check[0], &order_check);
+    if (!compare_digest(&identity[0], 32, &check[0], 32)) { return false; }
+    Hasher hash;
+    if (!hash_start(hash, Hash.SHA512)) { return false; }
+    bool updated = hash_update(hash, &signature[0], 32) && hash_update(hash, &public_key[0], 32) &&
+                   (first_length == 0 || hash_update(hash, first, first_length)) &&
+                   (second_length == 0 || hash_update(hash, second, second_length));
+    byte digest[64];
+    if (hash_finish(hash, digest) != 64 || !updated) { return false; }
+    byte scalar[32];
+    ed25519_scalar_reduce(&scalar[0], &digest[0]);
+    Ed25519Point offset;
+    ed25519_point_multiply(&offset, &public_point, &scalar[0]);
+    long zero[16];
+    field_subtract(offset.x, zero, offset.x);
+    field_subtract(offset.t, zero, offset.t);
+    byte base[32];
+    base[0] = 0x58;
+    for (int index = 1; index < 32; index++) { base[index] = 0x66; }
+    Ed25519Point anchor;
+    if (!ed25519_point_decode(&anchor, &base[0])) { return false; }
+    Ed25519Point sum;
+    ed25519_point_multiply(&sum, &anchor, &signature[32]);
+    ed25519_point_add(&sum, &sum, &offset);
+    ed25519_point_encode(&check[0], &sum);
+    return compare_digest(&check[0], 32, &signature[0], 32);
+}

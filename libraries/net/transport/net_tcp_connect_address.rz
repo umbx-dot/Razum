@@ -1,0 +1,5 @@
+import net.types;
+
+long net_tcp_connect_address(NetAddress *address) {
+    return net_tcp_connect_address_for(address, -1);
+}

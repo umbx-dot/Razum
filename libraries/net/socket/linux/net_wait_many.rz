@@ -1,0 +1,9 @@
+import net.types;
+import linux;
+
+int net_wait_many(NetPollState items[], int count, int timeout_ms) {
+    if (count <= 0 || count > items.length || timeout_ms < -1) {
+        return NET_INVALID;
+    }
+    return (int)system_call(SYS_POLL, (long)&items[0], count, timeout_ms, 0);
+}

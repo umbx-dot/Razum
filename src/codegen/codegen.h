@@ -31,6 +31,7 @@ typedef struct {
     int relocation_count;
     bool optimize;
     bool zen3;
+    bool elf_object;
 } ProgramContext;
 
 typedef struct {
@@ -72,13 +73,16 @@ typedef struct {
     const char *tail_sum;
 } FunctionContext;
 
-char *emit_program(const Program *program, const PointerList *units, const char *dll_name);
+char *emit_program(const Program *program, const PointerList *units, const char *dll_name, bool has_dll_main, bool object);
 char *emit_def_file(const Program *program, const char *dll_name);
-char *emit_c_header(const Program *program);
+char *emit_c_header(const Program *program, bool dll);
+void emit_coff_header(TextBuffer *output, const Program *program);
+void emit_elf_object_header(TextBuffer *output, const Program *program);
+const char *function_label_prefix(const ProgramContext *program);
 const char *relocation_label(ProgramContext *program);
 void emit_relocations(TextBuffer *output, const ProgramContext *program, bool is_dll);
 void emit_export_section(TextBuffer *output, const Program *program, const char *dll_name);
-void emit_dll_entry_point(TextBuffer *output, bool flushes_output);
+void emit_dll_entry_point(TextBuffer *output, bool flushes_output, bool has_dll_main);
 const char *source_line(ProgramContext *program, const char *text, int line, size_t *length);
 
 int string_constant_index(ProgramContext *program, const char *bytes, size_t length);
@@ -168,6 +172,7 @@ void emit_pe_header(TextBuffer *output, bool is_dll, bool is_window_program);
 void emit_entry_point(TextBuffer *output, bool flushes_output, bool takes_arguments);
 void emit_linux_entry_point(TextBuffer *output, bool flushes_output, bool takes_arguments, bool keeps_environment);
 void emit_elf_header(TextBuffer *output);
+void emit_elf_https_backend(TextBuffer *output);
 void emit_data_section(TextBuffer *output, ProgramContext *program, const Program *source_program);
 void emit_aggregate_global(TextBuffer *output, ProgramContext *program, const GlobalVariable *variable);
 void emit_import_section(TextBuffer *output, const PointerList *imports);

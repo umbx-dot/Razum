@@ -1,0 +1,28 @@
+import net.address.family;
+import net.types;
+
+bool net_ethernet_address(NetAddress *address, int interface_index, int ethertype, byte *mac) {
+    if (address == null) {
+        return false;
+    }
+    address.length = 0;
+    if (interface_index <= 0 || ethertype < 0 || ethertype > 65535) {
+        return false;
+    }
+    for (int index = 0; index < 20; index++) {
+        address.bytes[index] = 0;
+    }
+    address.bytes[0] = (byte)net_native_family(NET_ETHERNET);
+    address.bytes[2] = (byte)(ethertype >> 8);
+    address.bytes[3] = (byte)ethertype;
+    int *index_field = (int *)&address.bytes[4];
+    *index_field = interface_index;
+    if (mac != null) {
+        address.bytes[11] = 6;
+        for (int index = 0; index < 6; index++) {
+            address.bytes[12 + index] = mac[index];
+        }
+    }
+    address.length = 20;
+    return true;
+}

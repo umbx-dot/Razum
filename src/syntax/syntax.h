@@ -371,6 +371,7 @@ typedef struct GlobalVariable {
     int string_index;
     bool is_library;
     bool is_const;
+    bool is_exported;
     int constant_state;
 } GlobalVariable;
 

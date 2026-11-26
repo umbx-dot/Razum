@@ -1,0 +1,24 @@
+import linux;
+
+long http_backend_file() {
+    long size = 0;
+    long image = http_https_image(&size);
+    if (size == 0) { return HTTP_CLIENT_BACKEND; }
+    long fd = system_call(SYS_MEMFD_CREATE, (long)"razum-https", MFD_CLOEXEC | MFD_ALLOW_SEALING, 0, 0);
+    if (fd < 0) { return HTTP_CLIENT_BACKEND; }
+    long sent = 0;
+    while (sent < size) {
+        long count = system_call(SYS_WRITE, fd, image + sent, size - sent, 0);
+        if (count == EINTR) { continue; }
+        if (count <= 0) {
+            system_call(SYS_CLOSE, fd, 0, 0, 0);
+            return HTTP_CLIENT_BACKEND;
+        }
+        sent += count;
+    }
+    if (system_call(SYS_FCNTL, fd, F_ADD_SEALS, F_SEAL_ALL_WRITES, 0) < 0) {
+        system_call(SYS_CLOSE, fd, 0, 0, 0);
+        return HTTP_CLIENT_BACKEND;
+    }
+    return fd;
+}

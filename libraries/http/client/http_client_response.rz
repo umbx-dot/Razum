@@ -1,0 +1,26 @@
+struct HttpClientResponse {
+    byte *body;
+    long length;
+    int status;
+    char *headers;
+}
+
+struct HttpClientCall {
+    string method;
+    string url;
+    string headers;
+    byte *body;
+    int body_length;
+    int timeout_ms;
+    int max_body;
+    string ca_file;
+}
+
+const int HTTP_CLIENT_INVALID = -31000;
+const int HTTP_CLIENT_BACKEND = -31001;
+const int HTTP_CLIENT_TIMEOUT = -31002;
+const int HTTP_CLIENT_LIMIT = -31003;
+const int HTTP_CLIENT_TLS = -31004;
+const int HTTP_CLIENT_TRANSFER = -31005;
+const int HTTP_CLIENT_PROTOCOL = -31006;
+const int HTTP_CLIENT_UNSUPPORTED = -31007;

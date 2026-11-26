@@ -1,0 +1,10 @@
+import net.address;
+import net.types;
+import winsock;
+
+int net_connect(long socket, NetAddress *address) {
+    if (!net_valid_address(address)) {
+        return NET_INVALID;
+    }
+    return net_wsa_result(connect(socket, &address.bytes[0], address.length));
+}

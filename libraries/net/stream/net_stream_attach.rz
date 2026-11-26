@@ -1,0 +1,17 @@
+import net.socket;
+import net.types;
+
+int net_stream_attach(NetStream *stream, long socket) {
+    if (stream == null || socket < 0) {
+        return NET_INVALID;
+    }
+    int result = net_set_blocking(socket, false);
+    if (result == 0) {
+        stream.socket = socket;
+        stream.attached = true;
+        stream.read_status = 0;
+        stream.first = 0;
+        stream.end = 0;
+    }
+    return result;
+}

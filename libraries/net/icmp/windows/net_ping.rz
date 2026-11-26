@@ -1,0 +1,43 @@
+import net.address;
+import net.types;
+import windows;
+
+extern "iphlpapi" long IcmpCreateFile();
+extern "iphlpapi" long Icmp6CreateFile();
+extern "iphlpapi" int IcmpCloseHandle(long handle);
+extern "iphlpapi" uint IcmpSendEcho(long handle, uint destination, byte *data, ushort length, long options, byte *reply, uint capacity, uint timeout);
+extern "iphlpapi" uint Icmp6SendEcho2(long handle, long event, long routine, long context, byte *source, byte *destination, byte *data, ushort length, long options, byte *reply, uint capacity, uint timeout);
+
+int net_ping(NetAddress *target, int timeout_ms) {
+    int family = net_address_family(target);
+    if ((family != NET_IPV4 && family != NET_IPV6) || timeout_ms <= 0) {
+        return NET_INVALID;
+    }
+    long handle = family == NET_IPV4 ? IcmpCreateFile() : Icmp6CreateFile();
+    if (handle == -1) {
+        return -(int)GetLastError();
+    }
+    byte data[4] = {82, 90, 0, 1};
+    byte reply[128];
+    uint count = 0;
+    int offset = 4;
+    if (family == NET_IPV4) {
+        uint *destination = (uint *)&target.bytes[4];
+        count = IcmpSendEcho(handle, *destination, data, 4, 0, reply, 128, (uint)timeout_ms);
+    } else {
+        NetAddress source;
+        net_ip(&source, "::", 0);
+        count = Icmp6SendEcho2(handle, 0, 0, 0, &source.bytes[0], &target.bytes[0], data, 4, 0, reply, 128, (uint)timeout_ms);
+        offset = 28;
+    }
+    int result = 0;
+    if (count == 0) {
+        result = -(int)GetLastError();
+    } else {
+        uint *status = (uint *)&reply[offset];
+        uint *elapsed = (uint *)&reply[offset + 4];
+        result = *status != 0 ? -(int)*status : (int)*elapsed;
+    }
+    IcmpCloseHandle(handle);
+    return result;
+}

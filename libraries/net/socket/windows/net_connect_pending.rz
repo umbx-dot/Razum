@@ -1,0 +1,5 @@
+import winsock;
+
+bool net_connect_pending(int result) {
+    return result == -WSAEWOULDBLOCK || result == -10036 || result == -10037;
+}

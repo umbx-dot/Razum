@@ -1,0 +1,17 @@
+import net.types;
+import linux;
+
+long net_accept(long socket, NetAddress *peer) {
+    byte *bytes = null;
+    int *length = null;
+    if (peer != null) {
+        peer.length = (int)peer.bytes.length;
+        bytes = &peer.bytes[0];
+        length = &peer.length;
+    }
+    long accepted = system_call(SYS_ACCEPT4, socket, (long)bytes, (long)length, SOCK_CLOEXEC);
+    if (accepted < 0 && peer != null) {
+        peer.length = 0;
+    }
+    return accepted;
+}

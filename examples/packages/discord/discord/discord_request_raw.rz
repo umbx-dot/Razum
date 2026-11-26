@@ -1,0 +1,57 @@
+import discord.types;
+import discord.discord_rate_update;
+import discord.discord_route_key;
+import text;
+
+int discord_request_raw(DiscordBot *bot, HttpClientResponse *response, string method, string route, byte *data, int size,
+                        string content_type, string extra_headers, bool authenticate) {
+    if (bot == null || response == null || response.body != null || response.headers != null || length(method) == 0 ||
+        length(route) == 0 || route[0] != "/" || route[1] == "/" || length(route) > 3000 ||
+        length(content_type) > 127 || length(extra_headers) > 7600 || (authenticate && bot.token[0] == "\0")) {
+        return DISCORD_INVALID;
+    }
+    for (long index = 0; index < length(content_type); index++) {
+        if ((byte)content_type[index] < 32 || (byte)content_type[index] > 126) { return DISCORD_INVALID; }
+    }
+    bot.retry_after_ms = 0;
+    ulong key = discord_route_key(method, route);
+    int slot = (int)(key % (ulong)bot.limits.length);
+    long since = discord_millis();
+    long until = bot.global_limit;
+    if (bot.limits[slot].route == key && bot.limits[slot].until > until) { until = bot.limits[slot].until; }
+    if (until > since) {
+        bot.retry_after_ms = until - since;
+        response.status = 429;
+        return 429;
+    }
+    char url[4097] = "https://discord.com/api/v10";
+    concat(url, route);
+    char headers[8193] = "User-Agent: DiscordBot (https://github.com/umbx-dot/Razum, 0.1.0)\r\n";
+    if (authenticate) {
+        HttpClientResponse supplied;
+        supplied.headers = (char *)extra_headers;
+        char duplicate[8193];
+        if (http_client_header(&supplied, "Authorization", duplicate)) { return DISCORD_INVALID; }
+        concat(headers, "Authorization: Bot ");
+        concat(headers, bot.token);
+        concat(headers, "\r\n");
+    }
+    if (length(content_type) != 0) {
+        concat(headers, "Content-Type: ");
+        concat(headers, content_type);
+        concat(headers, "\r\n");
+    }
+    concat(headers, extra_headers);
+    HttpClientCall request;
+    request.url = url;
+    request.method = method;
+    request.headers = headers;
+    request.body = data;
+    request.body_length = size;
+    request.timeout_ms = 10000;
+    request.max_body = DISCORD_MAX_PAYLOAD;
+    int result = http_https_call(response, &request);
+    if (result != 0) { return result; }
+    discord_rate_update(bot, response, key);
+    return response.status;
+}

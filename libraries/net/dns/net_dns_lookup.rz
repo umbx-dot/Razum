@@ -1,0 +1,63 @@
+import crypt.random;
+import net.address;
+import net.dns.codec;
+import net.dns.transport;
+import net.socket;
+import net.types;
+
+int net_dns_lookup(string host, int family, NetAddress *server, NetAddress *result, int timeout_ms) {
+    if (result == null || server == result) {
+        return NET_INVALID;
+    }
+    result.length = 0;
+    int server_family = net_address_family(server);
+    if ((server_family != NET_IPV4 && server_family != NET_IPV6) || net_port(server) <= 0 ||
+        (family != NET_IPV4 && family != NET_IPV6) || timeout_ms <= 0) {
+        return NET_INVALID;
+    }
+    byte query[271];
+    byte id[2];
+    int size = net_dns_question(query, host, family);
+    if (size < 0) {
+        return size;
+    }
+    if (!secure_bytes(id, 2)) {
+        return NET_DNS_REPLY;
+    }
+    query[0] = id[0];
+    query[1] = id[1];
+    query[2] = 1;
+    query[5] = 1;
+    byte reply[4096];
+    long socket = net_open(server_family, NET_DATAGRAM, NET_UDP);
+    if (socket < 0) {
+        return (int)socket;
+    }
+    int count = net_set_timeout(socket, NET_READ, timeout_ms);
+    if (count == 0) {
+        count = net_connect(socket, server);
+    }
+    if (count == 0) {
+        count = net_send(socket, query, size);
+        if (count == size) {
+            count = net_receive(socket, reply, (int)reply.length);
+        } else if (count >= 0) {
+            count = NET_DNS_REPLY;
+        }
+    }
+    net_close(socket);
+    if (count < 0) {
+        return count;
+    }
+    int status = net_dns_response(reply, count, query, size, family, result);
+    if (status == NET_DNS_TRUNCATED) {
+        byte *full_reply = new byte[65535];
+        if (full_reply == null) {
+            return NET_DNS_REPLY;
+        }
+        count = net_dns_tcp(server, server_family, query, size, full_reply, 65535, timeout_ms);
+        status = count < 0 ? count : net_dns_response(full_reply, count, query, size, family, result);
+        free(full_reply);
+    }
+    return status;
+}

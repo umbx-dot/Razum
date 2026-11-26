@@ -196,10 +196,8 @@ static void parse_item(void *data) {
             function->is_library = is_library;
             list_push(&program->functions, function);
         } else {
-            if (is_exported) {
-                compile_error(start->line, start->column, "only functions can be exported");
-            }
             GlobalVariable *variable = parse_global(stream, start, base, name);
+            variable->is_exported = is_exported;
             variable->source_path = source_path;
             variable->is_library = is_library;
             list_push(&program->globals, variable);

@@ -1,0 +1,8 @@
+bool net_dns_equal(byte *first, byte *second, int size) {
+    for (int index = 0; index < size; index++) {
+        if (net_dns_lower(first[index]) != net_dns_lower(second[index])) {
+            return false;
+        }
+    }
+    return true;
+}
