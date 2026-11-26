@@ -44,4 +44,6 @@ jobs:
             mingw-w64-ucrt-x86_64-ninja
             mingw-w64-ucrt-x86_64-nasm
       - name: Build and test
-        run: bash tests/run_all.sh
+        run: |
+          export PATH="/c/Program Files/Git/cmd:$PATH"
+          bash tests/run_all.sh

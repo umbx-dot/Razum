@@ -4,6 +4,10 @@
 
 `rz add` and `rz update` query Git tags only when selecting a stable version. An explicit tag skips that query. The lockfile records the exact tag and commit, so `rz fetch --locked` and `rz build --offline` keep working after a tag moves. Stable selection compares three unsigned 64-bit numeric components. Use an explicit tag for prereleases or packages with another version scheme. Tag selection and resolution finish before the manifest and lockfile are staged. [Package guide](docs/projects.md#install-a-source-package)
 
+MSYS Git reads a Windows `file:///D:/...` URI as the POSIX path `/D:/...`. Windows CI puts Git for Windows on PATH before the MSYS tools so the fixture exercises the same drive-letter URLs as a native installation.
+
+NASM 3.01 rejects `$`-escaped names in ELF `global` directives. The emitter uses plain symbol names in `global` and keeps escaping the actual labels, including names such as `eax`. [NASM ELF exports](https://www.nasm.us/doc/nasm09.html#section-9.10.5)
+
 ## Project build performance
 
 Measured on a Ryzen 7 5700X with Windows 11 and Fedora 45 under WSL 2. The manifest example builds a report and shared library on both systems, plus a DLL client on Windows. The cold build fetches a tagged CSV package from a local Git repository into an empty cache, and the warm build reuses the outputs with `--offline`. The first four rows are medians of five runs. The mixed-language example uses one fresh build directory and one offline repeat. The native link time comes from Ninja. The initial native total includes downloading and building Lua.

@@ -55,7 +55,7 @@ csv = { git = "https://example.org/owner/razum-csv.git", tag = "v0.1.0" }
 
 A source package supplies `csv.rz` or `csv/` at its root for the alias `csv`. Its own `razum.toml` may declare further source packages. Resolution checks that all requests for an alias agree on the source and tag. The compiler uses the existing shared import namespace, so package authors should prefix public helper names.
 
-Commit `razum.lock` together with the manifest. The lockfile records the peeled Git commit of each exact tag, including transitive dependencies. `fetch --locked` fills an empty cache from those commits. `build --offline` requires matching pins and cached sources. Git is needed to fetch. Set `RZ_CACHE` to override the cache directory. `rzc` reads local source paths and runs without package resolution.
+Commit `razum.lock` together with the manifest. The lockfile records the peeled Git commit of each exact tag, including transitive dependencies. `fetch --locked` fills an empty cache from those commits. `build --offline` requires matching pins and cached sources. Package downloads require Git. On Windows, use Git for Windows for `file:///` repositories with drive-letter paths. Set `RZ_CACHE` to override the cache directory. `rzc` reads local source paths and runs without package resolution.
 
 Try `rz add umbx-dot/razum-csv` for a CSV field reader or `rz add umbx-dot/razum-discord` for a Discord bot library. Both packages are also included as source examples. [CSV example](../examples/packages/csv) · [Discord bot guide](discord.md)
 

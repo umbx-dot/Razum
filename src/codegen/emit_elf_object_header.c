@@ -15,7 +15,7 @@ static void stage_argument(TextBuffer *output, int slot, bool floating, int *int
 }
 
 static void emit_wrapper(TextBuffer *output, const Function *function) {
-    text_line(output, "global $%s:function", function->name);
+    text_line(output, "global %s:function", function->name);
     text_line(output, "$%s:", function->name);
     int slots = 0;
     for (int index = 0; index < function->parameters.count; index++) {
@@ -69,7 +69,7 @@ void emit_elf_object_header(TextBuffer *output, const Program *program) {
     for (int index = 0; index < program->globals.count; index++) {
         const GlobalVariable *variable = LIST_AT(program->globals, GlobalVariable, index);
         if (variable->is_exported) {
-            text_line(output, "global $%s:data protected (%d)", variable->name, shape_size(variable->shape));
+            text_line(output, "global %s:data protected (%d)", variable->name, shape_size(variable->shape));
         }
     }
 }
